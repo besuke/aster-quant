@@ -43,11 +43,6 @@ export default function TrsPage() {
     <div className="page">
       <section className="intro">
         <h1>TRS契約書連携</h1>
-        <p>
-          トータル・リターン・スワップの個別契約書（PDF・HTML）をアップロードすると、サーバーの <code>server/data/uploads/c1/</code>{" "}
-          に保存し、そこから取込・本文の抽出・契約条件の読解・原文との照合・FpML と Aladdin 向け下書きの作成までを行う。
-          推測で値を埋めず、原文に記載のない項目は「記載なし」として残す。
-        </p>
       </section>
 
       <section className="card">

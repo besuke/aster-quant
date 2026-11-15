@@ -39,6 +39,7 @@ server_dir <- local({
 source(file.path(server_dir, "R", "load_quantlet.R"), encoding = "UTF-8")
 load_quantlet(server_dir)
 source(file.path(server_dir, "R", "server", "jobs.R"), encoding = "UTF-8")
+source(file.path(server_dir, "R", "server", "server_info.R"), encoding = "UTF-8")
 
 args <- commandArgs(trailingOnly = TRUE)
 arg_value <- function(name, default) {
@@ -155,8 +156,9 @@ started_at <- Sys.time()
 # 入力（サンプル・ポートフォリオとデモの基準カーブ）はサーバーの実行中に変わらないので、IRRBB の結果は一度だけ計算する
 irrbb_cache <- new.env()
 handle_api <- function(req, method, path) {
+  if (method == "GET" && path == "/api/server") return(json_response(200, server_info_QL(host, port, static_dir)))
   if (method == "GET" && path == "/api/health") {
-    return(json_response(200, list(status = "ok", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
+    return(json_response(200, list(status = "ok", name = "QuantLet Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
                                    started_at = format(started_at, "%Y-%m-%dT%H:%M:%S%z"), data_dir = "server/data")))
   }
   m <- regmatches(path, regexec("^/api/uploads/(a1|c1|reports)$", path))[[1]]
@@ -361,6 +363,7 @@ app <- list(call = function(req) {
   method <- req$REQUEST_METHOD
   path <- req$PATH_INFO
   t0 <- Sys.time()
+  if (startsWith(path, "/api/")) SERVER_REQUESTS_QL$count <- SERVER_REQUESTS_QL$count + 1L
   res <- tryCatch({
     if (startsWith(path, "/api/")) handle_api(req, method, path)
     else if (!is.na(static_dir)) serve_static(path)
@@ -372,5 +375,10 @@ app <- list(call = function(req) {
   res
 })
 
-message("QuantLet API: http://", host, ":", port, "/api/health", if (!is.na(static_dir)) paste0("  (page: http://", host, ":", port, "/)"))
+message("QuantLet Server: http://", if (host == "0.0.0.0") "127.0.0.1" else host, ":", port, "/api/health",
+        if (!is.na(static_dir)) paste0("  (page: http://", if (host == "0.0.0.0") "127.0.0.1" else host, ":", port, "/)"))
+if (host == "0.0.0.0") {
+  pub <- public_host_QL()
+  message("URL for users on the LAN: http://", pub$host, ":", port, "/  (", pub$source, ")")
+}
 runServer(host, port, app)

@@ -142,6 +142,23 @@ export interface BloombergOis {
   a1_input_files: string[];
 }
 
+// ---- QuantLet Server ----
+export interface ServerInfo {
+  name: string;
+  status: string;
+  app_version: string;
+  engine: { name: string; version: string; library: string };
+  runtime: { r_version: string; platform: string; pid: number; logical_processors: number };
+  listen: { host: string; port: number; lan: boolean; serves_page: boolean };
+  urls: { public_host: string | null; public_host_source: string; share: string | null; local: string; note: string };
+  started_at: string;
+  server_time: string;
+  uptime_seconds: number;
+  requests_served: number;
+  probe: { calculation: string; repeats: number; seconds_each: number; check_value: number };
+  routes: { method: string; path: string; page: string }[];
+}
+
 // ---- IRRBB 金利シナリオ ----
 export interface IrrbbBond {
   bond_id: string;
@@ -378,6 +395,7 @@ const postJson = <T,>(path: string, body: unknown) =>
 
 export const api = {
   health: () => call<{ status: string; quantlet: string; engine: string }>("/api/health"),
+  server: () => call<ServerInfo>("/api/server"),
   irrbb: (floor: "none" | "zero") => call<IrrbbResult>(`/api/irrbb?floor=${floor}`),
   feedback: (id: string, client: string) => call<Feedback>(`/api/reports/${id}/feedback?client=${encodeURIComponent(client)}`),
   react: (id: string, client_id: string, reaction: "like" | "dislike" | null) => postJson<Feedback>(`/api/reports/${id}/reactions`, { client_id, reaction }),

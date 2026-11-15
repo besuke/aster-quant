@@ -35,13 +35,6 @@ export default function OfferSheetPage({ focusIsin }: { focusIsin: string | null
     <div className="page">
       <section className="intro">
         <h1>オファーシート作成</h1>
-        <p>
-          オファーExcelをアップロードすると、サーバー（R）が取込・銘柄属性との結合・入力検証を行い、RiemannFinMath で OIS
-          カーブとアセットスワップ・スプレッドを計算して Excel に出力する。円建てと外貨建ては別々に計算する。アップロードしないで実行すると、デモのオファー（架空）を使う。
-        </p>
-        <p className="muted small">
-          市場データ（OIS・JGB・FX・通貨ベーシス）と銘柄属性は、当面サーバーのデモデータ（架空、評価日 2026-10-06）を使う。オファー日がこの評価日と違う行は、別の日付で補わず「入力不合格」になる。
-        </p>
       </section>
       <OisMarketPanel />
       <div className="grid2">
@@ -255,7 +248,7 @@ function RelatedReports({ isin }: { isin: string }) {
           {reports.map((r) => (
             <li key={r.report_id}>
               <span className={`chip ${r.level === "候補（未確定）" ? "st-partial" : "st-success"}`}>{r.level}</span>{" "}
-              <a href={`#reports/${r.report_id}`}>
+              <a href={`#reports/list/${r.report_id}`}>
                 {r.issue_date ? `${Number(r.issue_date.slice(5, 7))}/${Number(r.issue_date.slice(8, 10))}` : "—"} ｜ {r.publisher ?? "—"}
                 {r.authors ? `・${r.authors.split("・").map((a) => a.split(/\s/)[0]).join("・")}` : ""} ｜ {r.headline}
               </a>
@@ -325,7 +318,11 @@ function OisMarketPanel() {
           Bloomberg から取得した（基準日 {result.base_date}、{result.files?.join("、")}）。オファーシートの計算は、オファー日と同じ基準日の OIS だけを使う。
         </div>
       )}
-      {status && <p className="muted small">{status.asw.note}</p>}
+      {status && (
+        <p className="muted small">
+          {status.asw.note}。市場データ（OIS・JGB・FX・通貨ベーシス）と銘柄属性は当面デモ（架空）。オファー日がこの基準日と違う行は「入力不合格」になる。
+        </p>
+      )}
     </section>
   );
 }

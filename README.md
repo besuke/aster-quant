@@ -1,6 +1,6 @@
 # QuantLet
 
-債券運用の分析・業務支援を行う Web アプリである。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
+運用の分析・業務支援を行う Web アプリである。対象は債券に限らず、市場分析・ポートフォリオ分析・リスク管理（IRRBB など）の画面を足していく。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
 
 - **A1 オファーシート**：円債・外債のオファー Excel の取込、銘柄属性と市場データの結合、ASW の計算、Excel 出力
 - **C1 TRS 確認書の連携**：確認書の取込、契約条件の抽出、原文との照合、条件 JSON・FpML の作成、未確定の項目と Aladdin 向けの下書き
@@ -29,15 +29,27 @@ npm run dev          # 画面を http://127.0.0.1:8091/ で起動
 - `npm run api` は `server/server.R` を Rscript で起動するだけである。直接起動する場合は `"C:/Program Files/R/R-4.6.0/bin/Rscript.exe" server/server.R --port 8790`
 - 一つのポートで画面と API をまとめて出す場合：`npm run lan`（ビルドして `server.R --static ../ui/dist` で配信。`--host 0.0.0.0` で LAN に公開する）
 
+### 社内の端末に配る（配備）
+
+`127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
+
+1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`QUANTLET_PUBLIC_HOST` にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
+2. `QuantLet.ps1`（デスクトップのショートカット「QuantLet」）で **2（社内LANで起動）** を選ぶ。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する（`.QuantLet.ps1 -Mode lan` でメニューなしでも起動できる）
+3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。QuantLet からは変えない）
+
+QuantLet Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（1、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
+
+ホスト名にアンダースコア（例 `CHIRO_FMV_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
+
 R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl, writexl, xml2, zip, rlang, collapse, jsonlite, httpuv, RiemannFinMath（C1 はさらに pdftools, openssl, curl, processx）。GaussQuant と QuantLib（R バインディング）は使わない。
 
 ## 画面
 
-左のサイドメニューで切り替える（この順。`ui/src/App.tsx` の `PAGES` に項目を足せば画面を増やせる）。アドレスは `#reports`・`#rates`・`#offers`・`#trs`・`#irrbb`（以前の `#a1`・`#c1`・`#yields` も開ける）。
+左のサイドメニューで切り替える（この順。`ui/src/App.tsx` の `PAGES` に項目を足せば画面を増やせる）。右上の「QuantLet Server：接続中／未接続」は全画面共通で、15 秒ごとに `/api/health` の実際の応答で決める。クリックすると接続確認ページ（`#server`：案内用の URL、待ち受け、RiemannFinMath の版、稼働時間、計算の時間、応答する経路）を開く。各画面の冒頭は機能名と操作に必要な情報だけにし、前提や保存先は操作の近くかこの README に置く。アドレスは `#reports`・`#rates`・`#offers`・`#trs`・`#irrbb`（以前の `#a1`・`#c1`・`#yields` も開ける）。
 
 | メニュー | できること |
 |---|---|
-| レポート分析掲示板 | 業者・格付機関のレポートの登録（AI が見出し・詳細サマリー・メタデータを作る）、新着順の一覧、原文根拠、オファーとの紐づけ（下記）。各レポートに「いいね」「ダメ」とコメント・返信（下記） |
+| レポート分析掲示板 | 画面上部のタブで3画面を切り替える。**掲示板**（`#reports`）：新着順に発行元・執筆者、短い見出し、反応数。詳細から「いいね」「ダメ」、コメント、返信。**レポート登録**（`#reports/register`）：PDF・HTML の選択と登録、処理状況（保存・AI の読解・原文根拠の照合・紐づけ）。**レポート一覧**（`#reports/list`）：登録済みのレポートの表と、要約・原文根拠・オファーとの紐づけ（`#reports/list/<id>`。以前の `#reports/<id>` もここを開く） |
 | 日米の国債金利・OIS | 「国債の公表利回り」（選んだ月の日米イールドカーブ、`YYYYMM` スライダー、再生・一時停止、観測日と欠損の表）と「評価用 OIS」（保存済みの OIS 気配から RiemannFinMath で作ったゼロ金利カーブと気配の表）を切り替える。それぞれ出典と基準日を示す |
 | オファーシート作成 | 円建て・外貨建てのオファーシートを別々にアップロードして計算する（OIS ASW、JGB スプレッド・円換算 ASW、状態と理由、詳細、関連レポート、Excel）。ASW が使う OIS の基準日と、Bloomberg からの更新（失敗したときは理由と、今使えるデータの基準日） |
 | TRS契約書連携 | TRS の個別契約書の取込・抽出・照合（原文根拠、FpML、Aladdin 向け JSON の**下書き・未送信**）と、キャッシュフロー・スケジュール（FundingLeg・ReturnLeg を「レッグ」列で区別した一つの表。Excel は2シート） |
