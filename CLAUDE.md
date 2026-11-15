@@ -30,9 +30,9 @@
 - 確かめていないことを断定しない。照合結果は実行した日付と数値で書く
 - ブラウザーでの確認は、ヘッドレスの Chrome を DevTools Protocol で操作して行ってきた（ブラウザー操作のツールはこの環境で使えなかった）
 
-## 状態（2026-11-15）
+## 状態（2026-11-16）
 
-- QuantLet：`main` は `6f7d17e`。IRRBB は作業ブランチ `irrbb-scenarios`（`3ac7bcd`）で、`main` への取り込みはユーザーの判断待ち。remote なし（未 push）
-- Riemann：`main` は `22e504e`（TRS）。IRRBB は `irrbb-scenarios`（`4def5bc`）で取り込み待ち。未 push
+- QuantLet：GitHub `besuke/QuantLet`（**private**）の `main` に push 済み（IRRBB、配備用 URL、QuantLet Server の接続表示・接続確認ページ、レポートの3画面、`QuantLet.ps1` まで）
+- Riemann：`main` は `22e504e`（TRS）、IRRBB は `irrbb-scenarios`（`4def5bc`）で取り込み待ち。どちらも未 push。QuantLet の TRS と IRRBB はこの RiemannFinMath の関数を使うので、他の PC で動かすには Riemann 側の公開も要る
 - 未了：Bloomberg の実接続、実データ（オファー・市場データ・銘柄属性の Aladdin 取得）、FpML の公式 XSD、承認済み AI API、金融庁の IRRBB フロアの確認、Curie にある Aladdin の実 URL の扱い
 - 以前の会話（2026-11-15 まで）は `C:\Windows\System32` で始めたセッション `7af9ce5a-fb0f-4c2c-9921-6c12a8690fa9`。そこから開くときは `cd /d C:\Windows\System32` のあと `claude --resume 7af9ce5a-fb0f-4c2c-9921-6c12a8690fa9`
