@@ -11,6 +11,14 @@ ui/dist/
 # サーバーのローカルデータ（アップロード・実行結果・案件・取得した市場データ・ジョブ）。デモデータ（架空）は管理対象
 /server/data/*
 !/server/data/demo/
+# 例外：掲示板のデモとして、サンプルレポート（架空）の案件だけを入れる。表示に使うファイルだけで、実行ログ（agents/・logs/）は入れない
+!/server/data/cases/
+/server/data/cases/*
+!/server/data/cases/reports/
+/server/data/cases/reports/*
+!/server/data/cases/reports/RPT_20261115_153947_c76c/
+/server/data/cases/reports/RPT_20261115_153947_c76c/agents/
+/server/data/cases/reports/RPT_20261115_153947_c76c/logs/
 
 # 個人用の設定・認証情報（server/tmp/.Renviron に Bloomberg の認証情報のパス、User-Agent、Aladdin の対応表のパスなどを書く）
 /server/tmp/

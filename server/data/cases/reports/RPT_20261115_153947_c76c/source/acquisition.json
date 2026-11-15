@@ -1,0 +1,24 @@
+{
+  "source": "C:/AnalyticFin/Projects/QuantLet/server/data/uploads/reports/reports_20261115_153947_8fca3e__ABC証券_XYZクレジットアップデート_20261115.pdf",
+  "pasted_input": "C:/AnalyticFin/Projects/QuantLet/server/data/uploads/reports/reports_20261115_153947_8fca3e__ABC証券_XYZクレジットアップデート_20261115.pdf",
+  "source_type": "local_file",
+  "name": "reports_20261115_153947_8fca3e__ABC証券_XYZクレジットアップデート_20261115.pdf",
+  "retrieved_at": "2026-11-15T15:39:47+0900",
+  "http_status": "NA",
+  "content_type": null,
+  "final_url": null,
+  "format": {
+    "kind": "pdf",
+    "by_content": "pdf",
+    "by_content_type": null,
+    "by_extension": "pdf",
+    "content_type": null,
+    "extension": "pdf",
+    "note": ""
+  },
+  "encoding": null,
+  "encoding_basis": null,
+  "stored_as": "source/original.pdf",
+  "bytes": 120500,
+  "sha256": "7e94f9a22e6ac4afbb2cc5d15e37ce068796857e745e491776989c8942bd55ba"
+}

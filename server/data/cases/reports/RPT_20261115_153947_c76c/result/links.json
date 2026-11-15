@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-11-15T15:40:30+0900",
+  "isin_links": [
+    {
+      "level": "銘柄",
+      "isin": "JPTEST000022",
+      "security_name": "テスト円債B 0.90% 2031/3",
+      "issuer_id": "ISS_XYZHD",
+      "issuer_name": "XYZホールディングス株式会社",
+      "page": 2,
+      "basis": "原文に ISIN の記載（AI の抽出・R の本文検索）",
+      "status": "auto"
+    }
+  ],
+  "unknown_isins": [],
+  "issuer_mentions": [
+    {
+      "mention": "XYZ",
+      "page": 1,
+      "status": "confirmed",
+      "issuer_id": "ISS_XYZHD",
+      "issuer_name": "XYZホールディングス株式会社",
+      "basis": "利用者が候補から確定した",
+      "candidates": [
+        {
+          "issuer_id": "ISS_XYZHD",
+          "issuer_name": "XYZホールディングス株式会社",
+          "match": "partial",
+          "hint": "原文の ISIN の発行体"
+        },
+        {
+          "issuer_id": "ISS_XYZBK",
+          "issuer_name": "XYZ銀行株式会社",
+          "match": "partial",
+          "hint": ""
+        }
+      ],
+      "decided_by": "利用者（画面）",
+      "decided_at": "2026-11-15T15:40:31+0900"
+    }
+  ],
+  "master_note": "発行体マスタはデモ（架空、data/demo/reference/）。本番の発行体ID体系は未定",
+  "updated_at": "2026-11-15T15:40:31+0900"
+}

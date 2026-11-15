@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, fmt, type A1Result, type OfferRow, type RelatedReport, type UploadResult, type Workflow } from "./api";
+import { api, fmt, type A1Result, type OfferRow, type OisRefresh, type OisStatus, type RelatedReport, type UploadResult, type Workflow } from "./api";
 import Upload from "./Upload";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -34,15 +34,16 @@ export default function OfferSheetPage({ focusIsin }: { focusIsin: string | null
   return (
     <div className="page">
       <section className="intro">
-        <h1>A1 オファーシート</h1>
+        <h1>オファーシート作成</h1>
         <p>
           オファーExcelをアップロードすると、サーバー（R）が取込・銘柄属性との結合・入力検証を行い、RiemannFinMath で OIS
-          カーブとアセットスワップ・スプレッドを計算して Excel に出力する。円債と外貨は別々に計算する。アップロードしないで実行すると、デモのオファー（架空）を使う。
+          カーブとアセットスワップ・スプレッドを計算して Excel に出力する。円建てと外貨建ては別々に計算する。アップロードしないで実行すると、デモのオファー（架空）を使う。
         </p>
         <p className="muted small">
           市場データ（OIS・JGB・FX・通貨ベーシス）と銘柄属性は、当面サーバーのデモデータ（架空、評価日 2026-10-06）を使う。オファー日がこの評価日と違う行は、別の日付で補わず「入力不合格」になる。
         </p>
       </section>
+      <OisMarketPanel />
       <div className="grid2">
         {BOOKS.map((b) => (
           <BookPanel key={b.workflow} {...b} initial={latest?.[b.workflow] ?? null} focusIsin={focusIsin} />
@@ -63,7 +64,7 @@ function BookPanel(props: { workflow: Workflow; title: string; hint: string; spr
   useEffect(() => {
     if (props.initial && !result) setResult(props.initial);
   }, [props.initial, result]);
-  // #a1/<ISIN>（レポート掲示板から戻るとき）：その銘柄の行を開いて表示する
+  // #offers/<ISIN>（レポート分析掲示板から戻るとき）：その銘柄の行を開いて表示する
   useEffect(() => {
     if (!props.focusIsin || !result) return;
     const row = result.offers.find((o) => o.ISIN === props.focusIsin);
@@ -263,5 +264,68 @@ function RelatedReports({ isin }: { isin: string }) {
         </ul>
       )}
     </div>
+  );
+}
+
+// ASW で使う OIS 市場データの基準日と、Bloomberg からの更新。更新に失敗したときは理由と、今使えるデータの基準日を示す
+function OisMarketPanel() {
+  const [status, setStatus] = useState<OisStatus | null>(null);
+  const [result, setResult] = useState<OisRefresh | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const load = () => api.oisStatus().then(setStatus).catch((e: Error) => setError(e.message));
+  useEffect(() => {
+    void load();
+  }, []);
+  const refresh = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await api.refreshOis());
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const b = status?.bloomberg;
+  const bbgDates = (status?.available ?? []).filter((d) => d.kind === "bloomberg").map((d) => d.base_date);
+  return (
+    <section className="card" data-testid="ois-market">
+      <div className="row spread">
+        <div>
+          <h2>ASW の OIS 市場データ</h2>
+          {status && (
+            <div className="source-line" data-testid="asw-ois">
+              <span>
+                基準日：<b>{status.asw.base_date}</b>（{status.asw.label}）
+              </span>
+              <span>Bloomberg から取得済み：{bbgDates.length ? bbgDates.join("、") : "なし"}</span>
+              <span>
+                Bloomberg 接続：{status.live_ready ? "設定済み" : "未設定"}（認証情報 {b?.credentials_file_exists ? "あり" : "なし"}、httr2 {b?.httr2_installed ? "あり" : "なし"}）
+              </span>
+            </div>
+          )}
+        </div>
+        <button className="btn" disabled={busy || !status} onClick={() => void refresh()} data-testid="bbg-refresh">
+          {busy ? "Bloomberg から取得中…" : "Bloomberg から更新"}
+        </button>
+      </div>
+      {error && <div className="error">{error}</div>}
+      {result && result.status === "failed" && (
+        <div className="error" data-testid="bbg-refresh-result">
+          更新できなかった（{result.stage}）：{result.reason}。{result.attempted}。<br />
+          今使えるデータの基準日：オファーシートの計算は <b>{result.current.asw.base_date}</b>（{result.current.asw.label}）。保存済みの OIS：
+          {result.current.available.map((d) => `${d.base_date}（${d.label}）`).join("、") || "なし"}
+        </div>
+      )}
+      {result && result.status === "success" && (
+        <div className="notice small" data-testid="bbg-refresh-result">
+          Bloomberg から取得した（基準日 {result.base_date}、{result.files?.join("、")}）。オファーシートの計算は、オファー日と同じ基準日の OIS だけを使う。
+        </div>
+      )}
+      {status && <p className="muted small">{status.asw.note}</p>}
+    </section>
   );
 }

@@ -1,0 +1,42 @@
+{
+  "report_id": "RPT_20261115_153947_c76c",
+  "registered_at": "2026-11-15T15:39:47+0900",
+  "original_file_name": "ABC証券_XYZクレジットアップデート_20261115.pdf",
+  "reader": "claude_code",
+  "app_version": {
+    "quantlet": "0.1.0",
+    "commit": "",
+    "r": "4.6.0"
+  },
+  "stages": {
+    "document": "取得済み",
+    "reader": "取得済み（Claude Code）",
+    "verification": "確認済み"
+  },
+  "document": {
+    "document_id": "RPT_20261115_153947_c76c",
+    "file_name": "ABC証券_XYZクレジットアップデート_20261115.pdf",
+    "pages": 2,
+    "sha256": "7e94f9a22e6ac4afbb2cc5d15e37ce068796857e745e491776989c8942bd55ba",
+    "kind": "pdf",
+    "local_name": "document.pdf"
+  },
+  "reader_log": {
+    "mode": "api",
+    "command": "claude.exe",
+    "timeout_sec": 1800,
+    "started_at": "2026-11-15T15:39:47+0900",
+    "seconds": 43,
+    "exit_status": 0,
+    "timed_out": false,
+    "cli_cost_estimate_usd": 0.2695,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 3863
+    },
+    "cost_usd": "NA",
+    "num_turns": 6,
+    "is_error": false
+  },
+  "finished_at": "2026-11-15T15:40:30+0900"
+}

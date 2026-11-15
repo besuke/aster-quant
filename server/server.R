@@ -214,6 +214,35 @@ handle_api <- function(req, method, path) {
     isin <- query_param(req, "isin") %||% http_error(400, "isin を指定する")
     return(json_response(200, list(isin = isin, reports = reports_for_offer_RP(isin))))
   }
+  # ---- 掲示板の反応・コメント（レポートの案件フォルダーの feedback.json） ----
+  m <- regmatches(path, regexec("^/api/reports/([A-Za-z0-9_-]+)/(feedback|reactions|comments)$", path))[[1]]
+  if (length(m)) {
+    if (!id_ok(m[2]) || !dir.exists(file.path(data_dir, "cases", "reports", m[2]))) http_error(404, paste0("レポートが見つからない: ", m[2]))
+    client <- query_param(req, "client") %||% ""
+    run <- function(expr) tryCatch(expr, error = function(e) http_error(400, conditionMessage(e)))
+    if (method == "GET" && m[3] == "feedback") return(json_response(200, feedback_view_RP(m[2], client)))
+    if (method == "POST" && m[3] == "reactions") {
+      b <- read_json_body(req)
+      return(json_response(200, run(set_reaction_RP(m[2], b$client_id, b$reaction))))
+    }
+    if (method == "POST" && m[3] == "comments") {
+      b <- read_json_body(req)
+      return(json_response(200, run(add_comment_RP(m[2], b$text, b$author, b$parent_id, b$client_id %||% ""))))
+    }
+  }
+  # ---- 保存済みの OIS（評価用）と Bloomberg からの更新 ----
+  if (method == "GET" && path == "/api/ois/datasets") return(json_response(200, list(datasets = ois_datasets_QL(), asw = asw_ois_dataset_QL())))
+  if (method == "GET" && path == "/api/ois/curves") {
+    id <- query_param(req, "dataset") %||% http_error(400, "dataset を指定する")
+    return(json_response(200, tryCatch(ois_curves_QL(id), error = function(e) http_error(404, conditionMessage(e)))))
+  }
+  if (method == "GET" && path == "/api/market/ois/status") {
+    cfg <- bbg_dl_config_QL()
+    return(json_response(200, list(asw = asw_ois_dataset_QL(), available = ois_datasets_QL(),
+                                   bloomberg = cfg[c("credentials_set", "credentials_file_exists", "catalog", "httr2_installed")],
+                                   live_ready = cfg$credentials_file_exists && cfg$httr2_installed)))
+  }
+  if (method == "POST" && path == "/api/market/ois/refresh") return(json_response(200, refresh_ois_from_bloomberg_QL()))
   m <- regmatches(path, regexec("^/api/reports/([A-Za-z0-9_-]+)(/links|/document)?$", path))[[1]]
   if (length(m)) {
     if (!id_ok(m[2]) || !dir.exists(file.path(data_dir, "cases", "reports", m[2]))) http_error(404, paste0("レポートが見つからない: ", m[2]))

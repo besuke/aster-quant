@@ -100,18 +100,15 @@ export default function YieldCurvePage() {
 
   const month = months[index];
   return (
-    <div className="page">
-      <section className="intro">
-        <h1>日米の国債金利</h1>
-        <p>
-          米国債（FRED の DGS1・DGS5・DGS10・DGS20・DGS30）と日本国債（財務省「国債金利情報」）の、1・5・10・20・30年の<b>公表利回り</b>を月ごとに重ねる。
-          各年限の値は月内の最終観測値で、観測日は下の表で確かめられる。
-        </p>
-        <p className="notice small">
-          ここは公表された国債利回りの比較であり、A1 の評価に使う <b>OIS カーブ（RiemannFinMath がブートストラップしたもの）とは別</b>のものである。この画面の値は計算には使わない。
-        </p>
-      </section>
-      <section className="card">
+    <>
+      <section className="card" data-testid="yields-view">
+        <div className="source-line" data-testid="yields-source">
+          <span>
+            <b>国債の公表利回り</b>（1・5・10・20・30年、月内最終観測値。計算には使わない）
+          </span>
+          <span>出典：米国 FRED（DGS1〜DGS30）、日本 財務省「国債金利情報」</span>
+          <span>基準日：{month ? `${ym(month.month)}の各年限の観測日（下の表）` : "—"}</span>
+        </div>
         <div className="row spread">
           <div className="row">
             <label className="small">
@@ -184,7 +181,7 @@ export default function YieldCurvePage() {
           </>
         )}
       </section>
-    </div>
+    </>
   );
 }
 

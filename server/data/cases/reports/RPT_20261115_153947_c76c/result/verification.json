@@ -1,0 +1,168 @@
+{
+  "state": "確認済み",
+  "reasons": null,
+  "headline_chars": 22,
+  "evidence": [
+    {
+      "group": "発行元",
+      "label": "発行元",
+      "status": "stated",
+      "value": "ABC証券",
+      "page": 1,
+      "quote": "ABC証券 クレジット調査部",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "執筆者・担当者",
+      "label": "執筆者・担当者 1",
+      "status": "stated",
+      "value": "山田 太郎（シニア・クレジットアナリスト）",
+      "page": 1,
+      "quote": "担当アナリスト：山田 太郎（シニア・クレジットアナリスト）",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "発行日",
+      "label": "発行日",
+      "status": "stated",
+      "value": "2026-11-15",
+      "page": 1,
+      "quote": "発行日：2026年11月15日",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "対象発行体",
+      "label": "対象発行体 1",
+      "status": "stated",
+      "value": "XYZ",
+      "page": 1,
+      "quote": "クレジット・アップデート：XYZ の財務見通しを下方修正",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "ISIN",
+      "label": "ISIN 1",
+      "status": "stated",
+      "value": "JPTEST000022（テスト円債B 0.90% 2031/3）",
+      "page": 2,
+      "quote": "テスト円債B 0.90% 2031/3（ISIN JPTEST000022）",
+      "check": "一致",
+      "found_page": 2
+    },
+    {
+      "group": "格付け・アウトルックの変更",
+      "label": "格付け・アウトルック 1",
+      "status": "stated",
+      "value": "QRSレーティング：XYZ 長期発行体格付け A+→A、アウトルック 安定的→ネガティブ（2026-11-14）",
+      "page": 1,
+      "quote": "XYZ の長期発行体格付けを A+ から A に引き下げ、アウトルックを「安定的」から「ネガティブ」に変更した。",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "投資判断の変更",
+      "label": "投資判断 1",
+      "status": "stated",
+      "value": "テスト円債B 0.90% 2031/3：オーバーウェイト→ニュートラル",
+      "page": 2,
+      "quote": "当社は同銘柄の投資判断を「オーバーウェイト」から「ニュートラル」に変更する。",
+      "check": "一致",
+      "found_page": 2
+    },
+    {
+      "group": "主な理由",
+      "label": "理由 1",
+      "status": "stated",
+      "value": "主力の素材事業で原燃料価格の上昇を販売価格に転嫁しきれず、2026年度上期の営業利益率が前年同期比2.1ポイント低下した。",
+      "page": 1,
+      "quote": "2026年度上期の営業利益率は前年同期比で2.1ポイント低下した。",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "主な理由",
+      "label": "理由 2",
+      "status": "stated",
+      "value": "新工場の建設を1年前倒しし、2027年3月期の設備投資が約1,800億円と従来計画から600億円増える。",
+      "page": 1,
+      "quote": "第二に、新工場の建設を1年前倒しし、2027年3月期の設備投資は約1,800億円と従来計画から600億円増える。",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "主な理由",
+      "label": "理由 3",
+      "status": "stated",
+      "value": "自己株式の取得を継続する方針で、財務の改善は2028年度以降にずれ込む見通し。",
+      "page": 1,
+      "quote": "第三に、自己株式の取得を継続する方針で、財務の改善は2028年度以降にずれ込むとみる。",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 1",
+      "status": "stated",
+      "value": "XYZの2027年3月期財務見通しの下方修正とネット有利子負債／EBITDAの上昇見込み",
+      "page": 1,
+      "quote": "ネット有利子負債／EBITDA は従来予想の3.2倍から4.1倍に上昇する見込みである。",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 2",
+      "status": "stated",
+      "value": "主な理由（採算悪化・設備投資の前倒し・自己株式取得の継続）",
+      "page": 1,
+      "quote": "主力の素材事業で原燃料価格の上昇を販売価格に転嫁しきれず",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 3",
+      "status": "stated",
+      "value": "QRSレーティングによる格下げとアウトルック変更",
+      "page": 1,
+      "quote": "架空格付機関 QRSレーティングは2026年11月14日、XYZ の長期発行体格付けを A+ から A に引き下げ",
+      "check": "一致",
+      "found_page": 1
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 4",
+      "status": "stated",
+      "value": "テスト円債Bの投資判断変更",
+      "page": 2,
+      "quote": "当社は同銘柄の投資判断を「オーバーウェイト」から「ニュートラル」に変更する。",
+      "check": "一致",
+      "found_page": 2
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 5",
+      "status": "stated",
+      "value": "今後の注目点と追加格下げの可能性",
+      "page": 2,
+      "quote": "2027年2月に公表予定の中期経営計画で、投資計画の見直しと株主還元方針が示されるかに注目する。",
+      "check": "一致",
+      "found_page": 2
+    },
+    {
+      "group": "サマリーの根拠",
+      "label": "根拠 6",
+      "status": "stated",
+      "value": "追加格下げの可能性",
+      "page": 2,
+      "quote": "格付けがさらに引き下げられる可能性は残る。",
+      "check": "一致",
+      "found_page": 2
+    }
+  ],
+  "verified_at": "2026-11-15T15:40:30+0900"
+}

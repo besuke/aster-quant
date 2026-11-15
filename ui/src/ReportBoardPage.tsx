@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, fmt, type BoardRow, type Evidence, type ReportDetail, type UploadResult } from "./api";
 import Upload from "./Upload";
+import ReportFeedback from "./ReportFeedback";
 
 // 業者・格付機関のレポートの掲示板。登録すると、サーバー（R）が原資料を保存し、AI（Claude Code）が見出し・詳細サマリー・
 // メタデータを作り、R が原文根拠を照合して案件フォルダー（server/data/cases/reports/<id>/）に記録する。一覧は新着順。
@@ -49,7 +50,7 @@ export default function ReportBoardPage({ focusId }: { focusId: string | null })
   return (
     <div className="page">
       <section className="intro">
-        <h1>レポート掲示板</h1>
+        <h1>レポート分析掲示板</h1>
         <p>
           業者や格付機関のレポート（PDF・HTML）を登録すると、AI が日本語の見出しと詳細サマリーを作り、発行元・執筆者・発行日・対象発行体・格付けの変更・主な理由を、原文に記載のある範囲で抽出する。
           抽出した値には原文のページと引用が付き、R が原文と照合する。オファーとは ISIN があれば銘柄単位、発行体だけなら発行体単位で結びつける。
@@ -91,6 +92,7 @@ export default function ReportBoardPage({ focusId }: { focusId: string | null })
                 <th>見出し</th>
                 <th>オファーとの紐づけ</th>
                 <th>状態</th>
+                <th>反応</th>
               </tr>
             </thead>
             <tbody>
@@ -111,6 +113,9 @@ export default function ReportBoardPage({ focusId }: { focusId: string | null })
                   <td>
                     <span className={`chip ${r.state === "確認済み" ? "st-success" : r.state === "要確認" ? "st-partial" : "st-failed"}`}>{r.state}</span>
                   </td>
+                  <td className="counts" data-testid={`counts-${r.report_id}`}>
+                    👍 {r.feedback?.likes ?? 0}　👎 {r.feedback?.dislikes ?? 0}　💬 {r.feedback?.comment_count ?? 0}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -119,6 +124,7 @@ export default function ReportBoardPage({ focusId }: { focusId: string | null })
       </section>
 
       {detail && <ReportView detail={detail} onChange={(d) => { setDetail(d); void loadBoard(); }} />}
+      {detail?.summary && <ReportFeedback reportId={detail.report_id} onChange={() => void loadBoard()} />}
     </div>
   );
 }
@@ -286,7 +292,7 @@ function ReportView({ detail, onChange }: { detail: ReportDetail; onChange: (d: 
           <p className="muted small">対象発行体の記載はない。</p>
         )}
         <p className="muted small">{detail.links?.master_note}</p>
-        <h3>対応するオファー（A1 の最新の実行結果）</h3>
+        <h3>対応するオファー（オファーシートの最新の計算結果）</h3>
         {detail.offers?.length ? (
           <table className="data compact" data-testid="report-offers">
             <thead>
@@ -308,7 +314,7 @@ function ReportView({ detail, onChange }: { detail: ReportDetail; onChange: (d: 
                   <td className="num">{fmt(o.offer_price, 3)}</td>
                   <td className="num">{fmt(o.native_asw_bp, 2)}</td>
                   <td>
-                    <a className="btn" href={`#a1/${o.ISIN}`}>
+                    <a className="btn" href={`#offers/${o.ISIN}`}>
                       オファーを開く
                     </a>
                   </td>
@@ -317,7 +323,7 @@ function ReportView({ detail, onChange }: { detail: ReportDetail; onChange: (d: 
             </tbody>
           </table>
         ) : (
-          <p className="muted small">A1 の最新の実行結果に、対応するオファーはない（A1 でオファーシートを計算すると表示される）。</p>
+          <p className="muted small">オファーシートの最新の計算結果に、対応するオファーはない（オファーシートを計算すると表示される）。</p>
         )}
       </section>
     </>

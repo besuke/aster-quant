@@ -193,7 +193,8 @@ list_reports_RP <- function(root_dir = reports_dir_RP()) {
          headline = s$headline %||% NA_character_,
          isin_links = length(links$isin_links %||% list()),
          issuer_links = sum(purrr::map_chr(mentions, "status") %in% c("auto", "confirmed")),
-         pending_links = sum(purrr::map_chr(mentions, "status") == "pending"))
+         pending_links = sum(purrr::map_chr(mentions, "status") == "pending"),
+         feedback = feedback_view_RP(id, root_dir = root_dir)[c("likes", "dislikes", "comment_count")])
   }) |> purrr::compact()
   rows[order(purrr::map_chr(rows, "registered_at"), decreasing = TRUE)]
 }

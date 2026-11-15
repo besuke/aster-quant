@@ -22,7 +22,8 @@
          "workflows_c1_case.R", "inbox_c1.R", "trs_cashflows.R"),
   bloomberg = c("bbg_data_license.R", "bbg_to_market_data.R"),
   yields = c("jgb_ust_yields.R"),
-  reports = c("report_reader.R", "report_store.R")
+  reports = c("report_reader.R", "report_store.R", "report_feedback.R"),
+  market = c("ois_datasets.R")
 )
 
 load_quantlet <- function(root = Sys.getenv("QUANTLET_ROOT", ""), envir = globalenv()) {

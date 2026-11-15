@@ -142,6 +142,73 @@ export interface BloombergOis {
   a1_input_files: string[];
 }
 
+// ---- 掲示板の反応・コメント ----
+export interface FeedbackComment {
+  id: string;
+  parent_id: string | null;
+  author: string;
+  text: string;
+  created_at: string;
+}
+export interface Feedback {
+  report_id: string;
+  likes: number;
+  dislikes: number;
+  my_reaction: "like" | "dislike" | null;
+  comments: FeedbackComment[];
+  comment_count: number;
+}
+
+// ---- 評価用 OIS ----
+export interface OisDataset {
+  id: string;
+  kind: "demo" | "bloomberg";
+  label: string;
+  base_date: string;
+  currencies: string[];
+}
+export interface AswOis {
+  id: string;
+  kind: string;
+  label: string;
+  base_date: string;
+  note: string;
+}
+export interface OisCurve {
+  currency: string;
+  source: string;
+  quote_time: string;
+  status: string;
+  message?: string;
+  index?: string;
+  last_date?: string;
+  quotes?: { tenor: string; quote_pct: number; pillar_date: string; years: number; zero_pct: number; reproduction_error_bp: number }[];
+  curve?: { years: number; zero_pct: number }[];
+}
+export interface OisCurves {
+  id: string;
+  kind: string;
+  label: string;
+  base_date: string;
+  curves: OisCurve[];
+  conventions: Record<string, string>;
+}
+export interface OisStatus {
+  asw: AswOis;
+  available: OisDataset[];
+  bloomberg: { credentials_set: boolean; credentials_file_exists: boolean; catalog: string; httr2_installed: boolean };
+  live_ready: boolean;
+}
+export interface OisRefresh {
+  status: "success" | "failed";
+  stage?: string;
+  reason?: string;
+  attempted?: string;
+  base_date?: string;
+  files?: string[];
+  current: { asw: AswOis; available: OisDataset[] };
+}
+
 // ---- TRS のキャッシュフロー・スケジュール ----
 export type SheetRow = Record<string, string | number | null>;
 export interface TrsCashflows {
@@ -193,6 +260,7 @@ export interface BoardRow {
   issuer_links: number;
   pending_links: number;
   failure: { kind: string; message: string } | null;
+  feedback: { likes: number; dislikes: number; comment_count: number };
 }
 export interface Evidence {
   group: string;
@@ -279,6 +347,13 @@ const postJson = <T,>(path: string, body: unknown) =>
 
 export const api = {
   health: () => call<{ status: string; quantlet: string; engine: string }>("/api/health"),
+  feedback: (id: string, client: string) => call<Feedback>(`/api/reports/${id}/feedback?client=${encodeURIComponent(client)}`),
+  react: (id: string, client_id: string, reaction: "like" | "dislike" | null) => postJson<Feedback>(`/api/reports/${id}/reactions`, { client_id, reaction }),
+  comment: (id: string, body: { text: string; author: string; parent_id: string | null; client_id: string }) => postJson<Feedback>(`/api/reports/${id}/comments`, body),
+  oisDatasets: () => call<{ datasets: OisDataset[]; asw: AswOis }>("/api/ois/datasets"),
+  oisCurves: (id: string) => call<OisCurves>(`/api/ois/curves?dataset=${encodeURIComponent(id)}`),
+  oisStatus: () => call<OisStatus>("/api/market/ois/status"),
+  refreshOis: () => postJson<OisRefresh>("/api/market/ois/refresh", {}),
   trsCashflows: (caseId: string, scenario_return_pct: number | null) =>
     postJson<TrsCashflows>(`/api/c1/cases/${caseId}/cashflows`, scenario_return_pct === null ? {} : { scenario_return_pct }),
   trsCashflowsUrl: (caseId: string) => `/api/c1/cases/${caseId}/cashflows.xlsx`,

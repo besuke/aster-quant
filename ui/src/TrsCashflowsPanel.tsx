@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { api, fmt, type SheetRow, type TrsCashflows } from "./api";
 
-// C1 の案件から TRS のキャッシュフロー・スケジュールを作る。日程と金額は RiemannFinMath がサーバーで計算し、画面は表示だけ。
+// TRS 契約書の案件からキャッシュフロー・スケジュールを作る。日程と金額は RiemannFinMath がサーバーで計算し、画面は表示だけ。
+// 画面では FundingLeg と ReturnLeg を一つの表にまとめ、「レッグ」列で区別する。
 // Excel（FundingLeg・ReturnLeg の2シート）は契約書の PDF と同じベース名で保存される。
 
 const STATUS_CLASS: Record<string, string> = { 確定: "st-success", 試算: "st-partial", 算出不可: "st-none" };
-const FUNDING_COLS = ["期間", "計算期間開始日", "計算期間終了日", "リセット日", "金利決定日", "観測期間開始日", "観測期間終了日", "支払日", "複利金利_pct", "金額", "金額の状態"];
-const RETURN_COLS = ["期間", "計算期間開始日", "計算期間終了日", "期初の評価日", "評価日", "規則による評価日", "支払日", "期末の水準", "騰落率_pct", "金額", "金額の状態"];
-const LABEL: Record<string, string> = { 複利金利_pct: "複利金利（%）", 騰落率_pct: "騰落率（%）", 金額: "金額（JPY）" };
 
 export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string; baseName: string | null }) {
   const [data, setData] = useState<TrsCashflows | null>(null);
@@ -61,8 +59,7 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
             <span>{data.engine}</span>
             {!data.name_confirmed && <span className="warn">ファイル名に不明な部分がある（UNKNOWN）：{Object.values(data.name_missing).join("；")}</span>}
           </div>
-          <Sheet title="FundingLeg" rows={data.sheets.FundingLeg} cols={FUNDING_COLS} />
-          <Sheet title="ReturnLeg" rows={data.sheets.ReturnLeg} cols={RETURN_COLS} />
+          <LegTable funding={data.sheets.FundingLeg} ret={data.sheets.ReturnLeg} />
           <details open>
             <summary>
               契約条件との照合（{data.checks.filter((c) => c.一致).length}/{data.checks.length} 一致）
@@ -125,55 +122,101 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
   );
 }
 
-function Sheet({ title, rows, cols }: { title: string; rows: SheetRow[]; cols: string[] }) {
-  if (rows.length && "不足項目" in rows[0] && !("期間" in rows[0])) {
-    return (
-      <div className="error">
-        {title}：算出不可。不足項目：{String(rows[0].不足項目)}
-      </div>
-    );
-  }
-  const notes = [...new Set(rows.map((r) => String(r.日程の状態 ?? "")))].filter(Boolean);
-  const missing = [...new Set(rows.map((r) => String(r.不足項目 ?? "")))].filter(Boolean);
+
+// 両レッグを一つの表に。日程と金額は RiemannFinMath の計算結果（サーバーが返したシートの値）をそのまま並べる
+type Leg = "FundingLeg" | "ReturnLeg";
+interface LegRow {
+  leg: Leg;
+  period: number;
+  start: string | null;
+  end: string | null;
+  calcDate: string | null;
+  calcNote: string;
+  payDate: string | null;
+  amount: number | null;
+  status: string;
+  basis: string;
+}
+
+const s = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
+
+function toRows(leg: Leg, rows: SheetRow[]): LegRow[] {
+  return rows
+    .filter((r) => "期間" in r)
+    .map((r) => ({
+      leg,
+      period: Number(r.期間),
+      start: s(r.計算期間開始日),
+      end: s(r.計算期間終了日),
+      calcDate: leg === "FundingLeg" ? s(r.金利決定日) : s(r.評価日),
+      calcNote:
+        leg === "FundingLeg"
+          ? `金利決定日。観測 ${s(r.観測期間開始日) ?? "—"}〜${s(r.観測期間終了日) ?? "—"}${r.複利金利_pct != null ? `、複利 ${fmt(Number(r.複利金利_pct), 4)}%` : ""}`
+          : `評価日。期初 ${s(r.期初の評価日) ?? "当初価格"}${r.騰落率_pct != null ? `、騰落 ${fmt(Number(r.騰落率_pct), 4)}%` : ""}`,
+      payDate: s(r.支払日),
+      amount: r.金額 == null ? null : Number(r.金額),
+      status: String(r.金額の状態 ?? ""),
+      basis: String(r.金額の根拠 ?? ""),
+    }));
+}
+
+function LegTable({ funding, ret }: { funding: SheetRow[]; ret: SheetRow[] }) {
+  const unavailable = ([["FundingLeg", funding], ["ReturnLeg", ret]] as [Leg, SheetRow[]][])
+    .filter(([, rows]) => rows.length && !("期間" in rows[0]))
+    .map(([leg, rows]) => `${leg}：算出不可。不足項目：${String(rows[0].不足項目)}`);
+  const rows = [...toRows("FundingLeg", funding), ...toRows("ReturnLeg", ret)].sort((a, b) => a.period - b.period || (a.leg === "FundingLeg" ? -1 : 1));
+  const notes = (leg: Leg, sheet: SheetRow[]) => ({
+    leg,
+    schedule: [...new Set(sheet.map((r) => s(r.日程の状態)).filter(Boolean))] as string[],
+    missing: [...new Set(sheet.map((r) => s(r.不足項目)).filter(Boolean))] as string[],
+    amount: [...new Set(sheet.filter((r) => "期間" in r).map((r) => `${r.金額の状態}：${r.金額の根拠}`))],
+  });
   return (
-    <div className="sheet" data-testid={`sheet-${title}`}>
-      <h3>{title}</h3>
+    <div className="sheet" data-testid="legs-table">
+      {unavailable.map((u) => (
+        <div key={u} className="error">{u}</div>
+      ))}
       <div className="table-wrap">
         <table className="data compact">
           <thead>
             <tr>
-              {cols.map((c) => (
-                <th key={c} className={typeof rows[0]?.[c] === "number" && c !== "期間" ? "num" : ""}>
-                  {LABEL[c] ?? c}
-                </th>
-              ))}
+              <th>レッグ</th>
+              <th className="num">期間</th>
+              <th>計算期間</th>
+              <th>計算日・評価日</th>
+              <th>受渡日・支払日</th>
+              <th className="num">金額（JPY）</th>
+              <th>算出状態</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={i} title={String(r.金額の根拠 ?? "")}>
-                {cols.map((c) => {
-                  const v = r[c];
-                  if (c === "金額の状態") return <td key={c}><span className={`chip ${STATUS_CLASS[String(v)] ?? ""}`}>{String(v)}</span></td>;
-                  if (v === null || v === undefined || v === "") return <td key={c} className="muted">{c === "支払日" ? "不足" : "—"}</td>;
-                  if (typeof v === "number") return <td key={c} className="num">{c === "期間" ? v : c === "金額" ? fmt(v, 0) : fmt(v, 4)}</td>;
-                  return <td key={c} className="mono">{v}</td>;
-                })}
+            {rows.map((r) => (
+              <tr key={r.leg + r.period} title={r.basis} data-leg={r.leg}>
+                <td>{r.leg}</td>
+                <td className="num">{r.period}</td>
+                <td className="mono">
+                  {r.start ?? "—"} 〜 {r.end ?? "—"}
+                </td>
+                <td>
+                  <span className="mono">{r.calcDate ?? "—"}</span>
+                  <div className="muted small">{r.calcNote}</div>
+                </td>
+                <td className={r.payDate ? "mono" : "muted"}>{r.payDate ?? "不足（定義なし）"}</td>
+                <td className="num">{r.amount === null ? <span className="muted">空欄</span> : fmt(r.amount, 0)}</td>
+                <td>
+                  <span className={`chip ${STATUS_CLASS[r.status] ?? ""}`}>{r.status}</span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <ul className="small">
-        {notes.map((n) => (
-          <li key={n}>日程：{n}</li>
-        ))}
-        {missing.map((n) => (
-          <li key={n} className="bad-text">不足：{n}</li>
-        ))}
-        {[...new Set(rows.map((r) => `${r.金額の状態}：${r.金額の根拠}`))].map((n) => (
-          <li key={n}>金額：{n}</li>
-        ))}
+        {[notes("FundingLeg", funding), notes("ReturnLeg", ret)].flatMap((n) => [
+          ...n.schedule.map((x) => <li key={n.leg + "s" + x}>{n.leg} の日程：{x}</li>),
+          ...n.missing.map((x) => <li key={n.leg + "m" + x} className="bad-text">{n.leg} の不足：{x}</li>),
+          ...n.amount.map((x) => <li key={n.leg + "a" + x}>{n.leg} の金額：{x}</li>),
+        ])}
       </ul>
     </div>
   );
