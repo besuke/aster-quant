@@ -142,6 +142,37 @@ export interface BloombergOis {
   a1_input_files: string[];
 }
 
+// ---- IRRBB 金利シナリオ ----
+export interface IrrbbBond {
+  bond_id: string;
+  security_name: string;
+  base_pv: number;
+  shocked_pv: number;
+  pv_change: number;
+}
+export interface IrrbbScenario {
+  id: string;
+  label: string;
+  domestic: boolean;
+  shocks_by_tenor: { tenor_years: number; shock_bp: number }[];
+  curve: { years: number; base_zero_pct: number; shocked_zero_pct: number; shock_bp: number; floored: boolean }[];
+  floored_points: number;
+  bonds: IrrbbBond[];
+  total: { base_pv: number; shocked_pv: number; pv_change: number; sum_of_bond_changes: number };
+}
+export interface IrrbbResult {
+  title: string;
+  valuation_date: string;
+  base_curve: { name: string; source: string; base_date: string; quote_time: string; last_date: string };
+  portfolio: { bond_id: string; security_name: string; issue_date: string; maturity_date: string; coupon_pct: number; coupon_frequency: number; face_amount: number; remaining_years: number }[];
+  shock_sizes_bp: { parallel_bp: number; short_bp: number; long_bp: number };
+  scenario_sets: Record<"domestic" | "international", { label: string; ids: string[] }>;
+  scenarios: IrrbbScenario[];
+  references: { id: string; title: string; publisher: string; published: string; effective: string | null; url: string; used_for: string }[];
+  assumptions: Record<string, string>;
+  engine: string;
+}
+
 // ---- 掲示板の反応・コメント ----
 export interface FeedbackComment {
   id: string;
@@ -347,6 +378,7 @@ const postJson = <T,>(path: string, body: unknown) =>
 
 export const api = {
   health: () => call<{ status: string; quantlet: string; engine: string }>("/api/health"),
+  irrbb: (floor: "none" | "zero") => call<IrrbbResult>(`/api/irrbb?floor=${floor}`),
   feedback: (id: string, client: string) => call<Feedback>(`/api/reports/${id}/feedback?client=${encodeURIComponent(client)}`),
   react: (id: string, client_id: string, reaction: "like" | "dislike" | null) => postJson<Feedback>(`/api/reports/${id}/reactions`, { client_id, reaction }),
   comment: (id: string, body: { text: string; author: string; parent_id: string | null; client_id: string }) => postJson<Feedback>(`/api/reports/${id}/comments`, body),

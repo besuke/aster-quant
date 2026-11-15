@@ -152,6 +152,8 @@ case_dir_of <- function(case_id) {
 
 # ---- 経路 --------------------------------------------------------------------------------------------------------
 started_at <- Sys.time()
+# 入力（サンプル・ポートフォリオとデモの基準カーブ）はサーバーの実行中に変わらないので、IRRBB の結果は一度だけ計算する
+irrbb_cache <- new.env()
 handle_api <- function(req, method, path) {
   if (method == "GET" && path == "/api/health") {
     return(json_response(200, list(status = "ok", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
@@ -243,6 +245,14 @@ handle_api <- function(req, method, path) {
                                    live_ready = cfg$credentials_file_exists && cfg$httr2_installed)))
   }
   if (method == "POST" && path == "/api/market/ois/refresh") return(json_response(200, refresh_ois_from_bloomberg_QL()))
+  # ---- IRRBB 金利シナリオ（全 6 シナリオを一度に計算して返す。画面はその中で切り替える） ----
+  if (method == "GET" && path == "/api/irrbb") {
+    f <- query_param(req, "floor") %||% "none"
+    if (!f %in% c("none", "zero")) http_error(400, "floor は none または zero")
+    key <- paste0("irrbb_", f)
+    if (is.null(irrbb_cache[[key]])) irrbb_cache[[key]] <- compute_irrbb_portfolio_QL(if (f == "zero") 0 else NULL)
+    return(json_response(200, irrbb_cache[[key]]))
+  }
   m <- regmatches(path, regexec("^/api/reports/([A-Za-z0-9_-]+)(/links|/document)?$", path))[[1]]
   if (length(m)) {
     if (!id_ok(m[2]) || !dir.exists(file.path(data_dir, "cases", "reports", m[2]))) http_error(404, paste0("レポートが見つからない: ", m[2]))

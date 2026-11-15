@@ -4,6 +4,7 @@ import OfferSheetPage from "./OfferSheetPage";
 import TrsPage from "./TrsPage";
 import RatesPage from "./RatesPage";
 import ReportBoardPage from "./ReportBoardPage";
+import IrrbbPage from "./IrrbbPage";
 
 // 左のサイドメニュー（Carmine Studio と同じ構成）。画面を足すときは、この表に項目を足す。
 const PAGES = [
@@ -11,6 +12,7 @@ const PAGES = [
   { id: "rates", label: "日米の国債金利・OIS" },
   { id: "offers", label: "オファーシート作成" },
   { id: "trs", label: "TRS契約書連携" },
+  { id: "irrbb", label: "IRRBB金利シナリオ" },
 ] as const;
 type PageId = (typeof PAGES)[number]["id"];
 // 以前のアドレス（#a1/…、#c1、#yields）も開けるようにする
@@ -70,6 +72,7 @@ export default function App() {
         {route.page === "rates" && <RatesPage />}
         {route.page === "offers" && <OfferSheetPage focusIsin={route.arg} />}
         {route.page === "trs" && <TrsPage />}
+        {route.page === "irrbb" && <IrrbbPage />}
       </main>
     </div>
   );

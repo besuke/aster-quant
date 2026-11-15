@@ -1,0 +1,6 @@
+bond_id,security_name,issue_date,maturity_date,coupon_pct,coupon_frequency,face_amount,day_count,calendar,settlement_days,payment_convention
+IRB-02Y,サンプル固定利付債 2年 0.60% 2028/9,2026-09-20,2028-09-20,0.60,2,100000000,actual_365_fixed,japan,2,following
+IRB-05Y,サンプル固定利付債 5年 1.00% 2031/9,2026-09-20,2031-09-20,1.00,2,100000000,actual_365_fixed,japan,2,following
+IRB-10Y,サンプル固定利付債 10年 1.60% 2036/9,2026-09-20,2036-09-20,1.60,2,100000000,actual_365_fixed,japan,2,following
+IRB-20Y,サンプル固定利付債 20年 2.20% 2046/9,2026-09-20,2046-09-20,2.20,2,100000000,actual_365_fixed,japan,2,following
+IRB-30Y,サンプル固定利付債 30年 2.50% 2056/9,2026-09-20,2056-09-20,2.50,2,100000000,actual_365_fixed,japan,2,following
