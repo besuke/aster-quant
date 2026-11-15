@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataDocument xmlns="http://www.fpml.org/FpML-5/confirmation" fpmlVersion="5-12">
+  <!-- Curie c1 TRS FpML（ドラフト：正式なFpMLではない） document_id=DEMO_TRS_confirmation -->
+  <!-- FpML 5.x confirmation の returnSwap を目指した構造。公式XSDでの検証は未実施 -->
+  <trade>
+    <tradeHeader>
+      <partyTradeIdentifier>
+        <partyReference href="party_dealer"/>
+        <tradeId tradeIdScheme="urn:curie:dealer-reference">DEMO-TRS-0001</tradeId>
+      </partyTradeIdentifier>
+      <tradeDate>2026-10-06</tradeDate>
+    </tradeHeader>
+    <returnSwap>
+      <returnLeg id="returnLeg">
+        <payerPartyReference href="party_dealer"/>
+        <receiverPartyReference href="party_counterparty"/>
+        <effectiveDate id="effectiveDate">
+          <adjustableDate>
+            <unadjustedDate>2026-10-08</unadjustedDate>
+            <dateAdjustments>
+              <businessDayConvention>NONE</businessDayConvention>
+            </dateAdjustments>
+          </adjustableDate>
+        </effectiveDate>
+        <terminationDate id="terminationDate">
+          <adjustableDate>
+            <unadjustedDate>2027-10-08</unadjustedDate>
+            <dateAdjustments>
+              <businessDayConvention>MODFOLLOWING</businessDayConvention>
+              <businessCenters>
+                <businessCenter>JPTO</businessCenter>
+              </businessCenters>
+            </dateAdjustments>
+          </adjustableDate>
+        </terminationDate>
+        <underlyer>
+          <singleUnderlyer>
+            <index>
+              <instrumentId instrumentIdScheme="urn:curie:index-code">DEMOJCBI</instrumentId>
+              <description>DEMO Japan Credit Bond Index</description>
+              <currency>JPY</currency>
+            </index>
+          </singleUnderlyer>
+        </underlyer>
+        <rateOfReturn>
+          <initialPrice>
+            <netPrice>
+              <amount>100</amount>
+              <priceExpression>PercentageOfNotional</priceExpression>
+            </netPrice>
+          </initialPrice>
+          <valuationPriceFinal>
+            <!-- 評価日の決め方（原文の要約）: Two Business Days prior to each Payment Date -->
+            <valuationRules>
+              <valuationDate>
+                <adjustableDate>
+                  <unadjustedDate>2027-10-06</unadjustedDate>
+                  <dateAdjustments>
+                    <businessDayConvention>NONE</businessDayConvention>
+                    <businessCenters>
+                      <businessCenter>JPTO</businessCenter>
+                    </businessCenters>
+                  </dateAdjustments>
+                </adjustableDate>
+              </valuationDate>
+            </valuationRules>
+          </valuationPriceFinal>
+        </rateOfReturn>
+        <notional>
+          <notionalAmount id="returnLegNotional">
+            <currency>JPY</currency>
+            <amount>1000000000</amount>
+          </notionalAmount>
+        </notional>
+        <amount>
+          <referenceAmount>Standard ISDA</referenceAmount>
+        </amount>
+        <return>
+          <returnType>Total</returnType>
+        </return>
+      </returnLeg>
+      <interestLeg id="interestLeg">
+        <payerPartyReference href="party_counterparty"/>
+        <receiverPartyReference href="party_dealer"/>
+        <interestLegCalculationPeriodDates id="interestLegPeriodDates">
+          <effectiveDate>
+            <adjustableDate>
+              <unadjustedDate>2026-10-08</unadjustedDate>
+              <dateAdjustments>
+                <businessDayConvention>NONE</businessDayConvention>
+              </dateAdjustments>
+            </adjustableDate>
+          </effectiveDate>
+          <terminationDate>
+            <adjustableDate>
+              <unadjustedDate>2027-10-08</unadjustedDate>
+              <dateAdjustments>
+                <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                <businessCenters>
+                  <businessCenter>JPTO</businessCenter>
+                </businessCenters>
+              </dateAdjustments>
+            </adjustableDate>
+          </terminationDate>
+          <interestLegResetDates id="interestLegResetDates">
+            <calculationPeriodDatesReference href="interestLegPeriodDates"/>
+            <resetRelativeTo>CalculationPeriodStartDate</resetRelativeTo>
+            <fixingDates>
+              <periodMultiplier>-2</periodMultiplier>
+              <period>D</period>
+              <dayType>Business</dayType>
+              <businessDayConvention>PRECEDING</businessDayConvention>
+              <businessCenters>
+                <businessCenter>JPTO</businessCenter>
+              </businessCenters>
+              <dateRelativeTo href="interestLegResetDates"/>
+            </fixingDates>
+            <resetFrequency>
+              <periodMultiplier>3</periodMultiplier>
+              <period>M</period>
+            </resetFrequency>
+          </interestLegResetDates>
+          <interestLegPaymentDates>
+            <periodicDates>
+              <calculationStartDate>
+                <adjustableDate>
+                  <unadjustedDate>2026-10-08</unadjustedDate>
+                  <dateAdjustments>
+                    <businessDayConvention>NONE</businessDayConvention>
+                  </dateAdjustments>
+                </adjustableDate>
+              </calculationStartDate>
+              <calculationPeriodFrequency>
+                <periodMultiplier>3</periodMultiplier>
+                <period>M</period>
+              </calculationPeriodFrequency>
+              <calculationPeriodDatesAdjustments>
+                <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                <businessCenters>
+                  <businessCenter>JPTO</businessCenter>
+                </businessCenters>
+              </calculationPeriodDatesAdjustments>
+            </periodicDates>
+          </interestLegPaymentDates>
+        </interestLegCalculationPeriodDates>
+        <notional>
+          <relativeNotionalAmount href="returnLegNotional"/>
+        </notional>
+        <interestAmount>
+          <currency>JPY</currency>
+          <referenceAmount>Standard ISDA</referenceAmount>
+        </interestAmount>
+        <interestCalculation>
+          <floatingRateCalculation>
+            <floatingRateIndex>JPY-TONA-OIS Compound</floatingRateIndex>
+            <spreadSchedule>
+              <initialValue>0.0035</initialValue>
+            </spreadSchedule>
+          </floatingRateCalculation>
+          <dayCountFraction>ACT/365.FIXED</dayCountFraction>
+        </interestCalculation>
+      </interestLeg>
+    </returnSwap>
+    <!-- FpMLの要素に対応させていない項目（値はここに記録）: funding.compounding_method=COMPOUNDING; funding.lookback_days=5; funding.observation_shift=NO; funding.payment_lag_days=2; return.valuation_frequency=QUARTERLY; return.valuation_time=15:00 Tokyo time; return.income_treatment=Coupons of the index constituents are reinvested in the index; trade.calculation_agent=DEMO Securities Co., Ltd. -->
+    <documentation>
+      <contractualDefinitions>ISDA2021</contractualDefinitions>
+    </documentation>
+  </trade>
+  <party id="party_dealer">
+    <partyName>DEMO Securities Co., Ltd.</partyName>
+  </party>
+  <party id="party_counterparty">
+    <partyName>Curie Demo Fund</partyName>
+  </party>
+</dataDocument>

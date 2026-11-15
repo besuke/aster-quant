@@ -1,0 +1,19 @@
+"item","curie","quantlet","match"
+"状態（r_validation.json state）","要確認（公式XSD：未実施（XSD未設定））","要確認（公式XSD：未実施（XSD未設定））",TRUE
+"判定：XML構文","合格","合格",TRUE
+"判定：公式XSD","未実施（XSD未設定）","未実施（XSD未設定）",TRUE
+"判定：原文根拠","合格","合格",TRUE
+"判定：条件JSONとの整合","合格","合格",TRUE
+"FpML の出力名","fpml_DRAFT.xml","fpml_DRAFT.xml",TRUE
+"条件の件数","47","47",TRUE
+"条件の内容（11列、全行）","","",TRUE
+"FpML の内容","<?xml version=""1.0"" encoding=""UTF-8""?>
+<dataDocument xmlns=""http://www.fpml.org/FpML-5/confirmation"" fpmlVersion=""5-12"">
+  <!-- Curie c1 TRS FpML（ドラフト：正式なFpMLではない） document_id=DEMO_TRS_confirmation --","<?xml version=""1.0"" encoding=""UTF-8""?>
+<dataDocument xmlns=""http://www.fpml.org/FpML-5/confirmation"" fpmlVersion=""5-12"">
+  <!-- Curie c1 TRS FpML（ドラフト：正式なFpMLではない） document_id=DEMO_TRS_confirmation --",TRUE
+"Aladdin 下書きの本文","{}","{}",TRUE
+"Aladdin 下書きの状態","下書き（未送信）：未確定 1 項目","下書き（未送信）：未確定 1 項目",TRUE
+"未確定の項目（項目・理由）","[{""項目"":""swapInfo.payLeg／recLeg"",""条件"":""trade.total_return_receiver"",""値"":""Curie Demo Fund"",""理由"":""トータル・リターンの受取者・支払者のどちらも自社の名前と一致しない""}]","[{""項目"":""swapInfo.payLeg／recLeg"",""条件"":""trade.total_return_receiver"",""値"":""Curie Demo Fund"",""理由"":""自社（ファンド）の名前が対応表（our_party_names）にないため、payLeg と recLeg の向きを決められない""}]",FALSE
+"原資料の SHA-256","c0b0303a254fa9e0d49d199b4681923be2609ef526a3cfe25a1763d6208df894","c0b0303a254fa9e0d49d199b4681923be2609ef526a3cfe25a1763d6208df894",TRUE
+"未確定の項目（自社の名前を仮に設定）","[{""項目"":""swapInfo.payLeg／recLeg"",""条件"":""trade.total_return_receiver"",""値"":""Curie Demo Fund"",""理由"":""トータル・リターンの受取者・支払者のどちらも自社の名前と一致しない""}]","[{""項目"":""swapInfo.payLeg／recLeg"",""条件"":""trade.total_return_receiver"",""値"":""Curie Demo Fund"",""理由"":""トータル・リターンの受取者・支払者のどちらも自社の名前と一致しない""}]",TRUE

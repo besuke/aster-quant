@@ -1,0 +1,58 @@
+{
+  "case_id": "DEMO_TRS_confirmation_20261027_081517",
+  "created_at": "2026-10-27T08:15:17+0900",
+  "claude_mode": "demo",
+  "stages": {
+    "document": "取得済み",
+    "reading_data": "作成済み（pdf_text 2 pages）",
+    "claude": "取得済み（デモ：Claude は呼んでいない）",
+    "outputs": "保存済み"
+  },
+  "source": "data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf",
+  "source_type": "local_file",
+  "acquisition": {
+    "source": "data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf",
+    "pasted_input": "data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf",
+    "source_type": "local_file",
+    "name": "DEMO_TRS_confirmation.pdf",
+    "retrieved_at": "2026-10-27T08:15:17+0900",
+    "http_status": "NA",
+    "content_type": null,
+    "final_url": null,
+    "format": {
+      "kind": "pdf",
+      "by_content": "pdf",
+      "by_content_type": null,
+      "by_extension": "pdf",
+      "content_type": null,
+      "extension": "pdf",
+      "note": ""
+    },
+    "encoding": null,
+    "encoding_basis": null,
+    "stored_as": "source/original.pdf",
+    "bytes": 21104,
+    "sha256": "c0b0303a254fa9e0d49d199b4681923be2609ef526a3cfe25a1763d6208df894"
+  },
+  "reading_data": {
+    "pages": 2,
+    "methods": "pdf_text 2 pages",
+    "text_chars": 1546
+  },
+  "document": {
+    "document_id": "DEMO_TRS_confirmation",
+    "file_name": "DEMO_TRS_confirmation.pdf",
+    "pages": 2,
+    "sha256": "c0b0303a254fa9e0d49d199b4681923be2609ef526a3cfe25a1763d6208df894",
+    "kind": "pdf",
+    "local_name": "document.pdf",
+    "source_type": "local_file"
+  },
+  "claude": {
+    "mode": "demo",
+    "demo_dir": "output/c1_trs/walkthrough/claude_demo",
+    "started_at": "2026-10-27T08:15:18+0900",
+    "output_check": "ok"
+  },
+  "finished_at": "2026-10-27T08:15:18+0900"
+}

@@ -1,0 +1,245 @@
+# QuantLet
+
+債券運用の分析・業務支援を行う Web アプリである。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
+
+- **A1 オファーシート**：円債・外債のオファー Excel の取込、銘柄属性と市場データの結合、ASW の計算、Excel 出力
+- **C1 TRS 確認書の連携**：確認書の取込、契約条件の抽出、原文との照合、条件 JSON・FpML の作成、未確定の項目と Aladdin 向けの下書き
+
+Curie は変更していない。移行中も Curie は従来の手順（`source("scripts/run_demo_JPY.R")` など）で使える。
+
+| ディレクトリ | 担当 |
+|---|---|
+| `server/` | R の HTTP API（httpuv）。金融計算は `RiemannFinMath` を呼ぶ。取込・整形・結合・集計・検証は R と tidyverse で行う（Curie から移植） |
+| `ui/` | React＋TypeScript の Web 画面。ファイルのアップロード、入力、API の呼び出し、JSON で返る結果の表示を担当する。計算はしない |
+
+データはすべて架空のデモデータである（Curie のデモと同じもの）。実在の銘柄・市場価格ではない。
+
+## 起動
+
+R 4.6.0（`C:/Program Files/R/R-4.6.0`）、RiemannFinMath 0.3.0、Node.js 23.6 以上（確認は 26.13.0）。
+
+```powershell
+cd C:/AnalyticFin/Projects/QuantLet/ui
+npm install          # 初回だけ
+npm run api          # R の API を 127.0.0.1:8790 で起動（別のターミナルで開いたままにする）
+npm run dev          # 画面を http://127.0.0.1:8091/ で起動
+```
+
+- ポートは画面 8091、API 8790。Carmine Studio（8081・8787）とは重ならない。8091 が使用中なら `npm run dev` は別のポートへ移らずに止まる
+- `npm run api` は `server/server.R` を Rscript で起動するだけである。直接起動する場合は `"C:/Program Files/R/R-4.6.0/bin/Rscript.exe" server/server.R --port 8790`
+- 一つのポートで画面と API をまとめて出す場合：`npm run lan`（ビルドして `server.R --static ../ui/dist` で配信。`--host 0.0.0.0` で LAN に公開する）
+
+R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl, writexl, xml2, zip, rlang, collapse, jsonlite, httpuv, RiemannFinMath（C1 はさらに pdftools, openssl, curl, processx）。GaussQuant と QuantLib（R バインディング）は使わない。
+
+## 画面
+
+| タブ | できること |
+|---|---|
+| A1 オファーシート | **円債オファーシート**と**外貨オファーシート**を別々にアップロードして計算する。オファーごとの OIS ASW、JGB スプレッド（円債）・円換算 ASW（外債）、状態と理由、詳細、OIS カーブ、出力 Excel のダウンロード。アップロードしなければデモのオファーを使う |
+| C1 TRS確認書 | TRS の個別契約書（PDF・HTML）をアップロードし、取込・抽出・照合を実行する。取引の要約、4つの判定、抽出した条件（項目ごとに原文根拠：ページ本文の中の引用を強調）、原資料の表示、FpML、Aladdin 向け JSON（**下書き・未送信**）と未確定の項目 |
+| レポート掲示板 | 業者・格付機関のレポートの登録（AI が見出し・詳細サマリー・メタデータを作る）、新着順の一覧、原文根拠、オファーとの紐づけ（下記） |
+| 日米国債金利 | 選んだ月の日米イールドカーブ（公表利回り）を重ねて表示。`YYYYMM` スライダー、再生・一時停止、観測日と欠損の表（下記） |
+| Bloomberg連携 | 接続設定の有無（値は出さない）、候補のティッカー、dry run（通信しない） |
+
+アップロードしたファイルは、サーバーのローカルフォルダーに保存し、処理はそこから読む。
+
+| 保存先（`server/data/`、Git に入れない） | 内容 |
+|---|---|
+| `uploads/a1/<uploadId>__<元の名前>.xlsx` | オファーシート |
+| `uploads/c1/<uploadId>__<元の名前>.pdf` | TRS 確認書 |
+| `runs/a1/<runId>/` | A1 の出力 Excel（`offer_results_{JPY,ISO}_<評価日>.xlsx`）と作業ファイル |
+| `cases/c1/<caseId>/` | C1 の案件フォルダー。構成は Curie と同じ（`source/`、`agents/claude/`、`result/conditions.json`、`result/fpml_DRAFT.xml`、`result/aladdin_request_DRAFT.json`、`result/aladdin_unresolved.json`、`r_validation.json`、`manifest.json`） |
+| `market/bbg_dl/` | Bloomberg の要求本文・取得結果・A1 用に変換した OIS 気配 |
+
+## API（`server/server.R`）
+
+| 経路 | 内容 |
+|---|---|
+| `GET /api/health` | 版 |
+| `POST /api/uploads/{a1,c1}?name=<ファイル名>` | 本文がファイル。拡張子（a1：.xlsx・.xls、c1：.pdf・.htm・.html）と大きさ（20 MB・50 MB）を確かめて保存し、`uploadId` を返す |
+| `GET /api/uploads/{a1,c1}` | アップロード済みの一覧 |
+| `POST /api/a1/run` | `{"workflow":"JPY"\|"ISO","uploadId":…}` → オファーごとの結果、カーブ、市場データの記録、`run_id` |
+| `GET /api/a1/runs/<runId>/excel` | 出力 Excel |
+| `POST /api/c1/run` | `{"uploadId":…,"reader":"saved"\|"claude_code"}` → 状態、判定、条件、ページ本文、FpML、Aladdin の下書き |
+| `GET /api/c1/cases/<caseId>/{document,fpml,aladdin}` | 原資料、FpML、Aladdin の下書き |
+| `GET /api/bloomberg/status`、`POST /api/bloomberg/ois` | 接続設定の有無、取得（既定は dry run） |
+
+不正な入力は 400 と日本語のメッセージを返す。httpuv は一つの R プロセスで要求を順に処理するので、C1 を Claude Code で読む間（数分）は他の要求が待つ。
+
+## C1：TRS のキャッシュフロー・スケジュール
+
+C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cases/<caseId>/cashflows`）で、両レッグの日程と金額を作り、Excel に保存する。
+
+- **分担**：日程の生成と金額の計算は RiemannFinMath（`create_trs_funding_leg`・`compute_trs_funding_cashflows`・`create_trs_return_leg`・`compute_trs_return_cashflows`。Riemann `docs/spec_trs.md`）。QuantLet（`server/R/c1/trs_cashflows.R`）は、C1 が原文で確認した契約条件だけを読み、RiemannFinMath の引数に変換し、不足と前提を記録し、Excel に整形する
+- **列**：FundingLeg は計算期間（調整前・調整後）、リセット日、金利決定日、観測期間の開始・終了（ルックバック）、支払日、日数・年数・営業日数、複利金利、金額。ReturnLeg は計算期間、期初の評価日、評価日、規則による評価日、支払日、期初・期末の水準、騰落率、金額。頻度・カレンダー・営業日調整・支払ラグはレッグごとに当てる
+- **状態**：各行に「金額の状態」（確定＝公表値だけ／試算＝市場データやシナリオを使う／算出不可＝空欄）と「金額の根拠」、「日程の状態」（前提の有無）、「不足項目」を書く。前提が不足する金額は空欄にする
+- **市場データ**：A1 と同じく評価日と同じ市場日のデータだけを使う。FundingLeg の試算はデモの JPY OIS カーブ（2026-10-06、架空）から翌日物の先渡金利を作る。TONA の公表値は `server/data/market/fixings/tonar.csv`（`date`・`rate`）があれば使う（今はない）。ReturnLeg は指数値がないので算出不可で、画面でシナリオ（指数の年率）を入れたときだけ試算する
+- **ファイル名**：C1 の共通名（`TRS_取引日_取引最終日_相手先の先頭5文字`、`c1_common_name()`）に `.xlsx`。シートは `FundingLeg` と `ReturnLeg` の2つ。契約書の PDF も同じベース名で保存できる（`GET /api/c1/cases/<caseId>/document?download=1`）。自社の名前（`QUANTLET_OUR_PARTY_NAMES`）を設定していないと、相手先が決まらず `UNKNOWN` になる（C1 の従来の規則）
+
+**デモ TRS での照合（2026-11-15、ブラウザーで実行）**：契約条件との照合 27 項目のうち 26 項目が一致した（最初・最後の期間、期間の数、各期間の支払日＝終了日の 2 営業日後、リセット日＝期間の初日、金利決定日＝リセット日の 2 営業日前、観測開始＝5 営業日前、ReturnLeg の評価日＝基準日の 2 営業日前、最終評価日 2027-10-06）。残る1項目は参考の照合で、評価日の基準「Payment Date」を FundingLeg の支払日と読むと最終評価日が 2027-10-08 になり、確認書の 2027-10-06 と一致しない。このため ReturnLeg は「各期間の終了日の 2 営業日前」と読み（確認書の最終評価日と一致）、日程の状態を「前提あり（要確認）」とした。ReturnLeg の支払日は確認書に定義がない（Payment Date の支払ラグ・営業日調整は FundingLeg にしかない）ので空欄で、不足項目に示す。
+
+| | 支払日 | 金額の状態（シナリオなし） |
+|---|---|---|
+| FundingLeg | 2027-01-13（1月11日が成人の日）、2027-04-12、2027-07-12、2027-10-13（10月11日がスポーツの日） | 期間1は算出不可（観測日 2026-10-01・02・05 の TONA 公表値がない）、期間2〜4は試算 |
+| ReturnLeg | 空欄（不足） | すべて算出不可（指数値がない）。年率 2% のシナリオでは試算 |
+
+## 日米の国債金利とイールドカーブ
+
+- **出典**：米国は FRED の `DGS1`・`DGS5`・`DGS10`・`DGS20`・`DGS30`（`fredgraph.csv`、API キー不要）、日本は財務省「国債金利情報」の `jgbcm_all.csv`（1974年9月〜前月）と `jgbcm.csv`（当月）。1・5・10・20・30年の公表利回り（%）をそのまま使い、補間・計算はしない
+- **整形（R、`server/R/yields/jgb_ust_yields.R`）**：観測日・国・年限・利回り・系列・出典の長い形にそろえる。財務省の基準日は和暦（S・H・R）を西暦にし、`-` は欠損にする。当月ファイルと全期間ファイルで同じ日があれば当月ファイルを使う
+- **保存**：`server/data/market/yields/`（Git に入れない）に、取得したファイルそのまま（`raw/`）、`yields_daily.csv`、`provenance.json`（URL・取得日時・SHA-256・期間）。画面の「出典から取得・更新」（`POST /api/yields/refresh`）で取り直す。表示（`GET /api/yields/monthly`）は保存済みのデータだけを読み、通信しない
+- **月次**：各国・各年限の月内最終観測値（その月で値のある最後の日の値）。観測日は年限ごとに表で示す。月内に値がない年限は「欠損」と示し、前後の月や他の年限から補わない（例：米国20年は1987〜1993年、米国30年は2002〜2006年に公表がない。日本の10・20・30年は開始前の月が欠損）。当月は「月の途中」と示す
+- **画面**：横軸を年限とし、米国（青・丸）と日本（橙・四角）を重ねる。欠損は軸の下に白抜きの印で示し、線は欠損をまたいで結ばない。期間（全期間・2000年以降・直近10年）を選ぶと、その期間の全月の範囲で縦軸を固定し、再生中も変えない。月別のデータは最初に一度だけ取得し、スライダーと再生はその中で切り替える。年限の上にマウスを置くと両国の値と観測日を出す
+- **OIS カーブとの区別**：画面の冒頭に「公表された国債利回りの比較で、A1 の評価に使う OIS カーブ（RiemannFinMath）とは別。この画面の値は計算に使わない」と示す
+- FRED は独自の User-Agent（例 `QuantLet`）では応答しなかった（2026-11-15 確認）。取得には R の curl の既定の User-Agent を使う（個人の情報は送らない）
+
+## レポート掲示板
+
+**登録の流れ**（`server/R/reports/`）：アップロード（`data/uploads/reports/`）→ 案件フォルダーを作り原資料と本文を保存 → AI（Claude Code、C1 と同じ起動方法。使えるツールは Read と Write だけ）が指示書 `server/docs/report_summary_instructions.md` に従って `summary.json` を作る → R が原文根拠を照合 → オファーとの紐づけ → 掲示板に表示。
+
+- **AI が作るもの**：日本語の見出し（20文字程度、多くても22文字。発行元・執筆者は入れない）、詳細サマリー、発行元、執筆者・担当者、発行日、対象発行体、ISIN、格付け・アウトルックの変更、投資判断の変更、主な理由、サマリーの根拠。原文に記載のある範囲だけで、記載がなければ「記載なし」。値ごとに原文のページと引用を付ける
+- **R の照合**：引用が指定ページの本文にあるかを確かめる（NFKC で全角・半角をそろえ、空白・改行を除く。PDF の本文は文の途中で改行されるため）。結果は「一致」「ページ違い」「原文にない」など。すべて一致し見出しが22文字以内なら「確認済み」、それ以外は「要確認」
+- **保存（案件単位、C1 と同じ方式）**：`server/data/cases/reports/<reportId>/` に `source/`（原資料・取得記録・ページ本文）、`agents/claude/`（依頼文・指示書・AI の結果・標準出力）、`result/summary.json`（AI の出力）、`result/verification.json`（照合）、`result/links.json`（紐づけ。利用者の確定もここに記録）、`manifest.json`、`logs/run_log.jsonl`
+- **掲示板**：新着順（登録の新しい順）。発行日・発行元と執筆者（姓）・見出しを別の欄に表示する（例：`11/15 ｜ ABC証券・山田 ｜ XYZの財務見通し下方修正、格付けもA+→A`）。見出しは約20文字で、長いものは省略記号で切る。行を選ぶと、全文サマリー、格付けの変更、抽出した項目と原文根拠（ページ本文の中の引用を強調）、原資料、紐づけを開く
+- **読み方**：「Claude Code で読む」（AI）と「保存済みの抽出結果」（サンプルのみ。`server/data/demo/reports/extraction_sample/`、AI を呼ばない）
+
+**オファーとの紐づけ**
+
+- **銘柄単位**：原文に ISIN があれば（AI の抽出と、R の本文検索の両方。チェックディジットも確かめる）、その銘柄と結びつける
+- **発行体単位**：原文の発行体名を、発行体マスタの正式名・別名と照合する。一致する発行体が1つだけなら自動で結び、複数あるか名前の一部だけが一致するなら、候補を表示して利用者が確定する（または「該当なし」）。本文の ISIN の発行体は、候補の手がかりとして示すが自動では確定しない
+- **発行体マスタ**：デモの銘柄属性は発行体名がすべて同じ（「架空発行体（テスト用）」）なので、架空の発行体マスタを `server/data/demo/reference/`（`issuer_master.csv`・`isin_issuer.csv`）に用意した。A1 の計算の入力は変えていない。本番の発行体ID体系は未定（Curie の A3 と同じ）
+- **画面の行き来**：A1 のオファーの詳細に「関連レポート」（銘柄・発行体・候補（未確定）の区別つき）を表示し、選ぶと掲示板のそのレポートを開く。掲示板のレポートには「対応するオファー」（A1 の最新の実行結果。`data/runs/a1/<runId>/result.json`）を表示し、「オファーを開く」でその銘柄の詳細へ戻る（URL は `#a1/<ISIN>`、`#reports/<reportId>`）
+
+**サンプル**：`server/data/demo/reports/sample_report_ABC_XYZ.pdf`（架空。ABC証券・山田 太郎、2026-11-15、XYZ の財務見通しの下方修正と架空格付機関の格下げ、テスト円債B（JPTEST000022）に言及）。HTML（同じフォルダー）を Chrome の印刷で PDF にしたもの。本文は発行体を「XYZ」とだけ書くので、XYZホールディングスと XYZ銀行の2つが候補になる。
+
+## 移植の内容
+
+### A1 オファーシート
+
+データ処理は Curie のファイルを写し、計算の層だけを RiemannFinMath に置き換えた。関数名と出力の列は Curie と同じにしたので、Excel の列構成も同じである。
+
+| Curie | QuantLet | 変更 |
+|---|---|---|
+| `R/z0_utility/`（取込設定・取込・ISIN・補間・属性・Excel 書式・表示・版）、`lagrange/import_data.R`、`lagrange/workflows_validate_worksheet.R` | `server/R/common/` | なし（環境変数名を `QUANTLET_*` に変更） |
+| `R/a1_offer_sheet/convert_offer_sheet.R`、`spread_inputs.R`、`validate_offer_worksheet.R`、`write_offer_results_excel.R`、`workflows_offer_sheet.R` | `server/R/a1/` | 日数計算の対応確認と、実行環境・説明の文言だけ RiemannFinMath に変更 |
+| `bond_build.R`、`curve_build.R`、`bond_yield_YEN.R`、`compute_offer_pricing.R`、`lagrange/instance_swap_curve.R`、`compute_asset_swap_ISO.R`、`compute_asset_swap_basis_JPY.R`（GaussQuant・QuantLib） | `server/R/a1/pricing_riemann.R` | RiemannFinMath の `bootstrap_ois_curve`、`create_fixed_rate_bond`、`compute_settlement_date`、`compute_ois_asset_swap`、`compute_yen_asset_swap`、`compute_remaining_years`、`compute_compound_yield_from_price` を呼ぶ |
+| `environment_info.R`（GaussQuant の照合） | `server/R/common/environment_info.R` | Excel の「GaussQuant照合」シートは「計算エンジン」（RiemannFinMath の版と、呼ぶ関数の一覧）に替えた |
+| 属性取得関数（デモ） | `server/R/a1/demo_attributes.R` | 同じ（Aladdin API からの取得は Curie と同じく未実装） |
+
+計算規約は Curie と同じである：OIS カーブは spot OIS 気配、受渡2営業日、年1回払い、支払ラグ0、MonotonicLogCubic、外挿なし。ASW は受渡日に開始し、翌日物レッグは半年払い・支払ラグ0（Curie と同じくデモの仮定）。円債の複利利回りは残存年数を満年数＋端数 ACT/365 とし、小数第7位で切り捨てる。JGB とベーシスの補間（同じ償還日の平均と自然3次スプライン、外挿なし）は R の処理で、Curie の関数をそのまま使う。
+
+**RiemannFinMath で対応していない部分**
+
+| 部分 | QuantLet での扱い |
+|---|---|
+| 円換算 ASW の CCS 校正の残差（Curie の `ccs_repricing_npv_jpy`） | `compute_yen_asset_swap` が返さないので NA にした。`fair_spread_npv_jpy` は返り値（spread 0 の NPV ＋ フェアスプレッド × アニュイティ）から作る |
+| OIS 指標 AONIA（AUD） | RiemannFinMath の OIS カーブは TONAR・SOFR・€STR・SONIA に限る（Riemann の決定事項）。AUD のオファーは「OIS カーブを構築できない」と理由を付けて計算しない。Curie は QuantLib で AUD も作れた。デモに AUD はない |
+| 翌日物の預金（`instrument_type = deposit`）の気配 | RiemannFinMath のカーブは spot OIS の気配だけを使う。deposit を含む通貨は理由を付けて計算しない。デモにはない |
+| カーブの外挿 | Curie は QuantLib の外挿禁止のエラーで止まっていた。QuantLet は計算終期が最後のピラーより後なら、理由を付けて計算しない（同じく外挿しない）。デモにはない |
+| 変動利付債・期限前償還条項付き債 | Curie と同じく対象外（`unsupported`。固定利付債として代用しない） |
+
+### C1 TRS 確認書
+
+Curie の `R/c1_trs_terms/` の13ファイルを `server/R/c1/` にそのまま写した。変えたのは環境変数名（`Curie_*` → `QUANTLET_*`）と、表示・記録の名前（User-Agent、FpML のコメント、manifest の版の項目名）だけである。抽出指示書は `server/docs/c1_trs_extraction_instructions.md`。
+
+- **読み方**：画面からは `saved`（保存済みの抽出結果。AI を呼ばない）と `claude_code`（Claude Code。開発用）を選べる。`saved` の抽出結果はデモの確認書のもの（`server/data/demo/c1/extraction_DEMO_TRS/`）で、別の契約書に使うと原文との照合で不一致になる。`api`（承認済みの AI API）は Curie と同じく接続先が未実装で、画面からは選べない
+- **未確定の項目と Aladdin 向けの下書き**：Curie と同じ。送信はしない（送信先がテスト環境か本番環境か未確認、認証情報は未提供）。自社の名前（`QUANTLET_OUR_PARTY_NAMES`）と Aladdin の対応表（`QUANTLET_ALADDIN_MAP`）は `server/tmp/.Renviron` に書く。設定がなければ CP・Pay leg・Receive leg は Unknown、payLeg／recLeg は未確定になる
+- **Aladdin の送信先**：Git に入っている `server/config/aladdin_endpoint_example.json` の URL はサンプル用（`https://aladdin.example.invalid/`）。実際の送信先は同じ形の JSON をローカル（例 `server/tmp/aladdin_endpoint.json`）に置き、`server/tmp/.Renviron` に `QUANTLET_ALADDIN_ENDPOINT=tmp/aladdin_endpoint.json` と書く（相対パスは `server` フォルダーから）。照合の基準として写した Curie の `curie_reference/c1/aladdin_unresolved.json` も、送信先の URL だけサンプル用に置き換えた（照合では比べない項目）
+- **FpML の公式 XSD**：Curie と同じく未設定（`QUANTLET_FPML_XSD`）。そのため状態は「要確認」で、FpML は `fpml_DRAFT.xml` になる
+- **フォルダー投入型**（`inbox_c1.R`）は写したが、HTTP API からは使っていない（画面のアップロードが代わる）
+
+### Bloomberg 連携
+
+**確認した範囲**：Riemann の Bloomberg 関連は `tools/market/fetch_bbg_dl_ois.R`（Data License の REST で TONAR・SOFR・€STR の OIS 気配 1Y・2Y・5Y・10Y を取る見本）だけだった。このスクリプトは単独で動き、RiemannFinMath のパッケージ本体からも Coral Book・Carmine Studio・Curie からも呼ばれていない。状態は Riemann 自身の記録どおり【設計案】である。要求本文・エンドポイント・トークンの流れは実際のアカウントで確かめておらず、ティッカーは候補である。live の取得は一度も実行されていない（`market_data/bbg_dl/` にあるのは dry run の架空の値だけ）。
+
+`tools/market/fetch_jbts_bb_close.R` と `check_bb_price_from_simple.R` の「BB」は日本相互証券（Japan Bond Trading）の BB 引値（ウェブページの公表値）で、Bloomberg ではない。移植の対象外とした。
+
+INDIGO は現時点で存在しない（ソースに参照もない）。Bloomberg のデータの取得は将来 INDIGO に移す予定なので、QuantLet では次のように分けた。
+
+| 段階 | ファイル | INDIGO に移すとき |
+|---|---|---|
+| 取得（live：Data License、synthetic：通信しない） | `server/R/bloomberg/bbg_data_license.R` の `fetch_bbg_ois_QL()` | INDIGO の呼び出しに替える |
+| 正規化：`date, currency, index, tenor, ticker, field, value, source` の長い形の表 | 同 `normalize_bbg_history_QL()` | この列を保つ |
+| A1 の OIS 気配ファイルの形へ変換 | `server/R/bloomberg/bbg_to_market_data.R` | 変えなくてよい |
+| 評価 | A1 の取込 → `pricing_riemann.R` → RiemannFinMath | 変えなくてよい |
+
+接続設定・認証情報・取得したデータはローカルだけに置く：認証情報 JSON のパスは `QUANTLET_BBG_DL_CREDENTIALS`、カタログ ID は `QUANTLET_BBG_DL_CATALOG`（`server/tmp/.Renviron`）、データは `server/data/market/bbg_dl/`（どちらも Git に入れない）。API と画面は、設定があるかどうかと件数だけを返し、値は出さない。
+
+**未了**：live の取得（httr2 が未導入、認証情報なし）、Data License の出力形式と PX_LAST の単位の確認、ティッカーの確認。A1 は今はデモの市場データだけを使い、Bloomberg から変換した OIS 気配ファイルを入力に選ぶ経路はまだない（変換したファイルは A1 の取込が読める形で書く）。
+
+## Curie との照合
+
+**A1**（2026-11-15 14:39 実行、`server/reconciliation/a1/results/`）。基準は Curie の旧デモ結果 `output/offer_results_{JPY,ISO}_demo_20261006.xlsx`（2026-10-27 作成、GaussQuant 2026.9.12.1・QuantLib 1.42）の「オファー結果」シート。入力は同じデモデータ。
+
+| 項目 | 件数 | 最大の差 | 許容誤差 |
+|---|---|---|---|
+| JPY OIS ASW | 5 | 5.3e-15 bp | 1e-6 bp |
+| JGB スプレッド | 5 | 7.1e-15 bp | 1e-6 bp |
+| 対象債の複利利回り | 5 | 0 | 1e-10 % |
+| 補間 JGB 利回り | 5 | 4.4e-16 % | 1e-10 % |
+| 経過利子・ダーティ価格（JPY） | 5・5 | 5.6e-17・4.3e-14 | 1e-10 |
+| 外債の自国通貨 OIS ASW（USD・EUR） | 5 | 2.8e-14 bp | 1e-6 bp |
+| 円換算 ASW | 5 | 1.1e-9 bp | 1e-6 bp |
+| 校正した割引スプレッド z | 5 | 1.1e-9 bp | 1e-6 bp |
+| 補間ベーシス・単純和・FX スポット | 5 ずつ | 3.6e-15 bp・2.8e-14 bp・0 | 1e-6 bp・1e-6 bp・0 |
+| 経過利子・ダーティ価格（外債） | 5・5 | 4.4e-16・4.3e-14 | 1e-10 |
+| 入力検証・計算状態・メッセージ | 12 | 全件一致（変動利付債とコール条項付き債は両方とも `unsupported`、理由の文言も同じ） | 完全一致 |
+
+数値 84 項目がすべて許容誤差内、状態の不一致は 0。円換算 ASW と z の 1e-9 bp 程度の差は、z を求める解法の停止条件の違い（Curie は `uniroot` の許容誤差 1e-12、RiemannFinMath は自前の解法）による。Carmine Studio の照合記録（`../carmine-studio/reconciliation/asw/RECONCILIATION_ASW.md`）と同じ大きさである。
+
+画面からの1件：円債オファー1件（テスト円債B 0.90% 2031/3、JPTEST000022、単価 98.15。`server/data/demo/a1/offers/demo_offer_JPY_single_JPTEST000022.xlsx`）をアップロードして計算すると、ASW 10.4841258717 bp、JGB スプレッド 11.5189351854 bp、ダーティ価格 98.2067123288 になり、上の照合の値と同じだった。
+
+**C1**（2026-11-15 14:42 実行、`server/reconciliation/c1/results/`）。基準は Curie の案件 `output/c1_trs/cases/DEMO_TRS_confirmation_20261027_081517`（2026-10-27）。同じ原資料（SHA-256 が一致するもの）と、その案件に残る Claude の抽出結果を `saved` で読ませた。
+
+| 項目 | 結果 |
+|---|---|
+| 状態、4つの判定（XML構文・公式XSD・原文根拠・条件JSONとの整合） | 一致（要確認。公式XSD は未設定で未実施、他の3つは合格） |
+| 条件 47 件（項目・レッグ・番号・値・単位・記載状況・ページ・位置・引用・確認状態・備考） | 全行一致 |
+| 検証の詳細（39 件）、FpML の内容と出力名（`fpml_DRAFT.xml`）、原資料の SHA-256 | 一致 |
+| Aladdin の下書き本文（`{}`）と状態（未確定 1 項目） | 一致 |
+| 未確定の項目の理由の文言 | 差あり（下記） |
+
+理由の文言の差は設定の違いによるもので、コードの差ではない。Curie の案件は自社の名前（`our_party_names`）が設定され、受取者・支払者のどちらとも一致しない状態で作られた（値は記録されていない）。QuantLet の照合は名前が未設定なので「名前が対応表にない」という別の文言になる。一致しない仮の名前を設定すると、文言も Curie と一致した（照合スクリプトの14項目め）。
+
+なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。QuantLet のデモには案件の原資料（`source/original.pdf`）を写した。
+
+## 再現手順
+
+```powershell
+cd C:/AnalyticFin/Projects/QuantLet/server
+& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/a1/reconcile_a1.R    # A1 の照合
+& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/c1/reconcile_c1.R    # C1 の照合
+& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" scripts/make_single_offer_demo.R    # 円債オファー1件のデモ Excel を作り直す
+```
+
+`ui/` からは `npm run reconcile:a1`・`npm run reconcile:c1` でも実行できる。照合の基準ファイルは `server/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
+
+画面での確認：`npm run api` と `npm run dev` を起動し、A1 タブで `demo_offer_JPY_single_JPTEST000022.xlsx` を「円債オファーシート」にアップロードして計算する。C1 タブで `server/data/demo/c1/DEMO_TRS_confirmation.pdf` をアップロードし、読み方「保存済みの抽出結果」で実行する。今回の確認は、画面と同じ要求を Vite の転送（127.0.0.1:8091 の `/api/*`）経由で送って行った。ブラウザーの自動操作のツールがこの環境で使えなかったため、ブラウザーでの操作そのものは未確認である。
+
+## ブラウザーでの確認（2026-11-15）
+
+Chrome（ヘッドレス）を DevTools Protocol で操作し、http://127.0.0.1:8091/ で実際にファイル選択・クリック・キー操作を行った（ブラウザーのコンソールエラーはなし）。
+
+**日米国債金利**：最新の月（2026年11月、月の途中、観測日 2026-11-12）から、キー操作（Home・→）で 2000年1月 → 2000年3月に切り替わった。再生すると1か月ずつ進み、一時停止で止まった。再生中も縦軸の目盛りは変わらなかった。全期間にして 1974年9月・1990年1月・2008年3月を選ぶと、両国の値と観測日が表とグラフで切り替わった。欠損も表示された（1974年9月は日本の10・20・30年と米国の30年、1990年1月は米国の20年と日本の30年）。年限10年の上にマウスを置くと、両国の値と観測日が出た。
+
+確認の途中で、再生が約1秒後に最新の月へ戻って止まる不具合を見つけて直した。開発時（React の StrictMode）は月次データの取得が2回走り、遅れて届いた応答で状態が初期化されていた。今は最後の取得の応答だけを使う。
+
+**レポート掲示板**：A1 で円債オファーを計算したあと、サンプル（`ABC証券_XYZクレジットアップデート_20261115.pdf` という名前の写し）をアップロードし、Claude Code で登録した（44秒、Claude Code の費用の目安 0.27 USD）。結果は次のとおり。
+
+1. 案件フォルダー `data/cases/reports/RPT_20261115_153947_c76c/` に、サマリー・照合・紐づけが保存された
+2. 掲示板に `11/15 ｜ ABC証券・山田 ｜ XYZの財務見通し下方修正、格付けもA+→A`（見出し22文字）、状態「確認済み」で表示された
+3. 原文根拠16件がすべて「一致」した。格付け・理由・ISIN の行を開くと、ページ本文の中で引用が強調された
+4. 紐づけは、銘柄単位で JPTEST000022 が自動、発行体「XYZ」は候補2つ（XYZホールディングス・XYZ銀行）で確定待ちになった。XYZホールディングスに確定すると、対応するオファーに JPTEST000014（発行体）と JPTEST000022（銘柄）が出た
+5. 「オファーを開く」で JPTEST000022 の詳細が開き、関連レポート（銘柄）が表示された。JPTEST000014 には関連レポート（発行体）、XYZ銀行の JPTEST000030 には何も出なかった。関連レポートを選ぶと、掲示板のそのレポートに戻った
+
+AI の出力は実行ごとに少し変わる（見出しは1回目が20文字、2回目が22文字）。
+
+## 未了
+
+- 実データの入力：Aladdin API による銘柄属性の取得、実際のオファー Excel・市場データへの対応（Curie と同じ未了事項）、A1 の市場データを画面から選ぶ・アップロードする機能
+- Bloomberg の live 取得と、取得した OIS 気配を A1 の入力に選ぶ経路
+- C1：FpML の公式 XSD、承認済みの AI API の接続先、Aladdin への送信
+- テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認は手で実行する
+- レポート掲示板：本番の発行体ID体系、承認済みの AI API（配布用。C1 と同じく未設定）、レポートの削除・再読解、オファーシートの Excel 出力からのレポートへのリンク（Curie の A3 の構想）
+- 日米国債金利：取得の定期実行（今は画面のボタンで取得する）
+- サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、RiemannFinMath に Node 版がないうちは、計算は R に残す

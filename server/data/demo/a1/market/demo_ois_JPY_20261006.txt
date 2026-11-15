@@ -1,0 +1,15 @@
+marketdate|quote_time|currency|instrument|instrument_type|tenor|rate_pct|quote_side|source
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|1M|0.73|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|3M|0.76|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|6M|0.8|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|1Y|0.88|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|2Y|1|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|3Y|1.1|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|4Y|1.19|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|5Y|1.27|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|7Y|1.42|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|10Y|1.62|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|12Y|1.74|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|15Y|1.88|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|20Y|2.05|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|JPY|TONAR_OIS|spot_ois|30Y|2.2|mid|架空データ（Curieデモ用）。実際の市場価格ではない

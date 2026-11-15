@@ -1,0 +1,15 @@
+marketdate|quote_time|currency|instrument|instrument_type|tenor|rate_pct|quote_side|source
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|1M|3.9|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|3M|3.85|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|6M|3.75|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|1Y|3.6|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|2Y|3.42|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|3Y|3.38|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|4Y|3.4|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|5Y|3.45|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|7Y|3.55|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|10Y|3.7|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|12Y|3.78|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|15Y|3.88|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|20Y|3.95|mid|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T17:00:00+09:00|USD|SOFR_OIS|spot_ois|30Y|3.9|mid|架空データ（Curieデモ用）。実際の市場価格ではない

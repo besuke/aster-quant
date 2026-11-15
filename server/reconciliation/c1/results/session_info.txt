@@ -1,0 +1,4 @@
+run_at: 2026-11-15 14:42:16 JST
+R: R version 4.6.0 (2026-04-24 ucrt)
+checks: 14 mismatch: 1
+validation detail tables: 4 mismatch: 0

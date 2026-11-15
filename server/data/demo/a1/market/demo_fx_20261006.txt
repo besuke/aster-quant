@@ -1,0 +1,3 @@
+marketdate|quote_time|currency_pair|base_currency|quote_currency|fx_spot|quote_convention|spot_date|source
+2026-10-06|2026-10-06T15:00:00+09:00|USDJPY|USD|JPY|148.5|JPY per 1 unit of base_currency|2026-10-08|架空データ（Curieデモ用）。実際の市場価格ではない
+2026-10-06|2026-10-06T15:00:00+09:00|EURJPY|EUR|JPY|161.2|JPY per 1 unit of base_currency|2026-10-08|架空データ（Curieデモ用）。実際の市場価格ではない

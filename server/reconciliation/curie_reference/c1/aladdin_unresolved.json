@@ -1,0 +1,24 @@
+{
+  "status": "下書き（未送信）：未確定 1 項目",
+  "note": "Aladdin へは送信していない。Curie は payload の生成まで（テスト環境か本番環境か未確認、認証情報は未提供）",
+  "endpoint": {
+    "method": "POST",
+    "url": "https://aladdin.example.invalid/",
+    "content_type": "application/json",
+    "environment": "未確認（テスト環境か本番環境か）",
+    "authentication": "未提供"
+  },
+  "request_file": "aladdin_request_DRAFT.json",
+  "request_sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+  "mapping_file": "（未設定：Aladdin のコード・列挙値・単位・自社の向きはすべて未確定）",
+  "side": null,
+  "conversions": [],
+  "unresolved": [
+    {
+      "項目": "swapInfo.payLeg／recLeg",
+      "条件": "trade.total_return_receiver",
+      "値": "Curie Demo Fund",
+      "理由": "トータル・リターンの受取者・支払者のどちらも自社の名前と一致しない"
+    }
+  ]
+}

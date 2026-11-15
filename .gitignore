@@ -1,0 +1,32 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Node
+node_modules/
+ui/dist/
+*.tsbuildinfo
+
+# サーバーのローカルデータ（アップロード・実行結果・案件・取得した市場データ・ジョブ）。デモデータ（架空）は管理対象
+/server/data/*
+!/server/data/demo/
+
+# 個人用の設定・認証情報（server/tmp/.Renviron に Bloomberg の認証情報のパス、User-Agent、Aladdin の対応表のパスなどを書く）
+/server/tmp/
+.Renviron
+.env
+*.env
+*.pem
+*.key
+*credential*
+*secret*
+config/*_local.*
+
+# 照合の出力（再実行で作り直す。session_info と CSV は残す）
+/server/reconciliation/*/results/*.xlsx
+
+~$*
+*.tmp
+.DS_Store
+Thumbs.db
