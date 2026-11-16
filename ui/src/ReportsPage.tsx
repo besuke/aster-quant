@@ -70,35 +70,37 @@ function BoardTab({ board, focusId, reload }: { board: BoardRow[]; focusId: stri
         {!rows.length ? (
           <p className="muted">まだ投稿がない。「レポート登録」で登録すると、ここに新着順で並ぶ。</p>
         ) : (
-          <table className="data board" data-testid="board">
-            <thead>
-              <tr>
-                <th>発行日</th>
-                <th>発行元・執筆者</th>
-                <th>見出し</th>
-                <th>反応</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.report_id} className={focusId === r.report_id ? "selected" : ""} onClick={() => (window.location.hash = `reports/board/${r.report_id}`)}>
-                  <td className="nowrap">{mmdd(r.issue_date)}</td>
-                  <td className="nowrap">
-                    {r.publisher ?? <span className="muted">記載なし</span>}
-                    {r.authors && `・${surnames(r.authors)}`}
-                  </td>
-                  <td className="headline" title={r.headline ?? ""}>{r.headline}</td>
-                  <td className="counts" data-testid={`counts-${r.report_id}`}>
-                    👍 {r.feedback?.likes ?? 0}　👎 {r.feedback?.dislikes ?? 0}　💬 {r.feedback?.comment_count ?? 0}
-                  </td>
+          <div className="table-wrap">
+            <table className="data board" data-testid="board">
+              <thead>
+                <tr>
+                  <th>発行日</th>
+                  <th>発行元・執筆者</th>
+                  <th>見出し</th>
+                  <th>反応</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.report_id} className={focusId === r.report_id ? "selected" : ""} onClick={() => (window.location.hash = `reports/board/${r.report_id}`)}>
+                    <td className="nowrap">{mmdd(r.issue_date)}</td>
+                    <td className="nowrap">
+                      {r.publisher ?? <span className="muted">記載なし</span>}
+                      {r.authors && `・${surnames(r.authors)}`}
+                    </td>
+                    <td className="headline" title={r.headline ?? ""}>{r.headline}</td>
+                    <td className="counts" data-testid={`counts-${r.report_id}`}>
+                      👍 {r.feedback?.likes ?? 0}　👎 {r.feedback?.dislikes ?? 0}　💬 {r.feedback?.comment_count ?? 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
       {detail?.summary && (
-        <>
+        <div className="two-col">
           <section className="card" data-testid="board-detail">
             <div className="row spread">
               <h2>{detail.summary.headline}</h2>
@@ -114,7 +116,7 @@ function BoardTab({ board, focusId, reload }: { board: BoardRow[]; focusId: stri
             <p className="summary-text">{detail.summary.summary}</p>
           </section>
           <ReportFeedback reportId={detail.report_id} onChange={reload} />
-        </>
+        </div>
       )}
     </>
   );
@@ -153,48 +155,54 @@ function RegisterTab({ reload }: { reload: () => void }) {
   const steps = ["原資料の保存と本文の抽出", reader === "claude_code" ? "Claude Code による読解（見出し・要約・メタデータ）" : "保存済みの抽出結果の読込", "原文根拠の照合", "オファーとの紐づけ"];
   return (
     <section className="card" data-testid="register-tab">
-      <Upload kind="reports" accept=".pdf,.htm,.html" label="レポート（.pdf・.htm・.html）" hint="業者・格付機関のレポート" uploaded={uploaded} onUploaded={setUploaded} />
-      <div className="row">
-        <label className="small">
-          読み方：
-          <select value={reader} onChange={(e) => setReader(e.target.value as typeof reader)} aria-label="読み方">
-            <option value="claude_code">Claude Code で読む（AI。1〜数分）</option>
-            <option value="saved">保存済みの抽出結果（サンプルのみ。AI を呼ばない）</option>
-          </select>
-        </label>
-        <button className="btn primary" disabled={busy || !uploaded || reader === "saved"} onClick={() => void register(false)} data-testid="register-upload">
-          登録する
-        </button>
-        <button className="btn" disabled={busy} onClick={() => void register(true)} data-testid="register-sample">
-          サンプルレポート（架空）を登録
-        </button>
-      </div>
-      <h3>処理状況</h3>
-      <ol className="steps small" data-testid="register-status">
-        {steps.map((s, i) => (
-          <li key={s} className={busy ? "running" : done ? "done" : ""}>
-            {s}
-            {busy && i === 1 && reader === "claude_code" && `（経過 ${elapsed} 秒）`}
-          </li>
-        ))}
-      </ol>
-      {!busy && !done && !error && <p className="muted small">待機中。ファイルを選んで「登録する」を押す。</p>}
-      {busy && <div className="notice small">処理中（経過 {elapsed} 秒）。終わるまでこの画面を開いたままにする。</div>}
-      {error && <div className="error">登録できなかった：{error}</div>}
-      {done && (
-        <div className={done.manifest.failure ? "error" : "notice small"} data-testid="register-result">
-          {done.manifest.failure ? (
-            <>
-              {done.manifest.failure.kind}：{done.manifest.failure.message}
-            </>
-          ) : (
-            <>
-              登録した：<b>{done.summary?.headline}</b>（{done.verification?.state}、{fmt(done.seconds ?? 0, 0)} 秒）。
-              <a href={`#reports/list/${done.report_id}`}>レポート一覧で開く</a>・<a href={`#reports/board/${done.report_id}`}>掲示板で開く</a>
-            </>
+      <div className="two-col">
+        <div>
+          <Upload kind="reports" accept=".pdf,.htm,.html" label="レポート（.pdf・.htm・.html）" hint="業者・格付機関のレポート" uploaded={uploaded} onUploaded={setUploaded} />
+          <div className="row">
+            <label className="small">
+              読み方：
+              <select value={reader} onChange={(e) => setReader(e.target.value as typeof reader)} aria-label="読み方">
+                <option value="claude_code">Claude Code で読む（AI。1〜数分）</option>
+                <option value="saved">保存済みの抽出結果（サンプルのみ。AI を呼ばない）</option>
+              </select>
+            </label>
+            <button className="btn primary" disabled={busy || !uploaded || reader === "saved"} onClick={() => void register(false)} data-testid="register-upload">
+              登録する
+            </button>
+            <button className="btn" disabled={busy} onClick={() => void register(true)} data-testid="register-sample">
+              サンプルレポート（架空）を登録
+            </button>
+          </div>
+        </div>
+        <div>
+          <h3>処理状況</h3>
+          <ol className="steps small" data-testid="register-status">
+            {steps.map((s, i) => (
+              <li key={s} className={busy ? "running" : done ? "done" : ""}>
+                {s}
+                {busy && i === 1 && reader === "claude_code" && `（経過 ${elapsed} 秒）`}
+              </li>
+            ))}
+          </ol>
+          {!busy && !done && !error && <p className="muted small">待機中。ファイルを選んで「登録する」を押す。</p>}
+          {busy && <div className="notice small">処理中（経過 {elapsed} 秒）。終わるまでこの画面を開いたままにする。</div>}
+          {error && <div className="error">登録できなかった：{error}</div>}
+          {done && (
+            <div className={done.manifest.failure ? "error" : "notice small"} data-testid="register-result">
+              {done.manifest.failure ? (
+                <>
+                  {done.manifest.failure.kind}：{done.manifest.failure.message}
+                </>
+              ) : (
+                <>
+                  登録した：<b>{done.summary?.headline}</b>（{done.verification?.state}、{fmt(done.seconds ?? 0, 0)} 秒）。
+                  <a href={`#reports/list/${done.report_id}`}>レポート一覧で開く</a>・<a href={`#reports/board/${done.report_id}`}>掲示板で開く</a>
+                </>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </section>
   );
 }
@@ -299,39 +307,45 @@ function ReportView({ detail, onChange }: { detail: ReportDetail; onChange: (d: 
           {v && <span className={`chip ${v.state === "確認済み" ? "st-success" : "st-partial"}`}>{v.state}</span>}
         </div>
         {v?.reasons?.length ? <div className="warn small">{v.reasons.join("。")}</div> : null}
-        <h3>詳細サマリー</h3>
-        <p className="summary-text">{s.summary}</p>
-        {s.rating_changes?.length > 0 && (
-          <>
-            <h3>格付け・アウトルックの変更</h3>
-            <table className="data compact">
-              <thead>
-                <tr>
-                  <th>格付機関</th>
-                  <th>対象</th>
-                  <th>格付け</th>
-                  <th>アウトルック</th>
-                  <th>日付</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.rating_changes.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r.agency}</td>
-                    <td>
-                      {r.issuer} {r.rating_type}
-                    </td>
-                    <td>
-                      {r.rating_from} → {r.rating_to}
-                    </td>
-                    <td>{r.outlook_to ? `${r.outlook_from} → ${r.outlook_to}` : "—"}</td>
-                    <td>{r.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+        <div className={s.rating_changes?.length > 0 ? "two-col" : ""}>
+          <div>
+            <h3>詳細サマリー</h3>
+            <p className="summary-text">{s.summary}</p>
+          </div>
+          {s.rating_changes?.length > 0 && (
+            <div>
+              <h3>格付け・アウトルックの変更</h3>
+              <div className="table-wrap">
+                <table className="data compact">
+                  <thead>
+                    <tr>
+                      <th>格付機関</th>
+                      <th>対象</th>
+                      <th>格付け</th>
+                      <th>アウトルック</th>
+                      <th>日付</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.rating_changes.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.agency}</td>
+                        <td>
+                          {r.issuer} {r.rating_type}
+                        </td>
+                        <td>
+                          {r.rating_from} → {r.rating_to}
+                        </td>
+                        <td>{r.outlook_to ? `${r.outlook_from} → ${r.outlook_to}` : "—"}</td>
+                        <td>{r.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="split">
@@ -372,82 +386,90 @@ function ReportView({ detail, onChange }: { detail: ReportDetail; onChange: (d: 
       <section className="card" data-testid="report-links">
         <h2>オファーとの紐づけ</h2>
         {err && <div className="error">{err}</div>}
-        <h3>銘柄単位（ISIN）</h3>
-        {detail.links?.isin_links.length ? (
-          <ul className="links">
-            {detail.links.isin_links.map((l) => (
-              <li key={l.isin}>
-                <span className="mono">{l.isin}</span> {l.security_name}（{l.issuer_name}）<span className="muted small"> — {l.basis}、{l.page} ページ</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted small">原文に、マスタにある ISIN の記載はない。</p>
-        )}
-        {detail.links?.unknown_isins?.length ? <p className="muted small">マスタにない ISIN：{detail.links.unknown_isins.join("、")}</p> : null}
-        <h3>発行体単位</h3>
-        {detail.links?.issuer_mentions.length ? (
-          <ul className="links">
-            {detail.links.issuer_mentions.map((m, i) => (
-              <li key={i} data-testid={`mention-${i}`}>
-                原文の「<b>{m.mention}</b>」（{m.page ?? "—"} ページ）→{" "}
-                <span className={`chip ${m.status === "auto" || m.status === "confirmed" ? "st-success" : m.status === "pending" ? "st-partial" : "st-none"}`}>{STATUS[m.status]}</span>{" "}
-                {m.issuer_name && <b>{m.issuer_name}</b>}
-                <span className="muted small"> — {m.basis}{m.decided_by ? `（${m.decided_by}、${m.decided_at?.slice(0, 16).replace("T", " ")}）` : ""}</span>
-                {m.status === "pending" && (
-                  <div className="candidates">
-                    <span className="small">候補：</span>
-                    {m.candidates.map((c) => (
-                      <button key={c.issuer_id} className="btn" disabled={deciding} onClick={() => void decide(i + 1, c.issuer_id)}>
-                        {c.issuer_name}に確定
-                        <span className="muted small">（{c.match === "exact" ? "名前が一致" : "部分一致"}{c.hint ? `、${c.hint}` : ""}）</span>
-                      </button>
+        <div className="two-col">
+          <div>
+            <h3>銘柄単位（ISIN）</h3>
+            {detail.links?.isin_links.length ? (
+              <ul className="links">
+                {detail.links.isin_links.map((l) => (
+                  <li key={l.isin}>
+                    <span className="mono">{l.isin}</span> {l.security_name}（{l.issuer_name}）<span className="muted small"> — {l.basis}、{l.page} ページ</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted small">原文に、マスタにある ISIN の記載はない。</p>
+            )}
+            {detail.links?.unknown_isins?.length ? <p className="muted small">マスタにない ISIN：{detail.links.unknown_isins.join("、")}</p> : null}
+            <h3>発行体単位</h3>
+            {detail.links?.issuer_mentions.length ? (
+              <ul className="links">
+                {detail.links.issuer_mentions.map((m, i) => (
+                  <li key={i} data-testid={`mention-${i}`}>
+                    原文の「<b>{m.mention}</b>」（{m.page ?? "—"} ページ）→{" "}
+                    <span className={`chip ${m.status === "auto" || m.status === "confirmed" ? "st-success" : m.status === "pending" ? "st-partial" : "st-none"}`}>{STATUS[m.status]}</span>{" "}
+                    {m.issuer_name && <b>{m.issuer_name}</b>}
+                    <span className="muted small"> — {m.basis}{m.decided_by ? `（${m.decided_by}、${m.decided_at?.slice(0, 16).replace("T", " ")}）` : ""}</span>
+                    {m.status === "pending" && (
+                      <div className="candidates">
+                        <span className="small">候補：</span>
+                        {m.candidates.map((c) => (
+                          <button key={c.issuer_id} className="btn" disabled={deciding} onClick={() => void decide(i + 1, c.issuer_id)}>
+                            {c.issuer_name}に確定
+                            <span className="muted small">（{c.match === "exact" ? "名前が一致" : "部分一致"}{c.hint ? `、${c.hint}` : ""}）</span>
+                          </button>
+                        ))}
+                        <button className="btn" disabled={deciding} onClick={() => void decide(i + 1, null)}>
+                          該当なし
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted small">対象発行体の記載はない。</p>
+            )}
+            <p className="muted small">{detail.links?.master_note}</p>
+          </div>
+          <div>
+            <h3>対応するオファー（オファーシートの最新の計算結果）</h3>
+            {detail.offers?.length ? (
+              <div className="table-wrap">
+                <table className="data compact" data-testid="report-offers">
+                  <thead>
+                    <tr>
+                      <th>単位</th>
+                      <th>ISIN</th>
+                      <th>銘柄</th>
+                      <th className="num">単価</th>
+                      <th className="num">OIS ASW (bp)</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.offers.map((o) => (
+                      <tr key={o.ISIN + o.workflow}>
+                        <td>{o.level}</td>
+                        <td className="mono">{o.ISIN}</td>
+                        <td>{o.security_name}</td>
+                        <td className="num">{fmt(o.offer_price, 3)}</td>
+                        <td className="num">{fmt(o.native_asw_bp, 2)}</td>
+                        <td>
+                          <a className="btn" href={`#offers/${o.ISIN}`}>
+                            オファーを開く
+                          </a>
+                        </td>
+                      </tr>
                     ))}
-                    <button className="btn" disabled={deciding} onClick={() => void decide(i + 1, null)}>
-                      該当なし
-                    </button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted small">対象発行体の記載はない。</p>
-        )}
-        <p className="muted small">{detail.links?.master_note}</p>
-        <h3>対応するオファー（オファーシートの最新の計算結果）</h3>
-        {detail.offers?.length ? (
-          <table className="data compact" data-testid="report-offers">
-            <thead>
-              <tr>
-                <th>単位</th>
-                <th>ISIN</th>
-                <th>銘柄</th>
-                <th className="num">単価</th>
-                <th className="num">OIS ASW (bp)</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {detail.offers.map((o) => (
-                <tr key={o.ISIN + o.workflow}>
-                  <td>{o.level}</td>
-                  <td className="mono">{o.ISIN}</td>
-                  <td>{o.security_name}</td>
-                  <td className="num">{fmt(o.offer_price, 3)}</td>
-                  <td className="num">{fmt(o.native_asw_bp, 2)}</td>
-                  <td>
-                    <a className="btn" href={`#offers/${o.ISIN}`}>
-                      オファーを開く
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="muted small">オファーシートの最新の計算結果に、対応するオファーはない（オファーシートを計算すると表示される）。</p>
-        )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="muted small">オファーシートの最新の計算結果に、対応するオファーはない（オファーシートを計算すると表示される）。</p>
+            )}
+          </div>
+        </div>
       </section>
     </>
   );

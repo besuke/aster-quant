@@ -158,7 +158,7 @@ irrbb_cache <- new.env()
 handle_api <- function(req, method, path) {
   if (method == "GET" && path == "/api/server") return(json_response(200, server_info_QL(host, port, static_dir)))
   if (method == "GET" && path == "/api/health") {
-    return(json_response(200, list(status = "ok", name = "QuantLet Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
+    return(json_response(200, list(status = "ok", name = "AsterQuant Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
                                    started_at = format(started_at, "%Y-%m-%dT%H:%M:%S%z"), data_dir = "server/data")))
   }
   m <- regmatches(path, regexec("^/api/uploads/(a1|c1|reports)$", path))[[1]]

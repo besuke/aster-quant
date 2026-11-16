@@ -139,31 +139,33 @@ export default function IrrbbPage() {
                 <li key={k}>{v}</li>
               ))}
             </ul>
-            <table className="data compact">
-              <thead>
-                <tr>
-                  <th>参照文書</th>
-                  <th>公表日</th>
-                  <th>適用日</th>
-                  <th>使った内容</th>
-                </tr>
-              </thead>
-              <tbody>
-                {r.references.map((d) => (
-                  <tr key={d.id}>
-                    <td>
-                      <a href={d.url} target="_blank" rel="noreferrer">
-                        {d.title}
-                      </a>
-                      <div className="muted small">{d.publisher}</div>
-                    </td>
-                    <td className="mono">{d.published}</td>
-                    <td className="small">{d.effective ?? "—"}</td>
-                    <td className="small">{d.used_for}</td>
+            <div className="table-wrap">
+              <table className="data compact">
+                <thead>
+                  <tr>
+                    <th>参照文書</th>
+                    <th>公表日</th>
+                    <th>適用日</th>
+                    <th>使った内容</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {r.references.map((d) => (
+                    <tr key={d.id}>
+                      <td>
+                        <a href={d.url} target="_blank" rel="noreferrer">
+                          {d.title}
+                        </a>
+                        <div className="muted small">{d.publisher}</div>
+                      </td>
+                      <td className="mono">{d.published}</td>
+                      <td className="small">{d.effective ?? "—"}</td>
+                      <td className="small">{d.used_for}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <p className="muted small">{r.engine}</p>
           </section>
         </>

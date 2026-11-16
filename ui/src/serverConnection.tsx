@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-// QuantLet Server（R の API）との接続。画面全体で一つの状態を持ち、右上の表示はどの画面でもこれを見る。
-// 接続中かどうかは、実際に /api/health が答え、その応答が QuantLet Server のものかで決める（推測しない）。
+// AsterQuant Server（R の API）との接続。画面全体で一つの状態を持ち、右上の表示はどの画面でもこれを見る。
+// 接続中かどうかは、実際に /api/health が答え、その応答が AsterQuant Server のものかで決める（推測しない）。
 
 export interface Check {
   n: number;
@@ -35,8 +35,14 @@ export function ServerConnectionProvider({ children }: { children: ReactNode }) 
     try {
       const res = await fetch("/api/health", { cache: "no-store" });
       const body = (await res.json()) as { status?: string; name?: string };
-      const ok = res.ok && body.status === "ok" && body.name === "QuantLet Server";
-      check = { n: ++n.current, at: new Date(), ok, roundTripMs: performance.now() - t0, error: ok ? undefined : `応答が QuantLet Server のものではない（HTTP ${res.status}）` };
+      const ok = res.ok && body.status === "ok" && (body.name === "AsterQuant Server" || body.name === "QuantLet Server");
+      check = {
+        n: ++n.current,
+        at: new Date(),
+        ok,
+        roundTripMs: performance.now() - t0,
+        error: ok ? undefined : `応答が AsterQuant Server のものではない（HTTP ${res.status}）`,
+      };
     } catch (e) {
       check = { n: ++n.current, at: new Date(), ok: false, roundTripMs: null, error: (e as Error).message };
     }
@@ -69,10 +75,14 @@ export function ServerStatusBadge() {
   const state = last === null ? "checking" : last.ok ? "ok" : "bad";
   const label = state === "checking" ? "確認中" : state === "ok" ? "接続中" : "未接続";
   return (
-    <a href="#server" className={`server-badge ${state}`} data-testid="server-badge"
-      title={last ? `最終確認 ${last.at.toLocaleTimeString("ja-JP")}${last.roundTripMs !== null ? `、往復 ${last.roundTripMs.toFixed(0)} ms` : ""}${last.error ? `、${last.error}` : ""}` : ""}>
+    <a
+      href="#server"
+      className={`server-badge ${state}`}
+      data-testid="server-badge"
+      title={last ? `最終確認 ${last.at.toLocaleTimeString("ja-JP")}${last.roundTripMs !== null ? `、往復 ${last.roundTripMs.toFixed(0)} ms` : ""}${last.error ? `、${last.error}` : ""}` : ""}
+    >
       <span className="dot" aria-hidden="true" />
-      QuantLet Server：{label}
+      AsterQuant Server：{label}
     </a>
   );
 }

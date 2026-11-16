@@ -11,7 +11,7 @@ export default function RatesPage() {
   const [view, setView] = useState<View>("yields");
   return (
     <div className="page">
-      <section className="intro">
+      <section className="intro intro-bar">
         <h1>日米の国債金利・OIS</h1>
         <div className="segmented" role="group" aria-label="表示する金利">
           <button aria-pressed={view === "yields"} onClick={() => setView("yields")} data-testid="view-yields">
@@ -64,23 +64,20 @@ function OisView() {
   const data = selected ? curves[selected] : undefined;
   return (
     <section className="card" data-testid="ois-view">
-      <div className="row spread">
-        <label className="small">
-          保存済みの OIS：
-          <select value={selected ?? ""} onChange={(e) => setSelected(e.target.value)} aria-label="OIS のデータ">
-            {(datasets ?? []).map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.base_date}・{d.label}（{d.currencies.join("・")}）{d.id === aswId ? "・オファーシートで使用中" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {error && <div className="error">{error}</div>}
-      {datasets && !datasets.length && <p className="muted">保存済みの OIS がない。</p>}
-      {!data && !error && datasets?.length ? <p className="muted">RiemannFinMath でカーブを作っている…</p> : null}
-      {data && (
-        <>
+      <div className="controls-bar">
+        <div className="row spread">
+          <label className="small">
+            保存済みの OIS：
+            <select value={selected ?? ""} onChange={(e) => setSelected(e.target.value)} aria-label="OIS のデータ">
+              {(datasets ?? []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.base_date}・{d.label}（{d.currencies.join("・")}）{d.id === aswId ? "・オファーシートで使用中" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {data && (
           <div className="source-line" data-testid="ois-source">
             <span>
               <b>評価用 OIS</b>（オファーシートの ASW と同じカーブ）
@@ -91,12 +88,23 @@ function OisView() {
               {data.curves[0]?.quote_time ? `（${data.curves[0].quote_time}）` : ""}
             </span>
           </div>
-          <OisChart data={data} />
-          <OisTable data={data} />
-          <p className="muted small">
-            {data.conventions.curve}。{data.conventions.zero}。
-          </p>
-        </>
+        )}
+      </div>
+      {error && <div className="error">{error}</div>}
+      {datasets && !datasets.length && <p className="muted">保存済みの OIS がない。</p>}
+      {!data && !error && datasets?.length ? <p className="muted">RiemannFinMath でカーブを作っている…</p> : null}
+      {data && (
+        <div className="two-col">
+          <div className="panel-col">
+            <OisChart data={data} />
+            <p className="muted small">
+              {data.conventions.curve}。{data.conventions.zero}。
+            </p>
+          </div>
+          <div className="panel-col">
+            <OisTable data={data} />
+          </div>
+        </div>
       )}
     </section>
   );

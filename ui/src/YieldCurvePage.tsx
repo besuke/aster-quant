@@ -55,7 +55,7 @@ export default function YieldCurvePage() {
       setError((e as Error).message);
     } finally {
       setRefreshing(false);
-    }
+    };
   };
 
   // 選んだ期間の月（取得済みのデータを切り出すだけ）
@@ -100,14 +100,14 @@ export default function YieldCurvePage() {
 
   const month = months[index];
   return (
-    <>
-      <section className="card" data-testid="yields-view">
+    <section className="card" data-testid="yields-view">
+      <div className="controls-bar">
         <div className="source-line" data-testid="yields-source">
           <span>
             <b>国債の公表利回り</b>（1・5・10・20・30年、月内最終観測値。計算には使わない）
           </span>
           <span>出典：米国 FRED（DGS1〜DGS30）、日本 財務省「国債金利情報」</span>
-          <span>基準日：{month ? `${ym(month.month)}の各年限の観測日（下の表）` : "—"}</span>
+          <span>基準日：{month ? `${ym(month.month)}の各年限の観測日（右の表）` : "—"}</span>
         </div>
         <div className="row spread">
           <div className="row">
@@ -129,12 +129,14 @@ export default function YieldCurvePage() {
             </button>
           </div>
         </div>
-        {error && <div className="error">{error}</div>}
-        {!data && !error && <p className="muted">読み込み中…</p>}
-        {data && month && (
-          <>
+      </div>
+      {error && <div className="error">{error}</div>}
+      {!data && !error && <p className="muted">読み込み中…</p>}
+      {data && month && (
+        <div className="two-col">
+          <div className="panel-col">
             <CurveChart month={month} tenors={data.tenors} yAxis={yAxis} inProgress={month.month === data.in_progress_month} />
-            <div className="player" role="group" aria-label="表示する年月">
+            <div className="player controls" role="group" aria-label="表示する年月">
               <button
                 className="btn primary"
                 aria-pressed={playing}
@@ -167,8 +169,10 @@ export default function YieldCurvePage() {
             <p className="muted small">
               {ym(months[0].month)}〜{ym(months[months.length - 1].month)} の {months.length} か月。縦軸は期間全体の範囲で固定している（再生中も変えない）。
             </p>
+          </div>
+          <div className="panel-col">
             <YieldTable month={month} tenors={data.tenors} inProgress={month.month === data.in_progress_month} />
-            <details>
+            <details open>
               <summary>出典と扱い</summary>
               <ul className="small">
                 <li>米国：{data.countries.US.source}</li>
@@ -178,10 +182,10 @@ export default function YieldCurvePage() {
                 <li>{data.conventions.basis}</li>
               </ul>
             </details>
-          </>
-        )}
-      </section>
-    </>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

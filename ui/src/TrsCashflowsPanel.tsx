@@ -32,7 +32,7 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
         原文と照合した契約条件から、両レッグの計算期間・リセット日・金利決定日・観測期間・支払日・評価日と金額を RiemannFinMath で作り、Excel に保存する。
         ファイル名は契約書の PDF と同じベース名（{baseName ?? "共通名"}）。
       </p>
-      <div className="row">
+      <div className="row controls">
         <label className="small">
           ReturnLeg の試算シナリオ（指数の年率、%。空欄なら試算しない）：
           <input className="num-input" value={scenario} onChange={(e) => setScenario(e.target.value)} placeholder="例 2" inputMode="decimal" aria-label="シナリオの年率" />
@@ -60,62 +60,68 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
             {!data.name_confirmed && <span className="warn">ファイル名に不明な部分がある（UNKNOWN）：{Object.values(data.name_missing).join("；")}</span>}
           </div>
           <LegTable funding={data.sheets.FundingLeg} ret={data.sheets.ReturnLeg} />
-          <details open>
-            <summary>
-              契約条件との照合（{data.checks.filter((c) => c.一致).length}/{data.checks.length} 一致）
-            </summary>
-            <table className="data compact" data-testid="trs-checks">
-              <thead>
-                <tr>
-                  <th>レッグ</th>
-                  <th>照合</th>
-                  <th>契約</th>
-                  <th>RiemannFinMath</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.checks.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.レッグ}</td>
-                    <td>{c.照合}</td>
-                    <td className="mono">{c.契約}</td>
-                    <td className="mono">{c.計算}</td>
-                    <td>
-                      <span className={`chip ${c.一致 ? "st-success" : c.照合.startsWith("（参考）") ? "st-partial" : "st-failed"}`}>{c.一致 ? "一致" : c.照合.startsWith("（参考）") ? "不一致（参考）" : "不一致"}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
-          <details>
-            <summary>使った契約条件（不足・前提 {data.terms.filter((t) => t.状態 !== "原文どおり").length} 件）</summary>
-            <table className="data compact">
-              <thead>
-                <tr>
-                  <th>項目</th>
-                  <th>原文の値</th>
-                  <th>変換後</th>
-                  <th>状態</th>
-                  <th>備考</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.terms.map((t, i) => (
-                  <tr key={i}>
-                    <td>{t.項目}</td>
-                    <td>{t.原文の値}</td>
-                    <td className="mono">{t.変換後}</td>
-                    <td>
-                      <span className={`chip ${t.状態 === "原文どおり" ? "st-success" : t.状態 === "前提" ? "st-partial" : "st-failed"}`}>{t.状態}</span>
-                    </td>
-                    <td className="small">{t.備考}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
+          <div className="two-col">
+            <details open>
+              <summary>
+                契約条件との照合（{data.checks.filter((c) => c.一致).length}/{data.checks.length} 一致）
+              </summary>
+              <div className="table-wrap">
+                <table className="data compact" data-testid="trs-checks">
+                  <thead>
+                    <tr>
+                      <th>レッグ</th>
+                      <th>照合</th>
+                      <th>契約</th>
+                      <th>RiemannFinMath</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.checks.map((c, i) => (
+                      <tr key={i}>
+                        <td>{c.レッグ}</td>
+                        <td>{c.照合}</td>
+                        <td className="mono">{c.契約}</td>
+                        <td className="mono">{c.計算}</td>
+                        <td>
+                          <span className={`chip ${c.一致 ? "st-success" : c.照合.startsWith("（参考）") ? "st-partial" : "st-failed"}`}>{c.一致 ? "一致" : c.照合.startsWith("（参考）") ? "不一致（参考）" : "不一致"}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+            <details open>
+              <summary>使った契約条件（不足・前提 {data.terms.filter((t) => t.状態 !== "原文どおり").length} 件）</summary>
+              <div className="table-wrap">
+                <table className="data compact">
+                  <thead>
+                    <tr>
+                      <th>項目</th>
+                      <th>原文の値</th>
+                      <th>変換後</th>
+                      <th>状態</th>
+                      <th>備考</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.terms.map((t, i) => (
+                      <tr key={i}>
+                        <td>{t.項目}</td>
+                        <td>{t.原文の値}</td>
+                        <td className="mono">{t.変換後}</td>
+                        <td>
+                          <span className={`chip ${t.状態 === "原文どおり" ? "st-success" : t.状態 === "前提" ? "st-partial" : "st-failed"}`}>{t.状態}</span>
+                        </td>
+                        <td className="small">{t.備考}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
         </>
       )}
     </section>

@@ -12,7 +12,7 @@ SERVER_REQUESTS_QL$count <- 0L
 SERVER_ROUTES_QL <- tibble::tribble(
   ~method, ~path,                                   ~page,
   "GET",  "/api/health",                            "接続の確認（右上の表示）",
-  "GET",  "/api/server",                            "QuantLet Server（このページ）",
+  "GET",  "/api/server",                            "AsterQuant Server（このページ）",
   "GET",  "/api/reports",                           "レポート分析（掲示板・一覧）",
   "POST", "/api/uploads/reports",                   "レポート分析（登録）",
   "POST", "/api/reports/register",                  "レポート分析（登録）",
@@ -61,7 +61,7 @@ server_info_QL <- function(host, port, static_dir) {
   pub <- public_host_QL()
   lan <- identical(host, "0.0.0.0")
   list(
-    name = "QuantLet Server", status = "ok", app_version = curie_version_line_Curie(),
+    name = "AsterQuant Server", status = "ok", app_version = curie_version_line_Curie(),
     engine = list(name = "RiemannFinMath", version = as.character(utils::packageVersion("RiemannFinMath")),
                   library = dirname(system.file(package = "RiemannFinMath"))),
     runtime = list(r_version = paste(R.version$major, R.version$minor, sep = "."), platform = R.version$platform,
