@@ -11,7 +11,7 @@
 | `ui/`（React＋TypeScript） | 入力、API 呼び出し、JSON の表・グラフ表示 | 計算し直さない |
 
 - 画面は左のアイコン付きサイドメニュー（`ui/src/App.tsx` の `PAGES`）：レポート分析掲示板、日米の国債金利・OIS、オファーシート作成、TRS契約書連携、IRRBB金利シナリオ
-- デザインは Carmine Studio（`../carmine-studio`）と同じ方針：ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）、左サイドバー上部に SVG ロゴと「AsterQuant」（副題：運用分析・業務支援）、右上に `AsterQuant Server` の接続状態表示、横幅を活かした配置
+- デザインは Carmine Studio（`../carmine-studio`）と同じ方針：ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）、左サイドバー上部に紫系の SVG ロゴと「Aster Quantlet」（日本語副題なし）、右上に `AsterQuant Server` の接続状態表示、横幅を活かした配置
 - ポート：画面 8091、R API 8790（Carmine Studio の 8081・8787 と分ける）。起動は `AsterQuant.ps1`（1 でこの PC、2 で社内LAN、4 でサーバーのみ、5 でクライアントのみ。`-Mode dev|lan|server|client|resume` でメニューなし）、個別起動は `Start-Server.ps1`・`Start-Client.ps1`、または `ui/` で `npm run api` と `npm run dev`
 - 社内に配る URL は `http://<ホスト>:8091/`。ホストは `deploy.local.env` の `ASTERQUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`、Git に入れない）、空なら LAN の IPv4。`127.0.0.1` は開発と内部通信だけ
 - R は PATH にない：`"C:/Program Files/R/R-4.6.0/bin/Rscript.exe"`。`Rscript -e` は引用符で失敗しやすいのでスクリプトファイルにする

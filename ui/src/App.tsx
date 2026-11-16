@@ -60,11 +60,10 @@ export default function App() {
       <div className={`shell layout ${collapsed ? "sidebar-collapsed" : ""}`}>
         <nav className={`sidebar ${collapsed ? "collapsed" : ""}`} aria-label="画面の一覧">
           <div className="sidebar-header">
-            <a className="brand" href="#reports" title="AsterQuant — 運用分析・業務支援">
+            <a className="brand" href="#reports" title="Aster Quantlet">
               <BrandLogo />
               <span className="brand-text">
-                <span className="brand-name">AsterQuant</span>
-                <span className="brand-sub">運用分析・業務支援</span>
+                <span className="brand-name">Aster Quantlet</span>
               </span>
             </a>
             <button

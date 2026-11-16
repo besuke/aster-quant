@@ -8,8 +8,8 @@
   --muted: #667085;
   --border: #dde2e8;
   --axis: #c0c8d2;
-  --accent: #1f5fae;
-  --accent-soft: #e8f0fb;
+  --accent: #6d28d9;
+  --accent-soft: #f3e8ff;
   --ok: #1d7a46;
   --ok-soft: #e5f4ea;
   --warn: #9a6200;
@@ -31,8 +31,8 @@
   --muted: #98a2b3;
   --border: #2d3642;
   --axis: #3d4856;
-  --accent: #7fb0f0;
-  --accent-soft: #1d2b3e;
+  --accent: #b794f4;
+  --accent-soft: #2d1f47;
   --ok: #6fcf97;
   --ok-soft: #173326;
   --warn: #f2c26b;
@@ -125,15 +125,9 @@ h3 { font-size: 14px; margin: 8px 0; }
 }
 .sidebar .brand-name {
   font-weight: 700;
-  font-size: 15.5px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
   color: var(--accent);
-  white-space: nowrap;
-}
-.sidebar .brand-sub {
-  font-weight: 400;
-  color: var(--muted);
-  font-size: 11px;
-  margin: 2px 0 0;
   white-space: nowrap;
 }
 .sidebar-toggle-btn {
@@ -547,7 +541,7 @@ ul.unresolved {
   --jp: #eb6834;
   --eur: #1baf7a;
   --grid: #e6e9ee;
-  --notice: #eef4fc;
+  --notice: #f5f0ff;
 }
 .notice {
   background: var(--notice);

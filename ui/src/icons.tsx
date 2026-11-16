@@ -84,8 +84,8 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
   );
 }
 
-// 左サイドバー上部の小さな SVG ロゴ（Aster の星標とイールドカーブを組み合わせ、アクセントの青で描く）
-export function BrandLogo({ size = 22 }: { size?: number }) {
+// 左サイドバー上部の SVG ロゴ（Aster＝紫苑の花・星標を紫系の濃淡で描く）
+export function BrandLogo({ size = 24 }: { size?: number }) {
   return (
     <svg
       className="brand-logo"
@@ -93,18 +93,20 @@ export function BrandLogo({ size = 22 }: { size?: number }) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
-       data-testid="brand-logo"
+      data-testid="brand-logo"
     >
-      <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth={1.75} />
-      <path d="M6.5 16.5c2.5-4.5 5.2-6.8 11-7.8" stroke="var(--accent)" strokeWidth={2} />
-      <path d="M9 6.5v4M7 8.5h4M7.6 7.1l2.8 2.8M10.4 7.1L7.6 9.9" stroke="var(--accent)" strokeWidth={1.5} />
-      <circle cx="17.5" cy="8.7" r="1.6" fill="var(--accent)" stroke="none" />
+      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="#f3e8ff" stroke="#7c3aed" strokeWidth={1.6} />
+      <g transform="rotate(45 12 12)" fill="#9333ea" opacity={0.88}>
+        <ellipse cx="12" cy="12" rx="2.2" ry="7.2" />
+        <ellipse cx="12" cy="12" rx="7.2" ry="2.2" />
+      </g>
+      <g fill="#6d28d9">
+        <ellipse cx="12" cy="12" rx="2.2" ry="7.4" />
+        <ellipse cx="12" cy="12" rx="7.4" ry="2.2" />
+      </g>
+      <circle cx="12" cy="12" r="2.7" fill="#fbbf24" stroke="#4c1d95" strokeWidth={1.2} />
     </svg>
   );
 }
