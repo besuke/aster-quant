@@ -1,6 +1,6 @@
-# QuantLet
+# AsterQuant
 
-運用の分析・業務支援を行う Web アプリである。対象は債券に限らず、市場分析・ポートフォリオ分析・リスク管理（IRRBB など）の画面を足していく。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
+運用の分析・業務支援を行う Web アプリである（旧称 QuantLet）。対象は債券に限らず、市場分析・ポートフォリオ分析・リスク管理（IRRBB など）の画面を足していく。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
 
 - **A1 オファーシート**：円債・外債のオファー Excel の取込、銘柄属性と市場データの結合、ASW の計算、Excel 出力
 - **C1 TRS 確認書の連携**：確認書の取込、契約条件の抽出、原文との照合、条件 JSON・FpML の作成、未確定の項目と Aladdin 向けの下書き
@@ -19,7 +19,16 @@ Curie は変更していない。移行中も Curie は従来の手順（`source
 R 4.6.0（`C:/Program Files/R/R-4.6.0`）、RiemannFinMath 0.3.0、Node.js 23.6 以上（確認は 26.13.0）。
 
 ```powershell
-cd C:/AnalyticFin/Projects/QuantLet/ui
+cd C:/AnalyticFin/Projects/aster-quant
+.\AsterQuant.ps1       # メニューから起動（1：この PC で開発起動、2：社内LANで公開、4：サーバーのみ、5：クライアントのみ）
+.\Start-Server.ps1     # サーバー（R API 127.0.0.1:8790）だけを起動
+.\Start-Client.ps1     # クライアント（Web 画面 http://127.0.0.1:8091/）だけを起動
+```
+
+または `ui/` ディレクトリから直接起動する：
+
+```powershell
+cd C:/AnalyticFin/Projects/aster-quant/ui
 npm install          # 初回だけ
 npm run api          # R の API を 127.0.0.1:8790 で起動（別のターミナルで開いたままにする）
 npm run dev          # 画面を http://127.0.0.1:8091/ で起動
@@ -33,11 +42,11 @@ npm run dev          # 画面を http://127.0.0.1:8091/ で起動
 
 `127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
 
-1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`QUANTLET_PUBLIC_HOST` にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
-2. `QuantLet.ps1`（デスクトップのショートカット「QuantLet」）で **2（社内LANで起動）** を選ぶ。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する（`.QuantLet.ps1 -Mode lan` でメニューなしでも起動できる）
-3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。QuantLet からは変えない）
+1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`ASTERQUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
+2. `AsterQuant.ps1` で **2（社内LANで起動）** を選ぶ。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する（`.\AsterQuant.ps1 -Mode lan` でメニューなしでも起動できる）
+3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。AsterQuant からは変えない）
 
-QuantLet Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（1、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
+AsterQuant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（1、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
 
 ホスト名にアンダースコア（例 `CHIRO_FMV_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
 
@@ -45,7 +54,7 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 
 ## 画面
 
-左のサイドメニューで切り替える（この順。`ui/src/App.tsx` の `PAGES` に項目を足せば画面を増やせる）。右上の「QuantLet Server：接続中／未接続」は全画面共通で、15 秒ごとに `/api/health` の実際の応答で決める。クリックすると接続確認ページ（`#server`：案内用の URL、待ち受け、RiemannFinMath の版、稼働時間、計算の時間、応答する経路）を開く。各画面の冒頭は機能名と操作に必要な情報だけにし、前提や保存先は操作の近くかこの README に置く。アドレスは `#reports`・`#rates`・`#offers`・`#trs`・`#irrbb`（以前の `#a1`・`#c1`・`#yields` も開ける）。
+左のアイコン付きサイドメニューで切り替える（この順。`ui/src/App.tsx` の `PAGES` に項目を足せば画面を増やせる。アイコンだけの幅にも折りたためる）。ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）で、Carmine Studio と同じ方針で横幅を活かして配置する。右上の「AsterQuant Server：接続中／未接続」は全画面共通で、15 秒ごとに `/api/health` の実際の応答で決める。クリックすると接続確認ページ（`#server`：案内用の URL、待ち受け、RiemannFinMath の版、稼働時間、計算の時間、応答する経路）を開く。アドレスは `#reports`・`#rates`・`#offers`・`#trs`・`#irrbb`（以前の `#a1`・`#c1`・`#yields` も開ける）。
 
 | メニュー | できること |
 |---|---|
@@ -53,7 +62,7 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 | 日米の国債金利・OIS | 「国債の公表利回り」（選んだ月の日米イールドカーブ、`YYYYMM` スライダー、再生・一時停止、観測日と欠損の表）と「評価用 OIS」（保存済みの OIS 気配から RiemannFinMath で作ったゼロ金利カーブと気配の表）を切り替える。それぞれ出典と基準日を示す |
 | オファーシート作成 | 円建て・外貨建てのオファーシートを別々にアップロードして計算する（OIS ASW、JGB スプレッド・円換算 ASW、状態と理由、詳細、関連レポート、Excel）。ASW が使う OIS の基準日と、Bloomberg からの更新（失敗したときは理由と、今使えるデータの基準日） |
 | TRS契約書連携 | TRS の個別契約書の取込・抽出・照合（原文根拠、FpML、Aladdin 向け JSON の**下書き・未送信**）と、キャッシュフロー・スケジュール（FundingLeg・ReturnLeg を「レッグ」列で区別した一つの表。Excel は2シート） |
-| IRRBB金利シナリオ | 円建て固定利付債のサンプル・ポートフォリオを、国内基準行の3シナリオ／国際統一基準行の6シナリオで再評価する。基準カーブとショック後カーブ、年限ごとのショック幅（bp）、銘柄別とポートフォリオ合計の基準PV・ショック後PV・PV変化（下記） |
+| IRRBB金利シナリオ | 円建て固定利付債のサンプル・ポートフォリオを、国内基準行の3シナリオ／国際統一基準行の6シナリオで再評価する。基準カーブとショック後カーブ、年限ごとのショック幅（bp）を横並びにし、その下に銘柄別とポートフォリオ合計の基準PV・ショック後PV・PV変化の表を幅いっぱいで表示する |
 
 **掲示板の反応とコメント**：反応（いいね／ダメ。ブラウザーごとに1つ、押し直すと取り消し）とコメント・返信は、レポートの案件フォルダーの `feedback.json`（`server/data/cases/reports/<reportId>/`）に保存し、再読み込み後も表示する。ログインはないので、表示名は画面で入れたもの（ブラウザーに覚える）。API は `GET /api/reports/<id>/feedback`、`POST /api/reports/<id>/reactions`、`POST /api/reports/<id>/comments`。
 
@@ -88,7 +97,7 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 
 C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cases/<caseId>/cashflows`）で、両レッグの日程と金額を作り、Excel に保存する。
 
-- **分担**：日程の生成と金額の計算は RiemannFinMath（`create_trs_funding_leg`・`compute_trs_funding_cashflows`・`create_trs_return_leg`・`compute_trs_return_cashflows`。Riemann `docs/spec_trs.md`）。QuantLet（`server/R/c1/trs_cashflows.R`）は、C1 が原文で確認した契約条件だけを読み、RiemannFinMath の引数に変換し、不足と前提を記録し、Excel に整形する
+- **分担**：日程の生成と金額の計算は RiemannFinMath（`create_trs_funding_leg`・`compute_trs_funding_cashflows`・`create_trs_return_leg`・`compute_trs_return_cashflows`。Riemann `docs/spec_trs.md`）。AsterQuant（`server/R/c1/trs_cashflows.R`）は、C1 が原文で確認した契約条件だけを読み、RiemannFinMath の引数に変換し、不足と前提を記録し、Excel に整形する
 - **列**：FundingLeg は計算期間（調整前・調整後）、リセット日、金利決定日、観測期間の開始・終了（ルックバック）、支払日、日数・年数・営業日数、複利金利、金額。ReturnLeg は計算期間、期初の評価日、評価日、規則による評価日、支払日、期初・期末の水準、騰落率、金額。頻度・カレンダー・営業日調整・支払ラグはレッグごとに当てる
 - **状態**：各行に「金額の状態」（確定＝公表値だけ／試算＝市場データやシナリオを使う／算出不可＝空欄）と「金額の根拠」、「日程の状態」（前提の有無）、「不足項目」を書く。前提が不足する金額は空欄にする
 - **市場データ**：A1 と同じく評価日と同じ市場日のデータだけを使う。FundingLeg の試算はデモの JPY OIS カーブ（2026-10-06、架空）から翌日物の先渡金利を作る。TONA の公表値は `server/data/market/fixings/tonar.csv`（`date`・`rate`）があれば使う（今はない）。ReturnLeg は指数値がないので算出不可で、画面でシナリオ（指数の年率）を入れたときだけ試算する
@@ -107,7 +116,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 - **ポートフォリオ**：`server/data/demo/irrbb/portfolio_jpy_fixed.csv`（架空）。残存約 2・5・10・20・30 年の円建て固定利付債 5 銘柄、額面 1 億円ずつ、年 2 回利払、Actual/365 Fixed、発行日 2026-09-20
 - **基準カーブ**：オファーシートと同じデモの円 OIS（TONA、基準日 2026-10-06、架空）を RiemannFinMath でブートストラップしたもの。評価日も 2026-10-06
-- **分担**：年限別のショック、ショック後カーブ、債券のキャッシュフローと再評価は RiemannFinMath（`get_irrbb_shock_sizes`・`compute_irrbb_shocks`・`compute_irrbb_curve_points`・`create_irrbb_shocked_curve`・`create_fixed_rate_bond`・`compute_bond_value_on_curve`。Riemann `docs/spec_irrbb.md`）。QuantLet の R（`server/R/irrbb/irrbb_scenarios.R`）は入力を整え、6 シナリオを一度に計算して JSON で返す（`GET /api/irrbb?floor=none|zero`）。画面はシナリオの切り替えと表・グラフだけ
+- **分担**：年限別のショック、ショック後カーブ、債券のキャッシュフローと再評価は RiemannFinMath（`get_irrbb_shock_sizes`・`compute_irrbb_shocks`・`compute_irrbb_curve_points`・`create_irrbb_shocked_curve`・`create_fixed_rate_bond`・`compute_bond_value_on_curve`。Riemann `docs/spec_irrbb.md`）。AsterQuant の R（`server/R/irrbb/irrbb_scenarios.R`）は入力を整え、6 シナリオを一度に計算して JSON で返す（`GET /api/irrbb?floor=none|zero`）。画面はシナリオの切り替えと表・グラフだけ
 - **シナリオ**：国内基準行は上方パラレル・下方パラレル・スティープ化の 3 つ、国際統一基準行はさらにフラット化・短期金利上昇・短期金利低下を加えた 6 つ
 - **参照文書**：BCBS「Basel Framework SRP31」（2024-07-16 公表、2026-01-01 適用。SRP31.90〜31.93）。金融庁・日本銀行の 2024-10-15 の資料（国内基準行の 3 シナリオ）。金融庁の 2025-03-31 公表の告示改正（金利ショックの水準の修正。本邦の適用日は本実装では確認していない）。画面にも表で示す
 - **前提**：円のショック幅はパラレル・短期・長期とも 100 bp（SRP31.90 Table 2）、形状は SRP31.91（x = 4）。ショックは基準カーブのゼロ金利（連続複利、Actual/365 Fixed）に加え、評価日から最後の期日まで月ごとの点を線形補間したカーブで評価する（基準 PV も同じ作り方。PV 変化がショックだけから生じるように）。**金利フロアは既定でなし**（SRP31.93 は各国当局が 0 以下のフロアを設けることを認める。金融庁の扱いは確認していない）。画面で 0% のフロア（参考）を選べる
@@ -122,7 +131,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 - **月次**：各国・各年限の月内最終観測値（その月で値のある最後の日の値）。観測日は年限ごとに表で示す。月内に値がない年限は「欠損」と示し、前後の月や他の年限から補わない（例：米国20年は1987〜1993年、米国30年は2002〜2006年に公表がない。日本の10・20・30年は開始前の月が欠損）。当月は「月の途中」と示す
 - **画面**：横軸を年限とし、米国（青・丸）と日本（橙・四角）を重ねる。欠損は軸の下に白抜きの印で示し、線は欠損をまたいで結ばない。期間（全期間・2000年以降・直近10年）を選ぶと、その期間の全月の範囲で縦軸を固定し、再生中も変えない。月別のデータは最初に一度だけ取得し、スライダーと再生はその中で切り替える。年限の上にマウスを置くと両国の値と観測日を出す
 - **OIS カーブとの区別**：画面の冒頭に「公表された国債利回りの比較で、A1 の評価に使う OIS カーブ（RiemannFinMath）とは別。この画面の値は計算に使わない」と示す
-- FRED は独自の User-Agent（例 `QuantLet`）では応答しなかった（2026-11-15 確認）。取得には R の curl の既定の User-Agent を使う（個人の情報は送らない）
+- FRED は独自の User-Agentでは応答しなかった（2026-11-15 確認）。取得には R の curl の既定の User-Agent を使う（個人の情報は送らない）
 
 ## レポート掲示板
 
@@ -149,7 +158,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 データ処理は Curie のファイルを写し、計算の層だけを RiemannFinMath に置き換えた。関数名と出力の列は Curie と同じにしたので、Excel の列構成も同じである。
 
-| Curie | QuantLet | 変更 |
+| Curie | AsterQuant | 変更 |
 |---|---|---|
 | `R/z0_utility/`（取込設定・取込・ISIN・補間・属性・Excel 書式・表示・版）、`lagrange/import_data.R`、`lagrange/workflows_validate_worksheet.R` | `server/R/common/` | なし（環境変数名を `QUANTLET_*` に変更） |
 | `R/a1_offer_sheet/convert_offer_sheet.R`、`spread_inputs.R`、`validate_offer_worksheet.R`、`write_offer_results_excel.R`、`workflows_offer_sheet.R` | `server/R/a1/` | 日数計算の対応確認と、実行環境・説明の文言だけ RiemannFinMath に変更 |
@@ -161,12 +170,12 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 **RiemannFinMath で対応していない部分**
 
-| 部分 | QuantLet での扱い |
+| 部分 | AsterQuant での扱い |
 |---|---|
 | 円換算 ASW の CCS 校正の残差（Curie の `ccs_repricing_npv_jpy`） | `compute_yen_asset_swap` が返さないので NA にした。`fair_spread_npv_jpy` は返り値（spread 0 の NPV ＋ フェアスプレッド × アニュイティ）から作る |
 | OIS 指標 AONIA（AUD） | RiemannFinMath の OIS カーブは TONAR・SOFR・€STR・SONIA に限る（Riemann の決定事項）。AUD のオファーは「OIS カーブを構築できない」と理由を付けて計算しない。Curie は QuantLib で AUD も作れた。デモに AUD はない |
 | 翌日物の預金（`instrument_type = deposit`）の気配 | RiemannFinMath のカーブは spot OIS の気配だけを使う。deposit を含む通貨は理由を付けて計算しない。デモにはない |
-| カーブの外挿 | Curie は QuantLib の外挿禁止のエラーで止まっていた。QuantLet は計算終期が最後のピラーより後なら、理由を付けて計算しない（同じく外挿しない）。デモにはない |
+| カーブの外挿 | Curie は QuantLib の外挿禁止のエラーで止まっていた。AsterQuant は計算終期が最後のピラーより後なら、理由を付けて計算しない（同じく外挿しない）。デモにはない |
 | 変動利付債・期限前償還条項付き債 | Curie と同じく対象外（`unsupported`。固定利付債として代用しない） |
 
 ### C1 TRS 確認書
@@ -185,7 +194,7 @@ Curie の `R/c1_trs_terms/` の13ファイルを `server/R/c1/` にそのまま�
 
 `tools/market/fetch_jbts_bb_close.R` と `check_bb_price_from_simple.R` の「BB」は日本相互証券（Japan Bond Trading）の BB 引値（ウェブページの公表値）で、Bloomberg ではない。移植の対象外とした。
 
-INDIGO は現時点で存在しない（ソースに参照もない）。Bloomberg のデータの取得は将来 INDIGO に移す予定なので、QuantLet では次のように分けた。
+INDIGO は現時点で存在しない（ソースに参照もない）。Bloomberg のデータの取得は将来 INDIGO に移す予定なので、AsterQuant では次のように分けた。
 
 | 段階 | ファイル | INDIGO に移すとき |
 |---|---|---|
@@ -230,14 +239,14 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 | Aladdin の下書き本文（`{}`）と状態（未確定 1 項目） | 一致 |
 | 未確定の項目の理由の文言 | 差あり（下記） |
 
-理由の文言の差は設定の違いによるもので、コードの差ではない。Curie の案件は自社の名前（`our_party_names`）が設定され、受取者・支払者のどちらとも一致しない状態で作られた（値は記録されていない）。QuantLet の照合は名前が未設定なので「名前が対応表にない」という別の文言になる。一致しない仮の名前を設定すると、文言も Curie と一致した（照合スクリプトの14項目め）。
+理由の文言の差は設定の違いによるもので、コードの差ではない。Curie の案件は自社の名前（`our_party_names`）が設定され、受取者・支払者のどちらとも一致しない状態で作られた（値は記録されていない）。AsterQuant の照合は名前が未設定なので「名前が対応表にない」という別の文言になる。一致しない仮の名前を設定すると、文言も Curie と一致した（照合スクリプトの14項目め）。
 
-なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。QuantLet のデモには案件の原資料（`source/original.pdf`）を写した。
+なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。AsterQuant のデモには案件の原資料（`source/original.pdf`）を写した。
 
 ## 再現手順
 
 ```powershell
-cd C:/AnalyticFin/Projects/QuantLet/server
+cd C:/AnalyticFin/Projects/aster-quant/server
 & "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/a1/reconcile_a1.R    # A1 の照合
 & "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/c1/reconcile_c1.R    # C1 の照合
 & "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" scripts/make_single_offer_demo.R    # 円債オファー1件のデモ Excel を作り直す
@@ -245,7 +254,7 @@ cd C:/AnalyticFin/Projects/QuantLet/server
 
 `ui/` からは `npm run reconcile:a1`・`npm run reconcile:c1` でも実行できる。照合の基準ファイルは `server/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
 
-画面での確認：`npm run api` と `npm run dev` を起動し、A1 タブで `demo_offer_JPY_single_JPTEST000022.xlsx` を「円債オファーシート」にアップロードして計算する。C1 タブで `server/data/demo/c1/DEMO_TRS_confirmation.pdf` をアップロードし、読み方「保存済みの抽出結果」で実行する。今回の確認は、画面と同じ要求を Vite の転送（127.0.0.1:8091 の `/api/*`）経由で送って行った。ブラウザーの自動操作のツールがこの環境で使えなかったため、ブラウザーでの操作そのものは未確認である。
+画面での確認：`npm run api` と `npm run dev` を起動し、A1 タブで `demo_offer_JPY_single_JPTEST000022.xlsx` を「円債オファーシート」にアップロードして計算する。C1 タブで `server/data/demo/c1/DEMO_TRS_confirmation.pdf` をアップロードし、読み方「保存済みの抽出結果」で実行する。
 
 ## ブラウザーでの確認（2026-11-15）
 

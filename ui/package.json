@@ -1,9 +1,9 @@
 {
-  "name": "quantlet-ui",
+  "name": "aster-quant-ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "QuantLet の Web 画面（React＋TypeScript）。入力・アップロード・API の呼び出し・結果の表示だけを行い、計算はしない",
+  "description": "AsterQuant の Web 画面（React＋TypeScript）。入力・アップロード・API の呼び出し・結果の表示だけを行い、計算はしない",
   "scripts": {
     "dev": "node scripts/check-port.mjs 8091 && vite",
     "api": "node scripts/run-r.mjs ../server/server.R --port 8790",
