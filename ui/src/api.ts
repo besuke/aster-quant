@@ -31,6 +31,9 @@ export interface OfferRow {
   asw_effective_date: string | null;
   asw_maturity_date: string | null;
   native_asw_bp: number | null;
+  compound_yield_pct?: number | null;
+  modified_duration?: number | null;
+  convexity?: number | null;
   jpy_compound_yield_pct?: number | null;
   jgb_interpolated_yield_pct?: number | null;
   jgb_spread_bp?: number | null;
@@ -181,7 +184,7 @@ export interface IrrbbResult {
   title: string;
   valuation_date: string;
   base_curve: { name: string; source: string; base_date: string; quote_time: string; last_date: string };
-  portfolio: { bond_id: string; security_name: string; issue_date: string; maturity_date: string; coupon_pct: number; coupon_frequency: number; face_amount: number; remaining_years: number }[];
+  portfolio: { bond_id: string; security_name: string; issue_date: string; maturity_date: string; coupon_pct: number; coupon_frequency: number; face_amount: number; remaining_years: number; compound_yield_pct?: number; modified_duration?: number; convexity?: number }[];
   shock_sizes_bp: { parallel_bp: number; short_bp: number; long_bp: number };
   scenario_sets: Record<"domestic" | "international", { label: string; ids: string[] }>;
   scenarios: IrrbbScenario[];
@@ -436,3 +439,7 @@ export const api = {
 
 export const fmt = (x: number | null | undefined, digits = 4) =>
   x === null || x === undefined || Number.isNaN(x) ? "—" : x.toLocaleString("ja-JP", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+// 小数点以下3桁（4桁目を切り捨て）で表示する（複利利回り・デュレーション・コンベクシティ用）
+export const fmtTrunc3 = (x: number | null | undefined) =>
+  x === null || x === undefined || Number.isNaN(x) ? "—" : (Math.trunc(x * 1000) / 1000).toFixed(3);

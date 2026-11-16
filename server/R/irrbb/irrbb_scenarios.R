@@ -67,7 +67,20 @@ compute_irrbb_portfolio_QL <- function(floor = NULL) {
   pv <- function(curve) purrr::map_dbl(bonds, \(b) RiemannFinMath::compute_bond_value_on_curve(b, curve, vd)$npv)
   sizes <- RiemannFinMath::get_irrbb_shock_sizes("JPY")
   base_curve <- RiemannFinMath::create_irrbb_shocked_curve(base$curve, "base", dates, "JPY", floor = floor)
-  base_pv <- pv(base_curve)
+  base_vals <- purrr::map(bonds, \(b) RiemannFinMath::compute_bond_value_on_curve(b, base_curve, vd))
+  base_pv <- purrr::map_dbl(base_vals, "npv")
+  base_clean <- purrr::map_dbl(base_vals, "clean_price")
+  base_dirty <- purrr::map_dbl(base_vals, "dirty_price")
+  settle_dates <- purrr::map_vec(bonds, \(b) RiemannFinMath::compute_settlement_date(b, vd))
+  rem_years <- RiemannFinMath::compute_remaining_years(settle_dates, pf$maturity_date)
+  cy_raw <- purrr::pmap_dbl(
+    list(rem_years, pf$coupon_pct, base_clean, pf$coupon_frequency),
+    \(t, c, p, f) RiemannFinMath::compute_compound_yield_from_price(t, c, p, 100, as.integer(f), 2L, on_error = "na")
+  )
+  risk_tbl <- purrr::pmap(
+    list(rem_years, pf$coupon_pct, cy_raw, base_dirty - base_clean, pf$coupon_frequency),
+    \(t, c, y, acc, f) RiemannFinMath::compute_risk_from_compound_yield(t, c, y, 100, acc, as.integer(f), 2L, on_error = "na")
+  ) |> purrr::list_rbind()
   original_pv <- pv(base$curve)
   tenors <- c(0.25, 0.5, 1, 2, 3, 3.5, 5, 7, 10, 15, 20, 25, 30)
   # グラフ用：3か月ごとの点（月次の点から間引く）
@@ -93,6 +106,9 @@ compute_irrbb_portfolio_QL <- function(floor = NULL) {
     base_curve = list(name = "円ゼロ金利カーブ（TONA OIS から RiemannFinMath でブートストラップ）", source = base$source,
                       base_date = format(vd), quote_time = base$quote_time, last_date = format(base$last_date)),
     portfolio = pf |> dplyr::mutate(remaining_years = round(as.numeric(.data$maturity_date - vd) / 365, 2),
+                                    compound_yield_pct = .trunc3_QL(cy_raw),
+                                    modified_duration = .trunc3_QL(risk_tbl$modified_duration),
+                                    convexity = .trunc3_QL(risk_tbl$convexity),
                                     dplyr::across(dplyr::where(\(x) inherits(x, "Date")), format)),
     shock_sizes_bp = sizes,
     scenario_sets = list(domestic = list(label = "国内基準行（3シナリオ）", ids = irrbb_scenarios_QL$id[irrbb_scenarios_QL$domestic]),

@@ -5,7 +5,8 @@
 .a1_engine_functions_QL <- c(
   "create_ois_instruments", "bootstrap_ois_curve", "get_quote_repricing", "create_fixed_rate_bond",
   "compute_settlement_date", "compute_ois_asset_swap", "compute_yen_asset_swap",
-  "compute_remaining_years", "compute_compound_yield_from_price"
+  "compute_remaining_years", "compute_compound_yield_from_price", "compute_risk_from_compound_yield",
+  "compute_yield_from_price", "compute_bond_values"
 )
 
 environment_info_QL <- function() {

@@ -115,7 +115,9 @@ summarise_ois_curves_Curie <- function(curves) {
   }) |> purrr::list_rbind()
 }
 
-# ---- 円債の複利利回り -----------------------------------------------------------------------------
+# ---- 円債の複利利回り・リスク指標（複利・デュレーション・コンベクシティは小数点3桁、4桁目切り捨て） ----
+.trunc3_QL <- function(x) ifelse(is.na(x), NA_real_, trunc(x * 1000) / 1000)
+
 compound_yield_YEN_Curie <- function(settlement_date, maturity_date, coupon_rate, clean_price,
                                      redemption, coupon_frequency, compound_frequency) {
   t <- RiemannFinMath::compute_remaining_years(as.Date(settlement_date), as.Date(maturity_date))
@@ -170,6 +172,7 @@ pricing_settings_Curie <- function(
     native_asw_bp = NA_real_, native_asw_status = NA_character_,
     native_ois_curve_id = NA_character_, native_ois_marketdate = as.Date(NA), native_ois_quote_time = NA_character_,
     jpy_compound_yield_pct = NA_real_, jgb_interpolated_yield_pct = NA_real_, jgb_spread_bp = NA_real_,
+    compound_yield_pct = NA_real_, modified_duration = NA_real_, convexity = NA_real_,
     jgb_yield_convention = NA_character_, jgb_curve_id = NA_character_,
     jgb_marketdate = as.Date(NA), jgb_quote_time = NA_character_, jgb_spread_status = NA_character_,
     fx_spot = NA_real_, fx_spot_date = as.Date(NA), fx_quote_id = NA_character_,
@@ -188,6 +191,14 @@ pricing_settings_Curie <- function(
   out$jpy_compound_yield_pct <- compound_yield_YEN_Curie(
     row$offer_settlementdate, row$calculation_end_date, row$coupon_rate, row$offer_price,
     row$redemption, row$coupon_frequency, settings$jgb_compound_frequency)
+  t_rem <- RiemannFinMath::compute_remaining_years(as.Date(row$offer_settlementdate), as.Date(row$calculation_end_date))
+  risk_jpy <- RiemannFinMath::compute_risk_from_compound_yield(
+    t_rem, row$coupon_rate * 100, out$jpy_compound_yield_pct, row$redemption, out$accrued_per_100,
+    as.integer(row$coupon_frequency), as.integer(settings$jgb_compound_frequency), on_error = "na"
+  )
+  out$compound_yield_pct <- .trunc3_QL(out$jpy_compound_yield_pct)
+  out$modified_duration <- .trunc3_QL(risk_jpy$modified_duration)
+  out$convexity <- .trunc3_QL(risk_jpy$convexity)
   out$jgb_yield_convention <- paste0(
     "RiemannFinMath::compute_compound_yield_from_price、クリーン単価、受渡日 ", row$offer_settlementdate,
     "、利払年", row$coupon_frequency, "回・複利年", settings$jgb_compound_frequency,
@@ -205,6 +216,19 @@ pricing_settings_Curie <- function(
 
 .price_jpy_asw_Curie <- function(out, row, bond, native, curve, curves, fx, basis_avg, settings) {
   ccy <- row$currency
+  dc_iso <- day_count_from_name_QL(row$day_count)
+  freq_iso <- as.integer(row$coupon_frequency)
+  y_iso <- RiemannFinMath::compute_yield_from_price(
+    bond, row$offer_price, "clean", dc_iso, "compounded", freq_iso, row$offer_settlementdate, on_error = "na"
+  )
+  if (!is.na(y_iso)) {
+    bv_iso <- RiemannFinMath::compute_bond_values(
+      bond, y_iso, dc_iso, "compounded", freq_iso, row$offer_settlementdate, on_error = "na"
+    )
+    out$compound_yield_pct <- .trunc3_QL(y_iso * 100)
+    out$modified_duration <- .trunc3_QL(bv_iso$duration_modified)
+    out$convexity <- .trunc3_QL(bv_iso$convexity)
+  }
   out$jpy_asw_status <- "not_computed"
   out$jpy_asw_model <- .jpy_asw_model_note_Curie
   jpy_curve <- curves[["JPY"]]

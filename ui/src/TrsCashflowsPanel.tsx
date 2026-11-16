@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, fmt, type SheetRow, type TrsCashflows } from "./api";
+import { api, fmt, fmtTrunc3, type SheetRow, type TrsCashflows } from "./api";
 
 // TRS 契約書の案件からキャッシュフロー・スケジュールを作る。日程と金額は RiemannFinMath がサーバーで計算し、画面は表示だけ。
 // 画面では FundingLeg と ReturnLeg を一つの表にまとめ、「レッグ」列で区別する。
@@ -157,7 +157,7 @@ function toRows(leg: Leg, rows: SheetRow[]): LegRow[] {
       calcDate: leg === "FundingLeg" ? s(r.金利決定日) : s(r.評価日),
       calcNote:
         leg === "FundingLeg"
-          ? `金利決定日。観測 ${s(r.観測期間開始日) ?? "—"}〜${s(r.観測期間終了日) ?? "—"}${r.複利金利_pct != null ? `、複利 ${fmt(Number(r.複利金利_pct), 4)}%` : ""}`
+          ? `金利決定日。観測 ${s(r.観測期間開始日) ?? "—"}〜${s(r.観測期間終了日) ?? "—"}${r.複利金利_pct != null ? `、複利 ${fmtTrunc3(Number(r.複利金利_pct))}%` : ""}`
           : `評価日。期初 ${s(r.期初の評価日) ?? "当初価格"}${r.騰落率_pct != null ? `、騰落 ${fmt(Number(r.騰落率_pct), 4)}%` : ""}`,
       payDate: s(r.支払日),
       amount: r.金額 == null ? null : Number(r.金額),

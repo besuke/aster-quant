@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, fmt, type IrrbbResult, type IrrbbScenario } from "./api";
+import { api, fmt, fmtTrunc3, type IrrbbResult, type IrrbbScenario } from "./api";
 
 // IRRBB 金利シナリオ。計算（ショック、ショック後カーブ、債券の再評価）はサーバーの RiemannFinMath。全 6 シナリオを一度に受け取り、
 // 画面はその中でシナリオを切り替えて、グラフと結果表を描き直すだけ。
@@ -111,6 +111,9 @@ export default function IrrbbPage() {
                     <th className="num">残存（年）</th>
                     <th className="num">クーポン（%）</th>
                     <th className="num">利払（年）</th>
+                    <th className="num">複利（%）</th>
+                    <th className="num">修正デュレーション</th>
+                    <th className="num">コンベクシティ</th>
                     <th className="num">額面（円）</th>
                   </tr>
                 </thead>
@@ -125,6 +128,9 @@ export default function IrrbbPage() {
                       <td className="num">{fmt(b.remaining_years, 2)}</td>
                       <td className="num">{fmt(b.coupon_pct, 2)}</td>
                       <td className="num">{b.coupon_frequency}回</td>
+                      <td className="num">{fmtTrunc3(b.compound_yield_pct)}</td>
+                      <td className="num">{fmtTrunc3(b.modified_duration)}</td>
+                      <td className="num">{fmtTrunc3(b.convexity)}</td>
                       <td className="num">{fmt(b.face_amount, 0)}</td>
                     </tr>
                   ))}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, fmt, type A1Result, type OfferRow, type OisRefresh, type OisStatus, type RelatedReport, type UploadResult, type Workflow } from "./api";
+import { api, fmt, fmtTrunc3, type A1Result, type OfferRow, type OisRefresh, type OisStatus, type RelatedReport, type UploadResult, type Workflow } from "./api";
 import Upload from "./Upload";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -195,11 +195,13 @@ function OfferDetail({ row, workflow }: { row: OfferRow; workflow: Workflow }) {
   ];
   if (workflow === "JPY") {
     items.push(
-      ["複利利回り（対象債・補間JGB）", `${fmt(row.jpy_compound_yield_pct ?? null, 7)}% · ${fmt(row.jgb_interpolated_yield_pct ?? null, 7)}%`],
+      ["複利利回り（対象債・補間JGB）", `${fmtTrunc3(row.jpy_compound_yield_pct ?? null)}% · ${fmtTrunc3(row.jgb_interpolated_yield_pct ?? null)}%`],
+      ["修正デュレーション・コンベクシティ", `${fmtTrunc3(row.modified_duration ?? null)} · ${fmtTrunc3(row.convexity ?? null)}`],
       ["JGBスプレッド", `${fmt(row.jgb_spread_bp ?? null, 6)} bp`],
     );
   } else {
     items.push(
+      ["複利利回り・修正デュレーション・コンベクシティ", `${fmtTrunc3(row.compound_yield_pct ?? null)}% · ${fmtTrunc3(row.modified_duration ?? null)} · ${fmtTrunc3(row.convexity ?? null)}`],
       ["FXスポット・ベーシス", `${fmt(row.fx_spot ?? null, 4)} · ${fmt(row.basis_bp ?? null, 6)} bp`],
       ["円換算ASW（単純和）", `${fmt(row.jpy_asw_bp ?? null, 6)} bp（${fmt(row.simple_sum_bp ?? null, 6)} bp）`],
       ["校正した割引スプレッド z", `${fmt(row.calibrated_discount_spread_bp ?? null, 6)} bp`],

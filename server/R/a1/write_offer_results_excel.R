@@ -18,7 +18,8 @@
   "validation_status", "validation_message",
   # 計算条件と自国通貨OIS ASW
   "valuation_date", "bond_settlement_date", "asw_effective_date", "asw_maturity_date",
-  "accrued_per_100", "dirty_price", "asw_payment_frequency", "asw_payment_lag", "asw_conditions_note",
+  "accrued_per_100", "dirty_price", "compound_yield_pct", "modified_duration", "convexity",
+  "asw_payment_frequency", "asw_payment_lag", "asw_conditions_note",
   "native_asw_bp", "native_ois_curve_id", "native_ois_marketdate", "native_ois_quote_time"
 )
 
@@ -44,6 +45,7 @@ result_column_notes_Curie <- function(workflow) {
     "validation_status/message",      "入力検証の結果と問題コード",
     "valuation_date",                 "評価日（＝オファー日＝各市場データの市場日）",
     "bond_settlement_date",           "債券の受渡日（評価日＋受渡日数）。オファー受渡日と一致した行だけ計算",
+    "compound_yield_pct / modified_duration / convexity", "複利利回り（%）・修正デュレーション・コンベクシティ（すべて小数点3桁、4桁目切り捨て）",
     "asw_payment_frequency/lag",      "ASWの翌日物レッグの払い方。現段階ではデモの仮定（設定で変更可）",
     "native_asw_bp",                  "建て通貨のOISに対するOIS ASW（bp）。compute_asset_swap_ISO()",
     "*_marketdate / *_quote_time",    "使用した市場データの市場日と取得時刻（ファイルに取得時刻がある場合）",
