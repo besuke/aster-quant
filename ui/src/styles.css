@@ -821,7 +821,7 @@ ol.steps li.done {
   --series-3: #2a78d6;
 }
 
-button:not(.link):not(.sidebar-toggle-btn),
+button:not(.link):not(.sidebar-toggle-btn):not(.sidebar-part),
 .btn {
   font: inherit;
   font-size: 13px;
@@ -835,9 +835,9 @@ button:not(.link):not(.sidebar-toggle-btn),
   transition: box-shadow 0.08s ease, transform 0.08s ease, filter 0.12s ease;
   text-decoration: none;
 }
-button:not(.link):not(.sidebar-toggle-btn):hover:not(:disabled),
+button:not(.link):not(.sidebar-toggle-btn):not(.sidebar-part):hover:not(:disabled),
 .btn:hover:not(:disabled) { border-color: var(--aqua-border); filter: brightness(1.04); }
-button:not(.link):not(.sidebar-toggle-btn):active:not(:disabled),
+button:not(.link):not(.sidebar-toggle-btn):not(.sidebar-part):active:not(:disabled),
 .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.28), var(--aqua-shadow-pressed); }
 button.primary,
 .btn.primary,
@@ -966,3 +966,64 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 .qc-tooltip-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; }
 .qc-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .qc-footer { padding: 2px 6px 4px; font-size: 11.5px; color: var(--muted); }
+
+/* ---- サイドバーのグループ（名前をクリックすると配下の項目が開閉する）と、本文上の画面の切り替え ---- */
+.sidebar button.sidebar-part {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 10px 0 2px;
+  padding: 3px 6px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar button.sidebar-part:hover { color: var(--text); background: var(--none-soft); }
+.sidebar .sidebar-group.current > button.sidebar-part { color: var(--accent); }
+.sidebar button.sidebar-part .icon { transition: transform 0.12s ease; }
+.sidebar button.sidebar-part[aria-expanded="true"] .icon { transform: rotate(90deg); }
+.sidebar ul[hidden] { display: none; }
+.sidebar-soon {
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--none-soft);
+  border-radius: 999px;
+}
+.sidebar ul a.active .sidebar-soon { background: #fff; }
+.sidebar.collapsed button.sidebar-part {
+  height: 1px;
+  margin: 8px 3px;
+  padding: 0;
+  background: var(--border);
+  font-size: 0;
+  overflow: hidden;
+}
+.sidebar.collapsed button.sidebar-part .icon { display: none; }
+.sidebar.collapsed .sidebar-soon { display: none; }
+.content > .tabs-row { margin: 0 0 12px; align-items: center; }
+.tabs-label { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 10px 0 2px; }
+.placeholder { max-width: 560px; }
+.placeholder-badge {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+.subtab { display: inline-flex; align-items: center; gap: 6px; }
+.subtab .icon { flex-shrink: 0; }

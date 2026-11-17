@@ -86,6 +86,49 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M17 6h3" />
     </>
   ),
+  // 発行体格付け推移：階段状に動く格付け
+  rating: (
+    <>
+      <path d="M3.5 20.5h17" />
+      <path d="M5 16h4v-4h4v-3h4V6" />
+      <path d="M5 20.5v-1M9 20.5v-1M13 20.5v-1M17 20.5v-1" />
+    </>
+  ),
+  // 格付け枠管理：メーターと枠
+  limit: (
+    <>
+      <path d="M4.5 16.5a7.5 7.5 0 1 1 15 0" />
+      <path d="M12 16.5l3-4.5" />
+      <path d="M4 20h16" />
+    </>
+  ),
+  // グループの開閉
+  chevron: <path d="M9 6l6 6-6 6" />,
+  // TRS契約書連携：書類と矢印
+  trs: (
+    <>
+      <path d="M6 3.5h8l4 4v13H6z" />
+      <path d="M14 3.5v4h4" />
+      <path d="M9 13h6M12.5 10.5L15 13l-2.5 2.5M9 17h5" />
+    </>
+  ),
+  // アセットスワップ：債券（棒）と交換の矢印
+  asw: (
+    <>
+      <path d="M4 20h16" />
+      <path d="M6.5 20v-5M10 20v-7" />
+      <path d="M4.5 8h10M12 5.5L14.5 8 12 10.5" />
+      <path d="M19.5 12h-6M16 9.5L13.5 12 16 14.5" />
+    </>
+  ),
+  // クレジットVaR：損失の分布と裾
+  var: (
+    <>
+      <path d="M3.5 20h17" />
+      <path d="M4.5 19c3-.2 4-6 6.5-11 2 5 3.5 10.5 8.5 11" />
+      <path d="M15 20v-4.5" strokeDasharray="1.5 2" />
+    </>
+  ),
   // Infrago Quant Server：2段のサーバーユニット
   server: (
     <>
