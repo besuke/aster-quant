@@ -9,6 +9,8 @@ import YieldCurvesPage from "./analytics/YieldCurvesPage";
 import TonaOisPage from "./analytics/TonaOisPage";
 import BondCashflowPage from "./analytics/BondCashflowPage";
 import CdsPage from "./analytics/CdsPage";
+import FuturesPage from "./analytics/FuturesPage";
+import EarlyRedemptionPage from "./analytics/EarlyRedemptionPage";
 import { ServerConnectionProvider, ServerStatusBadge } from "./serverConnection";
 import { BrandLogo, Icon, type IconName } from "./icons";
 
@@ -27,6 +29,8 @@ const GROUPS: readonly { label: string; pages: readonly { id: PageId; label: str
     label: "債券・クレジット",
     pages: [
       { id: "bond", label: "債券キャッシュフロー", icon: "bond" },
+      { id: "callable", label: "早期償還（コール債・MBS）", icon: "callable" },
+      { id: "futures", label: "国債先物・CTD", icon: "futures" },
       { id: "cds", label: "クレジット・CDS", icon: "credit" },
       { id: "offers", label: "オファーシート作成", icon: "offers" },
     ],
@@ -40,11 +44,11 @@ const GROUPS: readonly { label: string; pages: readonly { id: PageId; label: str
     ],
   },
 ];
-type PageId = "curves" | "ois" | "rates" | "bond" | "cds" | "offers" | "irrbb" | "reports" | "trs" | "server";
+type PageId = "curves" | "ois" | "rates" | "bond" | "callable" | "futures" | "cds" | "offers" | "irrbb" | "reports" | "trs" | "server";
 const PAGE_IDS = new Set<string>([...GROUPS.flatMap((g) => g.pages.map((p) => p.id)), "server"]);
 const DEFAULT_PAGE: PageId = "curves"; // 最初に開く画面（債券を見るときはまずイールドカーブ）
 // 以前のアドレス（#a1/…、#c1、#yields）も開けるようにする
-const ALIASES: Record<string, PageId> = { a1: "offers", c1: "trs", yields: "rates", bbg: "offers", "yield-curves": "curves", "yield-curve-ois": "ois", "deterministic-cashflow": "bond", "credit-cds": "cds" };
+const ALIASES: Record<string, PageId> = { a1: "offers", c1: "trs", yields: "rates", bbg: "offers", "yield-curves": "curves", "yield-curve-ois": "ois", "deterministic-cashflow": "bond", "credit-cds": "cds", "jgb-futures": "futures", "early-redemption": "callable" };
 
 // 画面の場所は URL のハッシュ（#画面/引数）。例：#offers/JPTEST000022、#reports/list/RPT_…、#server
 function parseHash(): { page: PageId; arg: string | null } {
@@ -129,6 +133,8 @@ export default function App() {
           {route.page === "curves" && <YieldCurvesPage />}
           {route.page === "ois" && <TonaOisPage />}
           {route.page === "bond" && <BondCashflowPage />}
+          {route.page === "callable" && <EarlyRedemptionPage />}
+          {route.page === "futures" && <FuturesPage />}
           {route.page === "cds" && <CdsPage />}
           {route.page === "reports" && <ReportsPage arg={route.arg} />}
           {route.page === "rates" && <RatesPage />}

@@ -1,0 +1,159 @@
+{
+  "note": "教材用の架空の入力。受渡適格銘柄・CF・日付・Funding Rate は LagrangeFinance II-2.6 と同じ。 現物価格と先物価格は架空（原稿の BB 価格は使わない）。",
+  "valuation_date": "2026-09-10",
+  "delivery_date": "2026-12-20",
+  "funding_rate": 0.0123,
+  "futures_price": 125.14,
+  "current_curve": [
+    {
+      "tenor_years": 0.25,
+      "yield_pct": 1.23
+    },
+    {
+      "tenor_years": 2,
+      "yield_pct": 1.55
+    },
+    {
+      "tenor_years": 5,
+      "yield_pct": 2.2000000000000002
+    },
+    {
+      "tenor_years": 7,
+      "yield_pct": 2.5499999999999998
+    },
+    {
+      "tenor_years": 10,
+      "yield_pct": 2.8999999999999999
+    }
+  ],
+  "basket": [
+    {
+      "issue": 373,
+      "issue_date": "2023-12-20",
+      "coupon_pct": 0.59999999999999998,
+      "maturity_date": "2033-12-20",
+      "conversion_factor": 0.69500600000000001,
+      "curve_yield_pct": 2.5829223744292236,
+      "fictitious_price": 86.912999999999997
+    },
+    {
+      "issue": 374,
+      "issue_date": "2024-03-20",
+      "coupon_pct": 0.80000000000000004,
+      "maturity_date": "2034-03-20",
+      "conversion_factor": 0.69788099999999997,
+      "curve_yield_pct": 2.611689497716895,
+      "fictitious_price": 87.683000000000007
+    },
+    {
+      "issue": 375,
+      "issue_date": "2024-06-20",
+      "coupon_pct": 1.1000000000000001,
+      "maturity_date": "2034-06-20",
+      "conversion_factor": 0.70752000000000004,
+      "curve_yield_pct": 2.6410958904109587,
+      "fictitious_price": 89.224000000000004
+    },
+    {
+      "issue": 376,
+      "issue_date": "2024-09-20",
+      "coupon_pct": 0.90000000000000002,
+      "maturity_date": "2034-09-20",
+      "conversion_factor": 0.68756099999999998,
+      "curve_yield_pct": 2.6705022831050225,
+      "fictitious_price": 87.275000000000006
+    },
+    {
+      "issue": 377,
+      "issue_date": "2024-12-20",
+      "coupon_pct": 1.2,
+      "maturity_date": "2034-12-20",
+      "conversion_factor": 0.69853299999999996,
+      "curve_yield_pct": 2.6995890410958903,
+      "fictitious_price": 88.936000000000007
+    },
+    {
+      "issue": 378,
+      "issue_date": "2025-03-20",
+      "coupon_pct": 1.3999999999999999,
+      "maturity_date": "2035-03-20",
+      "conversion_factor": 0.70405899999999999,
+      "curve_yield_pct": 2.7283561643835617,
+      "fictitious_price": 89.951999999999998
+    },
+    {
+      "issue": 379,
+      "issue_date": "2025-06-20",
+      "coupon_pct": 1.5,
+      "maturity_date": "2035-06-20",
+      "conversion_factor": 0.703762,
+      "curve_yield_pct": 2.7577625570776254,
+      "fictitious_price": 90.248999999999995
+    },
+    {
+      "issue": 380,
+      "issue_date": "2025-09-20",
+      "coupon_pct": 1.7,
+      "maturity_date": "2035-09-20",
+      "conversion_factor": 0.71053500000000003,
+      "curve_yield_pct": 2.7871689497716892,
+      "fictitious_price": 91.370000000000005
+    },
+    {
+      "issue": 381,
+      "issue_date": "2025-12-20",
+      "coupon_pct": 2.1000000000000001,
+      "maturity_date": "2035-12-20",
+      "conversion_factor": 0.73180599999999996,
+      "curve_yield_pct": 2.816255707762557,
+      "fictitious_price": 94.183000000000007
+    },
+    {
+      "issue": 382,
+      "issue_date": "2026-03-20",
+      "coupon_pct": 2.3999999999999999,
+      "maturity_date": "2036-03-20",
+      "conversion_factor": 0.74722100000000002,
+      "curve_yield_pct": 2.8453424657534248,
+      "fictitious_price": 96.296999999999997
+    },
+    {
+      "issue": 383,
+      "issue_date": "2026-06-20",
+      "coupon_pct": 2.7000000000000002,
+      "maturity_date": "2036-06-20",
+      "conversion_factor": 0.76365700000000003,
+      "curve_yield_pct": 2.8747488584474885,
+      "fictitious_price": 98.516000000000005
+    }
+  ],
+  "stress": {
+    "long_yield": 0.080000000000000002,
+    "funding_rate": 0.089999999999999997,
+    "standard_coupon": 0.059999999999999998,
+    "standard_maturity": "2036-09-10",
+    "curve": [
+      {
+        "tenor_years": 0.25,
+        "yield_pct": 9
+      },
+      {
+        "tenor_years": 2,
+        "yield_pct": 8.8000000000000007
+      },
+      {
+        "tenor_years": 5,
+        "yield_pct": 8.5
+      },
+      {
+        "tenor_years": 7,
+        "yield_pct": 8.25
+      },
+      {
+        "tenor_years": 10,
+        "yield_pct": 8
+      }
+    ]
+  },
+  "generated_by": "scripts/futures/make_demo_inputs.R"
+}

@@ -74,13 +74,15 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 
 ## 画面
 
-画面の構成は Carmine Studio と同じ：上の帯（左にロゴと「Infrago Quantlet」、右に Infrago Quant Server の接続表示）と、その下の左サイドバー（上に「折りたたむ」、項目は「金利・カーブ」「債券・クレジット」「リスク」「業務」の見出しでまとめる。`ui/src/App.tsx` の `GROUPS` に項目を足せば画面を増やせる）。最初に開く画面は**イールドカーブ**（`#curves`）。色は深い緑（`--accent: #166534`）、ボタン・入力欄・選択・スライダーは Carmine Studio と同じ Aqua 風（光沢・角丸・影）、グラフと表は白地。右上の「Infrago Quant Server：接続中／未接続」は 15 秒ごとに `/api/health` の実際の応答で決め、クリックすると接続確認ページ（`#server`）を開く。アドレスは `#curves`・`#ois`・`#rates`・`#bond`・`#cds`・`#offers`・`#irrbb`・`#reports`・`#trs`（以前の `#a1`・`#c1`・`#yields` と、Carmine Studio の `#yield-curves`・`#yield-curve-ois`・`#deterministic-cashflow`・`#credit-cds` も開ける）。
+画面の構成は Carmine Studio と同じ：上の帯（左にロゴと「Infrago Quantlet」、右に Infrago Quant Server の接続表示）と、その下の左サイドバー（上に「折りたたむ」、項目は「金利・カーブ」「債券・クレジット」「リスク」「業務」の見出しでまとめる。`ui/src/App.tsx` の `GROUPS` に項目を足せば画面を増やせる）。最初に開く画面は**イールドカーブ**（`#curves`）。色は深い緑（`--accent: #166534`）、ボタン・入力欄・選択・スライダーは Carmine Studio と同じ Aqua 風（光沢・角丸・影）、グラフと表は白地。右上の「Infrago Quant Server：接続中／未接続」は 15 秒ごとに `/api/health` の実際の応答で決め、クリックすると接続確認ページ（`#server`）を開く。アドレスは `#curves`・`#ois`・`#rates`・`#bond`・`#callable`・`#futures`・`#cds`・`#offers`・`#irrbb`・`#reports`・`#trs`（以前の `#a1`・`#c1`・`#yields` と、Carmine Studio の `#yield-curves`・`#yield-curve-ois`・`#deterministic-cashflow`・`#early-redemption`・`#jgb-futures`・`#credit-cds` も開ける）。
 
 | メニュー | できること |
 |---|---|
 | イールドカーブ | ゼロ金利のノード（年限・日付・金利を編集、足す・削除）から、割引係数の対数を単調3次補間したカーブと、平行移動したカーブ（bp、スライダー）を作り、ゼロ金利・割引係数・フォワードの3グラフと年限ごとの表を出す。Carmine Studio の yield-curves から移した |
 | TONA OIS・スワップ | 保存済みの円 OIS 気配（今はデモの架空データ）から TONA カーブを作り、選んだ年限の気配を ±bp 動かしたときの割引係数・ゼロ金利・1暦日フォワードとその差、基準カーブのパーレートで固定した OIS（固定払い・TONA 受け、年限と想定元本を選ぶ）の PV の変化、キャッシュフローを出す。Carmine Studio の yield-curve-ois から移した（Carmine の気配は GaussQuant のサンプルなので使わない） |
 | 債券キャッシュフロー | 固定利付債（半年払い、30/360）の取引日・発行日・償還日・クーポン・単利利回り・Zスプレッドから、単価・複利利回り・経過利子・BPV・修正デュレーション・コンベクシティ・Zスプレッドの価格、キャッシュフローの棒グラフと表、価格と利回りの曲線（一次・二次の近似つき）を出す。Carmine Studio の deterministic-cashflow から、説明用の部分（解析式との比較、求根法の比較、模式図）を除いて移した |
+| 早期償還（コール債・MBS） | コール条項つき債券（5年、半年クーポン、Hull-White 1因子。金利・a・σ・クーポン・最初のコール・コール価格を選ぶ）のコール付き価格・ブレット価格・発行体のコール・オプションの価値と、σ を動かしたときの変化。MBS（パススルー、PSA・借換えの感応度・借換え費用）の借換え金利シナリオ別の価格・加重平均life・CPR・キャッシュフロー。Carmine Studio の early-redemption から、RiemannFinMath で計算できる部分だけを移した（コール判断の境界・20本の経路・静的 OAS は原稿の独自の R 関数や乱数に依るので移していない） |
+| 国債先物・CTD | 受渡適格銘柄（教材の例、価格は架空）のベーシス・インプライド・レポ・CTD・先物BPV・Carry の内訳。「現在の市場」と「全銘柄を同じ利回りで評価」（ストレス）を切り替え、利回りの水準ごとの CTD の入れ替わりを示す。Carmine Studio の jgb-futures から移した（入力は `server/data/demo/futures/inputs.json`） |
 | クレジット・CDS | 標準 CDS（CDS2015、取引日・年限・市場スプレッド・契約クーポン・回収率・割引率・想定元本、ISDA／MidPoint）の NPV・Fair Upfront・Hazard Rate・生存確率・両レッグ、累積デフォルト確率と「市場スプレッドと Fair Upfront」のグラフ、キャッシュフロー表。Carmine Studio の credit-cds の標準5年物を、取引日と年限を選べる形にして移した |
 | レポート分析掲示板 | 画面上部のタブで3画面を切り替える。**掲示板**（`#reports`）：新着順に発行元・執筆者、短い見出し、反応数。詳細から「いいね」「ダメ」、コメント、返信。**レポート登録**（`#reports/register`）：PDF・HTML の選択と登録、処理状況（保存・AI の読解・原文根拠の照合・紐づけ）。**レポート一覧**（`#reports/list`）：登録済みのレポートの表と、要約・原文根拠・オファーとの紐づけ（`#reports/list/<id>`。以前の `#reports/<id>` もここを開く） |
 | 日米の国債金利・OIS | 「国債の公表利回り」（選んだ月の日米イールドカーブ、`YYYYMM` スライダー、再生・一時停止、観測日と欠損の表）と「評価用 OIS」（保存済みの OIS 気配から RiemannFinMath で作ったゼロ金利カーブと気配の表）を切り替える。それぞれ出典と基準日を示す |
@@ -118,6 +120,8 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 | `POST /api/analytics/tona-ois` | `{"datasetId","bumpTenor","bumpBp","swapTenor","notional"}` → 気配・カーブ・OIS の基準とシナリオ（`tona_ois_scenario.R`） |
 | `POST /api/analytics/bond` | `{"tradeDate","issueDate","maturityDate","couponPct","simpleYieldPct","zSpreadBp"}` → 価格・利回り・リスク・キャッシュフロー（`bond_cashflow.R`） |
 | `POST /api/analytics/cds` | `{"tradeDate","tenor","spreadBp","couponBp","recoveryPct","ratePct","notional","engine"}` → 標準 CDS の評価（`credit_cds.R`） |
+| `POST /api/analytics/futures` | `{"mode":"current"\|"flat","yieldPct","fundingPct"}` → 国債先物・CTD・先物BPV（`jgb_futures.R`） |
+| `POST /api/analytics/early-redemption` | `{"bond":{…},"mbs":{…}}` → コール条項つき債券（Hull-White）と MBS（`early_redemption.R`） |
 
 不正な入力は 400 と日本語のメッセージを返す。httpuv は一つの R プロセスで要求を順に処理するので、C1 を Claude Code で読む間（数分）は他の要求が待つ。
 
@@ -271,7 +275,7 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 
 なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。Infrago Quant のデモには案件の原資料（`source/original.pdf`）を写した。
 
-## Carmine Studio から移した4画面の照合（2026-11-18）
+## Carmine Studio から移した6画面の照合（2026-11-18）
 
 計算は RiemannFinMath 0.3.2（R 4.6.0）。同じ入力で Carmine Studio の R 関数と比べた。
 
@@ -279,6 +283,8 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 - イールドカーブ：既定のノード（Carmine と同じ日付）で、年限ごとの割引係数の差は 0（Carmine の `curve_compute()`）
 - 債券キャッシュフロー：既定（40年債、クーポン 7.5%、単利 6.515%）で単価 110.926、複利利回り 6.710%、修正デュレーション 13.650、コンベクシティ 321.173。Carmine と同じ RiemannFinMath の関数・引数。価格と利回りの曲線は Carmine の解析式ではなく RiemannFinMath の `compute_price_from_compound_yield` で描く
 - TONA OIS：気配が Carmine（GaussQuant のサンプル）と違うので数値の照合はしていない。デモ（2026-10-06）で 7Y 気配 +1bp のとき、7Y OIS（100億円）の PV の変化は計算できることを確かめた
+- 国債先物・CTD：既定（現在の市場）で CTD は 373回債、先物BPV 0.08793833。ストレス（8%・9%）で CTD 383回債、先物BPV 0.06749607。Carmine の `fut_compute()` との差は先物BPV・Net Basis・CTD とも 0
+- 早期償還：既定でコール付き価格 100.4516、ブレット 104.6871、コール・オプション 4.2355。MBS の3シナリオの価格と加重平均 life も Carmine の `cb_bond()`・`cb_mbs()` との差が 0
 - Hazard Rate は Carmine と同じく `uniroot`（RiemannFinMath の CDS 評価値の NPV がゼロになる点）で求める。RiemannFinMath の `bootstrap_hazard_curve` は契約の既定が違うので使っていない
 
 ## 再現手順

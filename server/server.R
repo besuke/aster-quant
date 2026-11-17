@@ -28,6 +28,8 @@
 #   POST /api/analytics/zero-curves {"evaluationDate","nodes":[{"tenor","ratePct"}],"shiftBp"} -> ゼロ金利・割引・平行移動のカーブ
 #   POST /api/analytics/cds         {"tradeDate","tenor","spreadBp","couponBp","recoveryPct","ratePct","notional","engine"} -> 標準 CDS
 #   POST /api/analytics/tona-ois    {"datasetId","bumpTenor","bumpBp","swapTenor","notional"} -> TONA OIS カーブとスワップのシナリオ
+#   POST /api/analytics/early-redemption {"bond":{...},"mbs":{...}} -> コール条項つき債券（Hull-White）と MBS
+#   POST /api/analytics/futures     {"mode":"current"|"flat","yieldPct","fundingPct"} -> 国債先物・CTD・先物BPV
 #
 # httpuv は1つの R プロセスで要求を順に処理する。C1 を Claude Code で読む間（数分）は、他の要求は待つ。
 
@@ -255,6 +257,8 @@ handle_api <- function(req, method, path) {
   if (method == "POST" && path == "/api/analytics/bond") return(json_response(200, compute_bond_cashflow_QL(read_json_body(req))))
   if (method == "POST" && path == "/api/analytics/zero-curves") return(json_response(200, compute_zero_curves_QL(read_json_body(req))))
   if (method == "POST" && path == "/api/analytics/cds") return(json_response(200, compute_cds_QL(read_json_body(req))))
+  if (method == "POST" && path == "/api/analytics/futures") return(json_response(200, compute_futures_QL(read_json_body(req))))
+  if (method == "POST" && path == "/api/analytics/early-redemption") return(json_response(200, compute_early_redemption_QL(read_json_body(req))))
   if (method == "POST" && path == "/api/analytics/tona-ois") return(json_response(200, compute_tona_ois_QL(read_json_body(req))))
   if (method == "GET" && path == "/api/irrbb") {
     f <- query_param(req, "floor") %||% "none"

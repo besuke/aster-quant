@@ -70,6 +70,22 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M9 12l2.2 2.2L15.5 10" />
     </>
   ),
+  // 国債先物・CTD：複数の銘柄から1つを選ぶ棒
+  futures: (
+    <>
+      <path d="M3.5 20h17" />
+      <path d="M6 20v-8M10 20v-12M14 20v-6M18 20v-9" />
+      <path d="M8.5 6.5l1.5-2 1.5 2" />
+    </>
+  ),
+  // 早期償還：コール日で折れる残高の階段
+  callable: (
+    <>
+      <path d="M3.5 20.5h17" />
+      <path d="M5 6h4v4h4v4h4v4" />
+      <path d="M17 6h3" />
+    </>
+  ),
   // Infrago Quant Server：2段のサーバーユニット
   server: (
     <>

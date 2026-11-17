@@ -10,7 +10,7 @@
 | `../Riemann`（RiemannFinMath） | 金融計算（カーブ、債券、ASW、TRS の両レッグ、IRRBB のショックなど） | — |
 | `ui/`（React＋TypeScript） | 入力、API 呼び出し、JSON の表・グラフ表示 | 計算し直さない |
 
-- 画面は Carmine Studio と同じ構成（上の帯と、その下の見出し付き・折りたためる左サイドバー。`ui/src/App.tsx` の `GROUPS`）。最初はイールドカーブ。金利・カーブ（イールドカーブ、TONA OIS・スワップ、日米の国債金利・OIS）、債券・クレジット（債券キャッシュフロー、クレジット・CDS、オファーシート作成）、リスク（IRRBB金利シナリオ）、業務（レポート分析掲示板、TRS契約書連携）。イールドカーブ・TONA OIS・債券キャッシュフロー・クレジットは Carmine Studio から移したもので、仕様の説明は載せず、入力・結果・グラフ・表だけにする
+- 画面は Carmine Studio と同じ構成（上の帯と、その下の見出し付き・折りたためる左サイドバー。`ui/src/App.tsx` の `GROUPS`）。最初はイールドカーブ。金利・カーブ（イールドカーブ、TONA OIS・スワップ、日米の国債金利・OIS）、債券・クレジット（債券キャッシュフロー、早期償還（コール債・MBS）、国債先物・CTD、クレジット・CDS、オファーシート作成）、リスク（IRRBB金利シナリオ）、業務（レポート分析掲示板、TRS契約書連携）。イールドカーブ・TONA OIS・債券キャッシュフロー・早期償還・国債先物・クレジットは Carmine Studio から移したもので、仕様の説明は載せず、入力・結果・グラフ・表だけにする
 - デザインは Carmine Studio（`../carmine-studio`）と同じ方針：ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）、上の帯の左に深い緑の SVG ロゴと「Infrago Quantlet」（日本語副題なし）、右に `Infrago Quant Server` の接続状態表示、横幅を活かした配置。色は深い緑（`#166534`）、ボタン・入力欄・選択・スライダーは Carmine と同じ Aqua 風（利用者の好み）
 - ポート：画面 8091、R API 8790（Carmine Studio の 8081・8787 と分ける）。起動は `InfragoQuant.ps1`（1 でこの PC、2 で社内LAN、4 でサーバーのみ、5 でクライアントのみ。`-Mode dev|lan|server|client|resume` でメニューなし）、個別起動は `Start-Server.ps1`・`Start-Client.ps1`、または `ui/` で `npm run api` と `npm run dev`
 - 社内に配る URL は `http://<ホスト>:8091/`。ホストは `deploy.local.env` の `INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`、Git に入れない）、空なら LAN の IPv4。`127.0.0.1` は開発と内部通信だけ

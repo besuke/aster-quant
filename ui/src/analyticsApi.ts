@@ -88,9 +88,56 @@ export interface CdsResponse {
   upfront_by_spread: { spread_bp: number; hazard: number; fair_upfront: number; upfront_amount: number }[];
 }
 
+export interface FuturesRow {
+  issue: number; coupon_pct: number; maturity_date: string; conversion_factor: number; price: number; yield: number; duration: number; dv01: number;
+  accrued_start: number; accrued_end: number; coupon_income: number; futures_invoice: number; gross_basis: number; funding_cost: number; carry: number;
+  net_basis: number; implied_repo: number; ctd: boolean;
+}
+export interface FuturesRequest { mode: "current" | "flat"; yieldPct?: number; fundingPct?: number }
+export interface FuturesResponse {
+  mode: "current" | "flat";
+  valuation_date: string;
+  delivery_date: string;
+  flat_yield: number | null;
+  inputs_note: string;
+  current_curve: { tenor_years: number; yield_pct: number }[];
+  stress_curve: { tenor_years: number; yield_pct: number }[];
+  conventions: Record<string, string>;
+  rows: FuturesRow[];
+  futures_price: number;
+  funding_rate: number;
+  ctd_issue: number;
+  futures_bpv: number;
+  ctd_dv01: number;
+  ctd_conversion_factor: number;
+  ctd_by_level: { yield_pct: number; ctd_issue: number; ctd_duration: number; futures_price: number; futures_bpv: number }[];
+}
+
+export interface EarlyRedemptionRequest {
+  bond: { ratePct: number; aPct: number; sigmaPct: number; couponPct: number; firstCallYear: number; callPrice: number };
+  mbs: { psaPct: number; incentive: number; refiCostPct: number };
+}
+export interface EarlyRedemptionResponse {
+  inputs: EarlyRedemptionRequest;
+  conventions: { bond: string; mbs: string; engine: string };
+  bond: {
+    flows: { time: number; coupon: number; principal: number; call_price: number | null }[];
+    bullet: number; callable: number; issuer_call_value: number;
+    by_volatility: { volatility: number; callable: number; bullet: number; issuer_call_value: number }[];
+  };
+  mbs: {
+    pool: { balance: number; mortgage_rate: number; pass_through_rate: number; months: number };
+    scenarios: { scenario: string; weighted_average_life: number; price_fixed_discount: number; price_path_discount: number; total_principal: number }[];
+    cpr: { month: number; falling: number; flat: number; rising: number }[];
+    flat_cashflows: { month: number; interest: number; scheduled_principal: number; prepaid_principal: number; end_balance: number }[];
+  };
+}
+
 export const analyticsApi = {
   bond: (body: Partial<BondRequest>) => postJson<BondResponse>("/api/analytics/bond", body),
   zeroCurves: (body: { evaluationDate?: string; nodes?: ZeroNode[]; shiftBp?: number }) => postJson<ZeroCurvesResponse>("/api/analytics/zero-curves", body),
   tonaOis: (body: Partial<TonaRequest>) => postJson<TonaResponse>("/api/analytics/tona-ois", body),
   cds: (body: Partial<CdsRequest>) => postJson<CdsResponse>("/api/analytics/cds", body),
+  earlyRedemption: (body: EarlyRedemptionRequest) => postJson<EarlyRedemptionResponse>("/api/analytics/early-redemption", body),
+  futures: (body: FuturesRequest) => postJson<FuturesResponse>("/api/analytics/futures", body),
 };
