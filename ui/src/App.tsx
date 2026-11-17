@@ -55,6 +55,12 @@ export default function App() {
     if (g) setOpen((o) => (o.includes(g) ? o : [...o, g]));
   }, [route.page]);
 
+  // ブラウザのタブのタイトル：「Infrago Quantlet/（開いているメニュー名）」。index.html の静的なタイトルは「Infrago Quantlet」のまま（起動スクリプトの確認が読む）
+  useEffect(() => {
+    const menu = route.page === "server" ? "サーバー接続" : locate(route.page)?.item.label;
+    document.title = menu ? `Infrago Quantlet/${menu}` : "Infrago Quantlet";
+  }, [route.page]);
+
   const toggleGroup = (id: string) => setOpen((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id]));
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
