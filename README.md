@@ -74,7 +74,18 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 
 ## 画面
 
-画面の構成は Carmine Studio と同じ：上の帯（左にロゴと「Infrago Quantlet」、右に Infrago Quant Server の接続表示）と、その下の左サイドバー（上に「折りたたむ」、項目は「金利・カーブ」「債券・クレジット」「リスク」「業務」の見出しでまとめる。`ui/src/App.tsx` の `GROUPS` に項目を足せば画面を増やせる）。最初に開く画面は**イールドカーブ**（`#curves`）。色は深い緑（`--accent: #166534`）、ボタン・入力欄・選択・スライダーは Carmine Studio と同じ Aqua 風（光沢・角丸・影）、グラフと表は白地。右上の「Infrago Quant Server：接続中／未接続」は 15 秒ごとに `/api/health` の実際の応答で決め、クリックすると接続確認ページ（`#server`）を開く。アドレスは `#curves`・`#ois`・`#rates`・`#bond`・`#callable`・`#futures`・`#cds`・`#offers`・`#irrbb`・`#reports`・`#trs`（以前の `#a1`・`#c1`・`#yields` と、Carmine Studio の `#yield-curves`・`#yield-curve-ois`・`#deterministic-cashflow`・`#early-redemption`・`#jgb-futures`・`#credit-cds` も開ける）。
+画面の構成は Carmine Studio と同じ：上の帯（左にロゴと「Infrago Quantlet」、右に Infrago Quant Server の接続表示）と、その下の左サイドバー。サイドバーは4つのグループで、名前をクリックすると配下の項目が開閉する（同時に開くのは1グループ）。構成は `ui/src/nav.ts`（項目を足すときはここ）。
+
+| グループ | 項目（表示順） | 実装状況 |
+|---|---|---|
+| レポートと市場分析 | イールドカーブ分析（イールドカーブ・TONA OIS・スワップ・日米の国債金利・OIS を切り替え）／レポートサマリー（掲示板・レポート登録・レポート一覧）／発行体格付け推移 | 発行体格付け推移は準備中 |
+| オファーレベル | オファーシート（取り込み・一覧。関連画面：TRS契約書連携） | 実装済み（比較の専用画面はない） |
+| 商品評価 | アセットスワップ（銘柄の入口。関連画面：債券キャッシュフロー・国債先物・CTD）／早期償還（コール債・MBS） | 実装済み |
+| リスク計算 | IRRBB／クレジットVaR（関連画面：クレジット・CDS）／格付け枠管理 | クレジットVaR・格付け枠管理は準備中（クレジット・CDS は動く） |
+
+トップ URL では「レポートサマリー」の掲示板を表示し、「レポートと市場分析」だけを開く。個別ページの URL（`#curves` など）を直接開くと、そのページを表示してそのグループだけを開く。ブラウザのタブのタイトルは「Infrago Quantlet/（開いているメニュー名）」。アセットスワップはオファーシートの最新の計算結果から銘柄を探し、詳細は `#offers/<ISIN>` で開く（計算は A1 と同じ処理を再利用）。サーバー接続（`#server`）は右上の接続ステータスから開く。ブラウザでの確認は `npm run test:nav`（`ui/tests/nav.e2e.mjs`、サーバーと画面を起動しておく）。
+
+色は深い緑（`--accent: #166534`）、ボタン・入力欄・選択・スライダーは Carmine Studio と同じ Aqua 風（光沢・角丸・影）、グラフと表は白地。右上の「Infrago Quant Server：接続中／未接続」は 15 秒ごとに `/api/health` の実際の応答で決める。
 
 | メニュー | できること |
 |---|---|
