@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
-// AsterQuant Server（R の API）との接続。画面全体で一つの状態を持ち、右上の表示はどの画面でもこれを見る。
-// 接続中かどうかは、実際に /api/health が答え、その応答が AsterQuant Server のものかで決める（推測しない）。
+// Infrago Quant Server（R の API）との接続。画面全体で一つの状態を持ち、右上の表示はどの画面でもこれを見る。
+// 接続中かどうかは、実際に /api/health が答え、その応答が Infrago Quant Server のものかで決める（推測しない）。
 
 export interface Check {
   n: number;
@@ -19,6 +19,10 @@ interface ConnectionState {
   checkNow: () => void;
 }
 
+// サーバーが /api/health で名乗る名前。旧名（AsterQuant Server・QuantLet Server）で答える古いサーバーも接続中とみなす
+export const SERVER_NAME = "Infrago Quant Server";
+export const SERVER_NAMES = [SERVER_NAME, "AsterQuant Server", "QuantLet Server"];
+
 const HISTORY = 40;
 const INTERVAL_SEC = 15;
 const Ctx = createContext<ConnectionState | null>(null);
@@ -35,13 +39,13 @@ export function ServerConnectionProvider({ children }: { children: ReactNode }) 
     try {
       const res = await fetch("/api/health", { cache: "no-store" });
       const body = (await res.json()) as { status?: string; name?: string };
-      const ok = res.ok && body.status === "ok" && (body.name === "AsterQuant Server" || body.name === "QuantLet Server");
+      const ok = res.ok && body.status === "ok" && SERVER_NAMES.includes(body.name ?? "");
       check = {
         n: ++n.current,
         at: new Date(),
         ok,
         roundTripMs: performance.now() - t0,
-        error: ok ? undefined : `応答が AsterQuant Server のものではない（HTTP ${res.status}）`,
+        error: ok ? undefined : `応答が Infrago Quant Server のものではない（HTTP ${res.status}）`,
       };
     } catch (e) {
       check = { n: ++n.current, at: new Date(), ok: false, roundTripMs: null, error: (e as Error).message };
@@ -82,7 +86,7 @@ export function ServerStatusBadge() {
       title={last ? `最終確認 ${last.at.toLocaleTimeString("ja-JP")}${last.roundTripMs !== null ? `、往復 ${last.roundTripMs.toFixed(0)} ms` : ""}${last.error ? `、${last.error}` : ""}` : ""}
     >
       <span className="dot" aria-hidden="true" />
-      AsterQuant Server：{label}
+      Infrago Quant Server：{label}
     </a>
   );
 }

@@ -1,6 +1,13 @@
 # 円債オファー1件のデモ Excel（架空）：Curie のデモと同じ様式（scripts/demo_data/demo_data_offers.R の write_demo_offer_jpy_Curie）で、
 # テスト円債B 0.90% 2031/3（JPTEST000022、テスト証券B、単価 98.15、受渡 2026/10/08）の1行だけを持つ。画面からのアップロードの確認用。
-#   "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" scripts/make_single_offer_demo.R     （server/ で実行）
+#   Rscript scripts/make_single_offer_demo.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/scripts/make_single_offer_demo.R）
+# この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
+local({
+  f <- sub("^--file=", "", grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
+  d <- if (length(f)) dirname(normalizePath(f[1L], winslash = "/")) else normalizePath(getwd(), winslash = "/")
+  while (!file.exists(file.path(d, "VERSION")) && dirname(d) != d) d <- dirname(d)
+  setwd(d)
+})
 source("R/load_quantlet.R", encoding = "UTF-8"); load_quantlet(getwd())
 rows_to_sheet <- function(rows) {
   width <- max(lengths(rows))

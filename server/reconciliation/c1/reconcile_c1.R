@@ -1,10 +1,17 @@
 # C1 の照合：QuantLet の C1（Curie から移植）と、Curie の案件 DEMO_TRS_confirmation_20261027_081517（2026-10-27）の成果物。
 #
-#   "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/c1/reconcile_c1.R     （server/ で実行）
+#   Rscript reconciliation/c1/reconcile_c1.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/reconciliation/c1/reconcile_c1.R）
 #
 # 入力：同じ架空の確認書（DEMO_TRS_confirmation.pdf）と、Curie の案件に残る Claude の抽出結果（reviewed.json・fpml.xml・review_items.md）。
 # 読み方は saved（AI を呼ばない）。Curie の参照は reconciliation/curie_reference/c1/ に写したもの。結果は reconciliation/c1/results/。
 suppressPackageStartupMessages(library(dplyr))
+# この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
+local({
+  f <- sub("^--file=", "", grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
+  d <- if (length(f)) dirname(normalizePath(f[1L], winslash = "/")) else normalizePath(getwd(), winslash = "/")
+  while (!file.exists(file.path(d, "VERSION")) && dirname(d) != d) d <- dirname(d)
+  setwd(d)
+})
 source("R/load_quantlet.R", encoding = "UTF-8"); load_quantlet(getwd())
 out_dir <- file.path("reconciliation", "c1", "results"); dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 ref_dir <- file.path("reconciliation", "curie_reference", "c1")

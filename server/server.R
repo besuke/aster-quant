@@ -1,4 +1,4 @@
-# QuantLet の HTTP API（R、httpuv）。既定では 127.0.0.1 だけで待ち受ける。
+# Infrago Quant の HTTP API（R、httpuv）。既定では 127.0.0.1 だけで待ち受ける。
 #
 #   Rscript server/server.R [--port 8790] [--host 127.0.0.1] [--static ../ui/dist]
 #
@@ -24,6 +24,10 @@
 #   POST /api/reports/<id>/links {"mention_index":1,"issuer_id":"ISS_..."|null} -> 発行体の候補の確定・却下
 #   GET  /api/reports/<id>/document          -> 原資料
 #   GET  /api/reports/related?isin=<ISIN>    -> オファーの銘柄に関連するレポート（銘柄・発行体・候補）
+#   POST /api/analytics/bond        {"tradeDate","issueDate","maturityDate","couponPct","simpleYieldPct","zSpreadBp"} -> 債券キャッシュフロー
+#   POST /api/analytics/zero-curves {"evaluationDate","nodes":[{"tenor","ratePct"}],"shiftBp"} -> ゼロ金利・割引・平行移動のカーブ
+#   POST /api/analytics/cds         {"tradeDate","tenor","spreadBp","couponBp","recoveryPct","ratePct","notional","engine"} -> 標準 CDS
+#   POST /api/analytics/tona-ois    {"datasetId","bumpTenor","bumpBp","swapTenor","notional"} -> TONA OIS カーブとスワップのシナリオ
 #
 # httpuv は1つの R プロセスで要求を順に処理する。C1 を Claude Code で読む間（数分）は、他の要求は待つ。
 
@@ -158,7 +162,7 @@ irrbb_cache <- new.env()
 handle_api <- function(req, method, path) {
   if (method == "GET" && path == "/api/server") return(json_response(200, server_info_QL(host, port, static_dir)))
   if (method == "GET" && path == "/api/health") {
-    return(json_response(200, list(status = "ok", name = "AsterQuant Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
+    return(json_response(200, list(status = "ok", name = "Infrago Quant Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
                                    started_at = format(started_at, "%Y-%m-%dT%H:%M:%S%z"), data_dir = "server/data")))
   }
   m <- regmatches(path, regexec("^/api/uploads/(a1|c1|reports)$", path))[[1]]
@@ -248,6 +252,10 @@ handle_api <- function(req, method, path) {
   }
   if (method == "POST" && path == "/api/market/ois/refresh") return(json_response(200, refresh_ois_from_bloomberg_QL()))
   # ---- IRRBB 金利シナリオ（全 6 シナリオを一度に計算して返す。画面はその中で切り替える） ----
+  if (method == "POST" && path == "/api/analytics/bond") return(json_response(200, compute_bond_cashflow_QL(read_json_body(req))))
+  if (method == "POST" && path == "/api/analytics/zero-curves") return(json_response(200, compute_zero_curves_QL(read_json_body(req))))
+  if (method == "POST" && path == "/api/analytics/cds") return(json_response(200, compute_cds_QL(read_json_body(req))))
+  if (method == "POST" && path == "/api/analytics/tona-ois") return(json_response(200, compute_tona_ois_QL(read_json_body(req))))
   if (method == "GET" && path == "/api/irrbb") {
     f <- query_param(req, "floor") %||% "none"
     if (!f %in% c("none", "zero")) http_error(400, "floor は none または zero")
@@ -375,7 +383,7 @@ app <- list(call = function(req) {
   res
 })
 
-message("QuantLet Server: http://", if (host == "0.0.0.0") "127.0.0.1" else host, ":", port, "/api/health",
+message("Infrago Quant Server: http://", if (host == "0.0.0.0") "127.0.0.1" else host, ":", port, "/api/health",
         if (!is.na(static_dir)) paste0("  (page: http://", if (host == "0.0.0.0") "127.0.0.1" else host, ":", port, "/)"))
 if (host == "0.0.0.0") {
   pub <- public_host_QL()

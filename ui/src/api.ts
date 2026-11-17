@@ -145,7 +145,7 @@ export interface BloombergOis {
   a1_input_files: string[];
 }
 
-// ---- QuantLet Server ----
+// ---- Infrago Quant Server ----
 export interface ServerInfo {
   name: string;
   status: string;
@@ -393,7 +393,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-const postJson = <T,>(path: string, body: unknown) =>
+export const postJson = <T,>(path: string, body: unknown) =>
   call<T>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
 export const api = {

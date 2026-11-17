@@ -42,3 +42,7 @@ Thumbs.db
 # 配備設定（実際のホスト名・IP アドレス）
 /deploy.local.env
 !/deploy.example.env
+
+# この PC の設定（使う Rscript.exe など）
+/settings.local.env
+!/settings.example.env
