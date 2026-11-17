@@ -18,7 +18,7 @@ import { BrandLogo, Icon } from "./icons";
 import { ALIASES, DEFAULT_PAGE, GROUPS, locate, PAGE_IDS, type NavItem, type PageId } from "./nav";
 
 // 画面の構成は Carmine Studio と同じ：上の帯（左にロゴと名前、右に Infrago Quant Server の接続表示）、その下に左のサイドバー。
-// サイドバーは4つのグループ（名前をクリックすると配下の項目が開閉する。いま開いている画面のグループは自動で開く）。
+// サイドバーは4つのグループ（全部開いた状態で始まり、名前をクリックすると、そのグループだけ手動で開閉できる）。
 // 構成は nav.ts。サーバー接続（#server）は右上の接続ステータスから開く。
 
 // 画面の場所は URL のハッシュ（#画面/引数）。例：#offers/JPTEST000022、#reports/list/RPT_…、#server
@@ -40,8 +40,8 @@ export default function App() {
       return false;
     }
   });
-  // 開いているグループは1つだけ（別のグループを開くと、それまで開いていたグループは閉じる）。起動時は、いま開いている画面のグループ
-  const [open, setOpen] = useState<string | null>(here ? here.group.id : null);
+  // グループは最初から全部開いている。名前をクリックすると、そのグループだけ手動で閉じたり開いたりできる（自動では閉じない）
+  const [open, setOpen] = useState<string[]>(() => GROUPS.map((g) => g.id));
 
   useEffect(() => {
     const on = () => setRoute(parseHash());
@@ -49,19 +49,13 @@ export default function App() {
     return () => window.removeEventListener("hashchange", on);
   }, []);
 
-  // 画面を移ったら、その画面のグループだけを開く（グループのない #server では、開閉はそのまま）
+  // 画面を移ったとき、その画面のグループが手動で閉じてあれば開く（ほかのグループには触らない）
   useEffect(() => {
     const g = locate(route.page)?.group.id;
-    if (g) setOpen(g);
+    if (g) setOpen((o) => (o.includes(g) ? o : [...o, g]));
   }, [route.page]);
 
-  // ブラウザのタブのタイトル：「Infrago Quantlet/（開いているメニュー名）」。index.html の静的なタイトルは「Infrago Quantlet」のまま（起動スクリプトの確認が読む）
-  useEffect(() => {
-    const menu = route.page === "server" ? "サーバー接続" : locate(route.page)?.item.label;
-    document.title = menu ? `Infrago Quantlet/${menu}` : "Infrago Quantlet";
-  }, [route.page]);
-
-  const toggleGroup = (id: string) => setOpen((o) => (o === id ? null : id));
+  const toggleGroup = (id: string) => setOpen((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id]));
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -116,7 +110,7 @@ export default function App() {
             </button>
           </div>
           {GROUPS.map((g) => {
-            const isOpen = open === g.id;
+            const isOpen = open.includes(g.id);
             const current = here?.group.id === g.id;
             return (
               <div key={g.id} className={`sidebar-group${current ? " current" : ""}`} data-testid={`group-${g.id}`}>

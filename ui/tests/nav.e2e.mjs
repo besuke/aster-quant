@@ -33,8 +33,8 @@ const q = (sel) => `document.querySelector(${JSON.stringify(sel)})`;
 const GROUPS = ["market", "offer", "product", "risk"];
 const expanded = (g) => ev(`${q(`[data-testid="group-toggle-${g}"]`)}.getAttribute("aria-expanded")`);
 const visibleItems = (g) => ev(`!document.getElementById("group-items-${g}").hidden`);
-const openOnly = async (g) => (await Promise.all(GROUPS.map(expanded))).every((v, i) => (v === "true") === (GROUPS[i] === g));
-const allClosed = async () => (await Promise.all(GROUPS.map(expanded))).every((v) => v === "false");
+const allOpen = async () => (await Promise.all(GROUPS.map(expanded))).every((v) => v === "true");
+const openExcept = async (g) => (await Promise.all(GROUPS.map(expanded))).every((v, i) => (v === "true") === (GROUPS[i] !== g));
 const activeItems = () => ev(`[...document.querySelectorAll('[data-testid^="nav-"][aria-current="page"]')].map(a => a.dataset.testid)`);
 const h1 = () => ev(`(document.querySelector(".content h1")||{}).textContent`);
 const click = (sel) => ev(`${q(sel)}.click()`);
@@ -50,9 +50,8 @@ await loaded();
 await waitFor(`!!${q('[data-testid="tab-board"]')}`);
 check("トップ URL でレポートサマリーの掲示板が表示される", (await ev(`${q('[data-testid="tab-board"]')}.getAttribute("aria-selected")`)) === "true", `ハッシュ「${await ev("location.hash")}」`);
 check("4グループが並ぶ", (await ev(`[...document.querySelectorAll('[data-testid^="group-toggle-"]')].map(b=>b.textContent.trim()).join("|")`)) === "レポートと市場分析|オファーレベル|商品評価|リスク計算");
-check("「レポートと市場分析」は展開されて項目が見える", (await expanded("market")) === "true" && (await visibleItems("market")));
-check("ほかの3グループは見出しだけ（閉じている）", (await Promise.all(["offer", "product", "risk"].map(async (g) => (await expanded(g)) === "false" && !(await visibleItems(g))))).every(Boolean));
-check("展開した「レポートと市場分析」の項目は 3つ（表示順どおり）", (await ev(`[...document.querySelectorAll('#group-items-market a')].map(a=>a.querySelector('.sidebar-label').textContent).join("|")`)) === "イールドカーブ分析|レポートサマリー|発行体格付け推移");
+check("4グループとも最初から開いていて、項目が見える", (await allOpen()) && (await Promise.all(GROUPS.map(visibleItems))).every(Boolean));
+check("「レポートと市場分析」の項目は 3つ（表示順どおり）", (await ev(`[...document.querySelectorAll('#group-items-market a')].map(a=>a.querySelector('.sidebar-label').textContent).join("|")`)) === "イールドカーブ分析|レポートサマリー|発行体格付け推移");
 check("「レポートサマリー」が選択状態（ほかは選択なし）", JSON.stringify(await activeItems()) === '["nav-report-summary"]', JSON.stringify(await activeItems()));
 check("サイドバーにサーバー接続の項目はない", !(await ev(`!!document.querySelector('.sidebar a[href="#server"]')`)));
 check("右上の接続ステータス（Infrago Quant Server）がある", await ev(`!!document.querySelector('.site-header a[href="#server"]')`));
@@ -71,7 +70,7 @@ const DIRECT = [
 for (const [hash, group, item, want] of DIRECT) {
   await goto(hash); await loaded(); await sleep(500);
   const t = await h1();
-  check(`直接 ${hash}：その画面を表示し、「${group}」だけ展開、${item} を選択`, (await openOnly(group)) && JSON.stringify(await activeItems()) === JSON.stringify([`nav-${item}`]) && (want === null || t === want), `見出し「${t}」`);
+  check(`直接 ${hash}：その画面を表示し、全グループ開いたまま、${item} を選択`, (await allOpen()) && JSON.stringify(await activeItems()) === JSON.stringify([`nav-${item}`]) && (want === null || t === want), `見出し「${t}」`);
 }
 // タブのタイトル（Chrome のフレーム）：Infrago Quantlet/メニュー名
 for (const [hash, title] of [["", "Infrago Quantlet/レポートサマリー"], ["#curves", "Infrago Quantlet/イールドカーブ分析"], ["#bond", "Infrago Quantlet/アセットスワップ"], ["#callable", "Infrago Quantlet/早期償還"], ["#irrbb", "Infrago Quantlet/IRRBB"], ["#credit-var", "Infrago Quantlet/クレジットVaR"], ["#server", "Infrago Quantlet/サーバー接続"]]) {
@@ -80,26 +79,27 @@ for (const [hash, title] of [["", "Infrago Quantlet/レポートサマリー"], 
 }
 await goto("#curves"); await loaded(); await sleep(300); await shot("nav1_curves.png");
 
-// ---------- 3. 開閉：同時に開くのは1グループ
+// ---------- 3. 開閉：全部開いたまま。自動では閉じず、名前のクリックで、そのグループだけ手動で開閉
 await goto("#irrbb"); await loaded();
+check("開いた状態で始まる", await allOpen());
 await click('[data-testid="group-toggle-offer"]');
-check("別のグループ（オファーレベル）を開くと、開いていた（リスク計算）は閉じる", (await openOnly("offer")) && (await visibleItems("offer")) && !(await visibleItems("risk")));
-await click('[data-testid="group-toggle-offer"]');
-check("開いているグループ名をもう一度クリックすると閉じる（全グループが閉じた状態）", await allClosed());
+check("グループ名をクリックすると、そのグループ（オファーレベル）だけ閉じる", (await openExcept("offer")) && !(await visibleItems("offer")) && (await visibleItems("risk")));
 await click('[data-testid="group-toggle-product"]');
-check("商品評価を開く（ほかは閉じたまま）", await openOnly("product"));
+check("別のグループ（商品評価）を閉じても、ほかは閉じない・開かない", (await Promise.all(GROUPS.map(expanded))).join() === "true,false,false,true");
+await click('[data-testid="group-toggle-offer"]'); await click('[data-testid="group-toggle-product"]');
+check("もう一度クリックすると開く（全グループ開いた状態に戻る）", await allOpen());
 await click('[data-testid="group-toggle-market"]');
-check("レポートと市場分析を開くと、商品評価は閉じる", await openOnly("market"));
-check("グループを開閉しても、いまの画面の項目（IRRBB）は選択されたまま", JSON.stringify(await activeItems()) === '["nav-irrbb"]');
-await shot("nav2_accordion.png");
+check("手動で閉じても、いまの画面の項目（IRRBB）は選択されたまま", JSON.stringify(await activeItems()) === '["nav-irrbb"]' && (await expanded("market")) === "false");
+await click('[data-testid="nav-report-summary"]').catch(() => {}); await sleep(500);
+check("閉じたグループの画面へ移ると、そのグループだけ開く（ほかは触らない）", (await ev("location.hash")) === "#reports" && (await allOpen()));
+await shot("nav2_toggle.png");
 
 // ---------- 4. 項目の選択表示と既存画面への遷移（サイドバーから）
 const visit = async (itemId, expectHash, expectH1, group) => {
-  if ((await expanded(group)) !== "true") { await click(`[data-testid="group-toggle-${group}"]`); await sleep(100); }
   await click(`[data-testid="nav-${itemId}"]`); await sleep(500);
   if (expectH1) await waitFor(`(document.querySelector(".content h1")||{}).textContent === ${JSON.stringify(expectH1)}`, 15000);
   const act = JSON.stringify(await activeItems()), t = await h1();
-  check(`${itemId}：${expectHash} を開き、選択表示、${group} だけ展開`, (await ev("location.hash")) === expectHash && act === JSON.stringify([`nav-${itemId}`]) && (await openOnly(group)) && (!expectH1 || t === expectH1), `見出し「${t}」`);
+  check(`${itemId}：${expectHash} を開き、選択表示、全グループ開いたまま`, (await ev("location.hash")) === expectHash && act === JSON.stringify([`nav-${itemId}`]) && (await allOpen()) && (!expectH1 || t === expectH1), `見出し「${t}」`);
 };
 await goto("#irrbb"); await loaded();
 await visit("yield-analysis", "#curves", "イールドカーブ", "market");
@@ -127,7 +127,7 @@ await shot("nav4_rates.png");
 await goto("#offers"); await loaded(); await waitFor(q('[data-testid="view-trs"]'));
 check("オファーシートに「関連画面」として TRS契約書連携", (await ev(`document.querySelector('[data-testid="view-tabs"]').getAttribute("aria-label")`)) === "関連画面");
 await click('[data-testid="view-trs"]'); await sleep(600);
-check("TRS契約書連携が開き、オファーシートの項目が選択されたまま", (await ev("location.hash")) === "#trs" && JSON.stringify(await activeItems()) === '["nav-offer-sheet"]' && (await openOnly("offer")), await h1());
+check("TRS契約書連携が開き、オファーシートの項目が選択されたまま", (await ev("location.hash")) === "#trs" && JSON.stringify(await activeItems()) === '["nav-offer-sheet"]' && (await allOpen()), await h1());
 
 await goto("#asw"); await loaded(); await waitFor(q('[data-testid="view-bond"]'));
 await click('[data-testid="view-bond"]'); await sleep(600);
@@ -151,7 +151,6 @@ if (rowsN > 0) {
 // ---------- 7. 準備中
 for (const [item, hash, title, grp] of [["issuer-ratings", "#issuer-ratings", "発行体格付け推移", "market"], ["credit-var", "#credit-var", "クレジットVaR", "risk"], ["rating-limits", "#rating-limits", "格付け枠管理", "risk"]]) {
   await goto("#curves"); await loaded();
-  if ((await expanded(grp)) !== "true") await click(`[data-testid="group-toggle-${grp}"]`);
   const badge = await ev(`!!${q(`[data-testid="nav-${item}"] .sidebar-soon`)}`);
   await click(`[data-testid="nav-${item}"]`); await sleep(500);
   check(`${title}：メニューに「準備中」、画面にも「準備中」`, badge && (await ev("location.hash")) === hash && (await ev(`!!document.querySelector('[data-testid="placeholder"]')`)) && JSON.stringify(await activeItems()) === JSON.stringify([`nav-${item}`]));
