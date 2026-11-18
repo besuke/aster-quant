@@ -1,6 +1,6 @@
 # Bloomberg Data License（REST、HistoryRequest）からの取得。
 #
-# 移植元：Riemann tools/market/fetch_bbg_dl_ois.R（コミット 82869a1）。スクリプトを関数に分けただけで、要求本文・エンドポイント・
+# 移植元：rmql tools/market/fetch_bbg_dl_ois.R（コミット 82869a1）。スクリプトを関数に分けただけで、要求本文・エンドポイント・
 # トークンの流れ・正規化の列は変えていない。移植元の状態は【設計案】のままである：
 #   - 要求本文・エンドポイント・トークンの流れは Bloomberg の公開サンプルの記憶に基づき、実際のアカウントで確かめていない
 #   - ティッカーは候補で、Data License 側での確認が必要
@@ -10,7 +10,7 @@
 #   取得（ここ）        ：fetch_bbg_records_QL()  … live（Data License）／synthetic（通信しない）
 #   正規化（ここ）      ：normalize_bbg_history_QL() … 長い形の表 date, currency, index, tenor, ticker, field, value, source
 #   A1 への受け渡し     ：R/bloomberg/bbg_to_market_data.R … 正規化した表 → A1 の OIS 気配ファイルの形
-#   評価                ：A1 の pricing_riemann.R が RiemannFinMath に渡す
+#   評価                ：A1 の pricing_rmql.R が rmql に渡す
 # INDIGO へ移すときは、取得の関数を INDIGO の呼び出しに替え、正規化した表の列を保てば、後ろの処理は変えなくてよい。
 #
 # 接続設定・認証情報・取得したデータはローカルだけに置く（Git に入れない。.gitignore）：

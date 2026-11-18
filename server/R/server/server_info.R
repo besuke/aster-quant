@@ -1,6 +1,6 @@
 # Infrago Quant Server の接続確認ページの API（GET /api/server）。Carmine Studio の接続ページにならう。
 # サーバーが何で、どこで待ち受け、利用者にどの URL を案内するか、どれだけ動いているか、どの経路に答えるか、
-# RiemannFinMath の小さな計算にかかる時間（ネットワークの往復と分けて見るため）を返す。
+# rmql の小さな計算にかかる時間（ネットワークの往復と分けて見るため）を返す。
 #
 # 案内用の URL：配備先のホスト名（DNS で解決できる名前）または LAN の IP アドレス。環境変数 QUANTLET_PUBLIC_HOST
 # （scripts/InfragoQuant.ps1 が配備設定 config/deploy.local.env から渡す）を使い、なければ LAN の IPv4 を探す。127.0.0.1 はこの PC の中だけで使う。
@@ -51,8 +51,8 @@ public_host_QL <- function() {
 server_probe_QL <- function(repeats = 20L) {
   returns <- matrix(sin(seq_len(240)) / 50, 60, 4, dimnames = list(NULL, c("a", "b", "c", "d")))
   t0 <- as.numeric(Sys.time())
-  runs <- purrr::map(seq_len(repeats), \(k) RiemannFinMath::compute_return_moments(returns))
-  list(calculation = "RiemannFinMath::compute_return_moments（60期間 × 4資産）", repeats = repeats,
+  runs <- purrr::map(seq_len(repeats), \(k) rmql::compute_return_moments(returns))
+  list(calculation = "rmql::compute_return_moments（60期間 × 4資産）", repeats = repeats,
        seconds_each = (as.numeric(Sys.time()) - t0) / repeats, check_value = unname(purrr::pluck(runs, repeats, "mean", "a")))
 }
 
@@ -62,8 +62,8 @@ server_info_QL <- function(host, port, static_dir) {
   lan <- identical(host, "0.0.0.0")
   list(
     name = "Infrago Quant Server", status = "ok", app_version = curie_version_line_Curie(),
-    engine = list(name = "RiemannFinMath", version = as.character(utils::packageVersion("RiemannFinMath")),
-                  library = dirname(system.file(package = "RiemannFinMath"))),
+    engine = list(name = "rmql", version = as.character(utils::packageVersion("rmql")),
+                  library = dirname(system.file(package = "rmql"))),
     runtime = list(r_version = paste(R.version$major, R.version$minor, sep = "."), platform = R.version$platform,
                    pid = Sys.getpid(), logical_processors = parallel::detectCores(logical = TRUE)),
     listen = list(host = host, port = port, lan = lan, serves_page = !is.na(static_dir)),

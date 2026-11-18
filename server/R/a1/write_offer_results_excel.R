@@ -83,7 +83,7 @@ result_column_notes_Curie <- function(workflow) {
     "評価日" = paste(format(sort(unique(results$valuation_date))), collapse = ", "),
     "単位" = "スプレッドはbp（列名の末尾 _bp）、利回りは%（_pct）、価格は額面100当たり",
     "市場データの日付" = "評価日と同じ市場日のデータだけを使う。不一致・不足を別の日付で補わない（「市場データ」シート）",
-    "自国ASW" = "RiemannFinMath::compute_ois_asset_swap()：債券CFを支払い、翌日物＋スプレッドを受け取る。オファー単価はクリーン価格",
+    "自国ASW" = "rmql::compute_ois_asset_swap()：債券CFを支払い、翌日物＋スプレッドを受け取る。オファー単価はクリーン価格",
     "ASWの払い方" = paste0("翌日物レッグ ", settings$asw_payment_frequency, "、支払ラグ ", settings$asw_payment_lag,
                       "。", settings$assumption_note, "（pricing_settings_Curie() で変更可）"),
     "計算終期" = "最終償還日。変動利付・期限前償還条項付き等は計算関数の対象外とし、固定利付債として代用しない（unsupported）"
@@ -92,7 +92,7 @@ result_column_notes_Curie <- function(workflow) {
     c(
       "JGBスプレッド" = paste("（対象JPY債の複利利回り − 同じ償還日のJGB複利利回り）×100 bp。",
                              "JGB利回りは同一市場日・同一受渡日・同一償還日を算術平均し、残存年数で自然3次スプライン補間（外挿なし）"),
-      "複利利回りの規約" = paste0("対象債・JGBとも RiemannFinMath::compute_compound_yield_from_price()、クリーン単価、同じ受渡日、",
+      "複利利回りの規約" = paste0("対象債・JGBとも rmql::compute_compound_yield_from_price()、クリーン単価、同じ受渡日、",
                           "複利年", settings$jgb_compound_frequency, "回。受渡日・利払回数・複利回数が違うJGBは比較に使わない")
     )
   } else {

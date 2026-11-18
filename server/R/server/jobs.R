@@ -1,5 +1,5 @@
 # HTTP API（server.R）が呼ぶ処理：A1・C1・Bloomberg。要求は list（JSON を読んだもの）、戻り値は JSON にする list。
-# 金融計算は RiemannFinMath、データの取込・整形・結合・集計は Curie から移植した R の関数で行う。
+# 金融計算は rmql、データの取込・整形・結合・集計は Curie から移植した R の関数で行う。
 # root は server フォルダー（load_quantlet() が QUANTLET_ROOT に設定する）。
 
 # ---- A1 ------------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ job_bbg_status <- function(req) {
   list(config = cfg[c("credentials_set", "credentials_file_exists", "catalog", "httr2_installed")],
        live_ready = cfg$credentials_file_exists && cfg$httr2_installed,
        universe = bbg_ois_universe_QL(),
-       note = "要求本文・エンドポイント・ティッカーは未確認の設計案（Riemann tools/market/fetch_bbg_dl_ois.R から移植）。live は未実行")
+       note = "要求本文・エンドポイント・ティッカーは未確認の設計案（rmql tools/market/fetch_bbg_dl_ois.R から移植）。live は未実行")
 }
 
 job_bbg_ois <- function(req) {

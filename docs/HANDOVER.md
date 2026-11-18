@@ -7,7 +7,7 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 - リポジトリ：<https://github.com/besuke/infrago>（旧名 `infrago-quant`。古い URL は転送される）。2026-11-18 の確認では**公開（public）**で、CLAUDE.md の「private」と食い違っている。意図した公開かは未確認。
 - ブランチ：作業は `rename-infrago-quant-and-analytics`（PR #1、`main` 向け、未マージ）。`main` はまだ改名前の `7cb0cc3`。続きは、この PR をマージしたあとの `main` か、このブランチから始める。
 - 画面：4グループのサイドバー（`ui/src/nav.ts`）。実装済みはイールドカーブ分析（イールドカーブ・TONA OIS・日米の国債金利）、レポートサマリー、オファーシート（関連：TRS契約書連携）、アセットスワップ（関連：債券キャッシュフロー・国債先物・CTD）、早期償還、IRRBB。**準備中**は発行体格付け推移、クレジットVaR（関連のクレジット・CDS は動く）、格付け枠管理。
-- 計算は R（`server/`、RiemannFinMath）、画面は React（`ui/`）。画面は計算しない。
+- 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。
 
 ## 新しい PC で動かす
 
@@ -18,7 +18,7 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 | Git | — | |
 | Node.js | 23.6 以上 | 確認は 26.13.0 |
 | R | 4.x | **版ごとにパッケージの置き場が違う**（下の「R の版が違うとき」） |
-| RiemannFinMath | 0.3.0 以上 | 確認は **0.3.2**。Riemann は 0.3.4 まで進んでいるが、0.3.4 では未確認 |
+| rmql | 0.3.0 以上 | 確認は **0.3.2**。rmql は 0.3.4 まで進んでいるが、0.3.4 では未確認 |
 
 ### 手順
 
@@ -35,7 +35,7 @@ cd ui; npm install; cd ..          # 画面の部品（初回だけ）
 
 ### R のパッケージを入れる
 
-必須（`server/scripts/check_r.R` が確かめる 15 個）：`httpuv`、`jsonlite`、`dplyr`、`purrr`、`tibble`、`tidyr`、`stringr`、`readr`、`readxl`、`writexl`、`xml2`、`zip`、`rlang`、`collapse`、`RiemannFinMath`。任意（その機能を使うときだけ。TRS 契約書連携・レポート・Bloomberg 取得）：`pdftools`、`openssl`、`curl`、`processx`、`ps`、`httr2`、`flextable`、`stringi`、`later`、`future`、`furrr`。
+必須（`server/scripts/check_r.R` が確かめる 15 個）：`httpuv`、`jsonlite`、`dplyr`、`purrr`、`tibble`、`tidyr`、`stringr`、`readr`、`readxl`、`writexl`、`xml2`、`zip`、`rlang`、`collapse`、`rmql`。任意（その機能を使うときだけ。TRS 契約書連携・レポート・Bloomberg 取得）：`pdftools`、`openssl`、`curl`、`processx`、`ps`、`httr2`、`flextable`、`stringi`、`later`、`future`、`furrr`。
 
 ```r
 install.packages(c("httpuv", "jsonlite", "dplyr", "purrr", "tibble", "tidyr", "stringr", "readr",
@@ -44,18 +44,18 @@ install.packages(c("httpuv", "jsonlite", "dplyr", "purrr", "tibble", "tidyr", "s
 install.packages(c("pdftools", "openssl", "curl", "processx", "ps", "httr2", "flextable", "stringi", "later", "future", "furrr"))
 ```
 
-### RiemannFinMath を入れる
+### rmql を入れる
 
-Riemann は別のリポジトリ（<https://github.com/besuke/Riemann>）。入れ方の正本は Riemann の `docs/client_guide.md`。要点：
+rmql は別のリポジトリ（<https://github.com/besuke/rmql>）。入れ方の正本は rmql の `docs/client_guide.md`。要点：
 
 ```r
 install.packages(
-  "RiemannFinMath",
-  repos = c("https://besuke.github.io/Riemann", "https://cloud.r-project.org")
+  "rmql",
+  repos = c("https://besuke.github.io/rmql", "https://cloud.r-project.org")
 )
 ```
 
-- **公開しているバイナリは Windows の R 4.6 用だけ**（Riemann 側の記録）。Rust も Rtools も要らない。
+- **公開しているバイナリは Windows の R 4.6 用だけ**（rmql 側の記録）。Rust も Rtools も要らない。
 - `remotes::install_github()` は使わない（常にソースからビルドするので Rust が要る）。
 - 入れ替えるときは、その DLL を使っている R のプロセス（Infrago Quant の R API、RStudio の R セッションなど）を**先に止める**。
 
@@ -63,9 +63,9 @@ install.packages(
 
 - **使う R は自動で決まる**（`ui/scripts/rscript.mjs`）：環境変数 `RSCRIPT` → `config/settings.local.env` の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R。複数の版が入っていて、最新でない R を使うときだけ指定する（`Copy-Item config/settings.example.env config/settings.local.env` して `RSCRIPT=` に Rscript.exe のパスを書く）。使う R と版は、起動のたびに表示される。
 - **パッケージは R の版（4.5、4.6 のような 2 桁目）ごとに別の置き場に入る**。R の版を替えたら、上の `install.packages(...)` をその R でやり直す。
-- **R 4.6 以外では、RiemannFinMath は公開バイナリがない**。次のどれかになる。
+- **R 4.6 以外では、rmql は公開バイナリがない**。次のどれかになる。
   1. R 4.6 を入れる（いちばん簡単。複数の版は共存できる。`RSCRIPT` で選ぶ）。
-  2. その版でソースからビルドする（Rust と Rtools が要る）。Riemann の `docs/client_guide.md` は「確認していない」としている。
+  2. その版でソースからビルドする（Rust と Rtools が要る）。rmql の `docs/client_guide.md` は「確認していない」としている。
   3. 手元の PC では、まず `-Mode check` で、選ばれた R と不足を確かめる（足りなければ、選ばれた R と不足のパッケージ、この PC にある別の R の一覧が出る）。
 - Infrago Quant 側の R のコードは R 4.6.0 で確認した。ほかの版での動作は**確認していない**（`R 4.x` と書いているのは、版を決め打ちしないという意味で、4.x で動くという確認ではない）。
 
@@ -94,7 +94,7 @@ install.packages(
 | `.\start_infrago.ps1 -Mode resume` | Claude Code をこのフォルダーで開く |
 
 - 起動の処理の本体は `scripts/InfragoQuant.ps1`（`start_infrago.ps1` から呼ばれる）。
-- **サーバーとクライアントを別の PC で動かす**：サーバーの PC（R・RiemannFinMath が要る）で `.\scripts\start_infrago_server.ps1`。R API を 0.0.0.0:8790 で起動し、クライアントに渡すアドレス（`http://<この PC>:8790`）を表示する。クライアントの PC（Node.js と `ui/` だけでよい。R は要らない）で `.\scripts\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`。画面（127.0.0.1:8091）は、`/api` をそのアドレスへ転送する。`-ApiUrl` の代わりに `config/deploy.local.env` の `INFRAGO_QUANT_API_URL` でもよい。サーバーの PC では Windows ファイアウォールで 8790 の受信を許可する。
+- **サーバーとクライアントを別の PC で動かす**：サーバーの PC（R・rmql が要る）で `.\scripts\start_infrago_server.ps1`。R API を 0.0.0.0:8790 で起動し、クライアントに渡すアドレス（`http://<この PC>:8790`）を表示する。クライアントの PC（Node.js と `ui/` だけでよい。R は要らない）で `.\scripts\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`。画面（127.0.0.1:8091）は、`/api` をそのアドレスへ転送する。`-ApiUrl` の代わりに `config/deploy.local.env` の `INFRAGO_QUANT_API_URL` でもよい。サーバーの PC では Windows ファイアウォールで 8790 の受信を許可する。
   - 確認済み（2026-11-18）：1 台の PC の中で、LAN の IP アドレス経由でサーバーとクライアントをつなぎ、画面から `/api/health` が通ることを確かめた。**別の PC どうしでの接続（ファイアウォール越し）は未確認**
   - アドレスは **LAN の IP アドレス**（`http://192.168.x.x:8790`）を正とする。`127.0.0.1`・`localhost` は別の PC では使えず、クライアントのスクリプトも拒否する
   - コンピューター名・DNS 名（`-ApiUrl http://<名前>:8790`）は、2026-11-19 にサーバーの PC 自身から試したところ応答しなかった。名前が先に IPv6 に解決され、R API は IPv4（0.0.0.0）でしか待ち受けないため。名前を使うなら、DNS に IPv4 の A レコードを登録して IPv4 に解決させるか、IPv6 での待ち受けを調べる（未調査）
@@ -138,15 +138,15 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 | `ui/src/charts/` | グラフ（Carmine Studio から写した `LineChart`・`FlowChart`） |
 | `ui/src/styles.css` | 配色（深い緑）、Aqua 風の部品、サイドバー、グラフ |
 | `server/server.R` | HTTP API の経路 |
-| `server/R/analytics/` | 上の6画面の計算（RiemannFinMath を呼ぶ）。読み込みは `server/R/load_quantlet.R` の `.quantlet_modules` |
+| `server/R/analytics/` | 上の6画面の計算（rmql を呼ぶ）。読み込みは `server/R/load_quantlet.R` の `.quantlet_modules` |
 | `server/data/demo/` | 架空のデモデータ（先物の入力は `demo/futures/inputs.json`） |
 | `ui/scripts/rscript.mjs`、`run-r.mjs` | 使う R の決め方と、起動前の確認 |
 
-画面を足す手順：R の計算を `server/R/analytics/` に書く（金融計算は RiemannFinMath。足りなければ Riemann に足す）→ `load_quantlet.R` の `analytics` に足す → `server.R` に経路を足す → `ui/src/analyticsApi.ts` に型と呼び出し → `ui/src/analytics/` に画面 → `ui/src/nav.ts` に項目。
+画面を足す手順：R の計算を `server/R/analytics/` に書く（金融計算は rmql。足りなければ rmql に足す）→ `load_quantlet.R` の `analytics` に足す → `server.R` に経路を足す → `ui/src/analyticsApi.ts` に型と呼び出し → `ui/src/analytics/` に画面 → `ui/src/nav.ts` に項目。
 
 ## 決めたこと（要点。全文は `CLAUDE.md`）
 
-- 計算は RiemannFinMath、R の API は取り込み・整形・集計・検証、画面は表示だけ（計算し直さない）。
+- 計算は rmql、R の API は取り込み・整形・集計・検証、画面は表示だけ（計算し直さない）。
 - 市場データは、評価日と同じ市場日のものだけを使い、別の日付で補わない。
 - Aladdin への送信はしない（下書きのみ）。Bloomberg の実接続は未実施（将来 INDIGO に移す）。
 - 画面は Carmine Studio（`../carmine-studio`）と同じ構成・同じ Aqua 風の部品で、色は深い緑。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。
@@ -161,9 +161,9 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 4. PR #1 をマージする。
 5. **Carmine Studio のフォワードの直し**（未着手）：Carmine の yield-curves は原稿の2つの補間（ゼロ金利の線形補間、割引係数の対数線形補間）を再現する作りで、フォワードが折れ線・階段状になる。単調な対数3次補間のカーブを3つ目として足し、メインのグラフはそちらにする。原稿の2つは照合のために残す（照合の差 0 のテストを壊さない）。
 6. Carmine Studio の残りの画面（ブラック・モデル、金利モデル、キャリブレーション、PRDC など）を移すか決める。移すのは実務で使うものだけ。
-7. 準備中の3項目（発行体格付け推移、クレジットVaR、格付け枠管理）。RiemannFinMath にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
-8. 数値の確認が残っているもの：TONA OIS は Infrago のデモ気配（Carmine は別の気配）なので、Carmine との数値照合をしていない。早期償還のコール判断の境界は、RiemannFinMath の `compute_hull_white_callable_bond_decisions`（2026-11-19 に Riemann に追加、0.3.5 で公開予定・未公開）で計算する。この版が入っていない PC では早期償還の債券タブが失敗する。公開までは、Riemann で `R CMD INSTALL -l <別ライブラリー> crates/riemann-r` を実行し、`R_LIBS=<別ライブラリー>` を付けて起動する。静的 OAS・ダイナミック OAS・Hull-White の経路は移した（2026-11-19、`npm run test:early-redemption` で 12 項目合格。静的 OAS は Carmine の照合済みの値と最大 0.26 bp 差で、原因は原稿の `uniroot` の精度。経路は RiemannFinMath の乱数なので原稿の経路とは別）。CDS の Hazard Rate は、Carmine と同じ `uniroot` で求めている（RiemannFinMath の `bootstrap_hazard_curve` は契約の既定が違うので使っていない）。
-9. Riemann の新しい版（0.3.4。OIS スワップの日付を期間から作る関数など）への更新。TONA OIS の `tona_swap_dates_QL` を置き換えられる可能性がある。更新後は、`npm run test:irrbb` と、各画面の既定値の照合をやり直す。
+7. 準備中の3項目（発行体格付け推移、クレジットVaR、格付け枠管理）。rmql にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
+8. 数値の確認が残っているもの：TONA OIS は Infrago のデモ気配（Carmine は別の気配）なので、Carmine との数値照合をしていない。早期償還のコール判断の境界は、rmql の `compute_hull_white_callable_bond_decisions`（2026-11-19 に rmql に追加、0.3.5 で公開予定・未公開）で計算する。この版が入っていない PC では早期償還の債券タブが失敗する。公開までは、rmql で `R CMD INSTALL -l <別ライブラリー> crates/rmql-r` を実行し、`R_LIBS=<別ライブラリー>` を付けて起動する。静的 OAS・ダイナミック OAS・Hull-White の経路は移した（2026-11-19、`npm run test:early-redemption` で 12 項目合格。静的 OAS は Carmine の照合済みの値と最大 0.26 bp 差で、原因は原稿の `uniroot` の精度。経路は rmql の乱数なので原稿の経路とは別）。CDS の Hazard Rate は、Carmine と同じ `uniroot` で求めている（rmql の `bootstrap_hazard_curve` は契約の既定が違うので使っていない）。
+9. rmql の新しい版（0.3.4。OIS スワップの日付を期間から作る関数など）への更新。TONA OIS の `tona_swap_dates_QL` を置き換えられる可能性がある。更新後は、`npm run test:irrbb` と、各画面の既定値の照合をやり直す。
 10. 機能ごとの未了（実データ、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API など）は、下の「機能ごとの未了」。そこにないもの：金融庁の IRRBB フロアの扱いの確認（既定はフロアなし）、Curie にある Aladdin の実 URL の扱い。
 
 ### 機能ごとの未了
@@ -174,11 +174,11 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 - テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認（`npm run test:nav`）は手で実行する
 - レポート掲示板：本番の発行体ID体系、承認済みの AI API（配布用。C1 と同じく未設定）、レポートの削除・再読解、オファーシートの Excel 出力からのレポートへのリンク（Curie の A3 の構想）
 - 日米国債金利：取得の定期実行（今は画面のボタンで取得する）
-- サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、RiemannFinMath に Node 版がないうちは、計算は R に残す
+- サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、rmql に Node 版がないうちは、計算は R に残す
 
 ## 気をつけること
 
-- **R の API（8790）が RiemannFinMath の DLL を使っている**間は、RiemannFinMath を入れ替えられない。先に R API を止める。
+- **R の API（8790）が rmql の DLL を使っている**間は、rmql を入れ替えられない。先に R API を止める。
 - 起動したウィンドウは、Claude Code のツールから起動すると、呼び出しが終わったときに閉じられることがある。確認のために立ち上げたサーバーは、確認が終わったら止める（8790・8091 が空いていることを確かめる）。
 - `npm run test:nav` は、サーバーを前もって起動しておく。オファーの計算結果がないと、アセットスワップの銘柄の一覧は空になる（`POST /api/a1/run` で円債のデモを計算できる）。
 - ブラウザー操作のツールは使えなかったので、画面の確認は、ヘッドレス Chrome を DevTools Protocol で操作して行っている（`ui/tests/nav.e2e.mjs`）。

@@ -3,7 +3,7 @@ import { api, fmt, type OisCurves, type OisDataset } from "./api";
 import YieldCurvePage from "./YieldCurvePage";
 
 // 日米の国債金利・OIS。国債の公表利回り（比較用）と評価用の OIS（オファーシートの ASW が使うカーブ）を切り替えて見る。
-// どちらの表示も一度取得したデータを保ち、切り替えで取り直さない。計算はサーバー（OIS は RiemannFinMath）。
+// どちらの表示も一度取得したデータを保ち、切り替えで取り直さない。計算はサーバー（OIS は rmql）。
 
 type View = "yields" | "ois";
 
@@ -92,7 +92,7 @@ function OisView() {
       </div>
       {error && <div className="error">{error}</div>}
       {datasets && !datasets.length && <p className="muted">保存済みの OIS がない。</p>}
-      {!data && !error && datasets?.length ? <p className="muted">RiemannFinMath でカーブを作っている…</p> : null}
+      {!data && !error && datasets?.length ? <p className="muted">rmql でカーブを作っている…</p> : null}
       {data && (
         <div className="two-col">
           <div className="panel-col">

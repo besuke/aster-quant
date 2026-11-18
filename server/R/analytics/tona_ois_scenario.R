@@ -1,7 +1,7 @@
 # TONA OIS カーブとスワップのシナリオ。Carmine Studio の /api/scenario（yield-curve-ois）を移し、気配は Infrago Quant の
 # 保存済み OIS（今はデモの架空データ、data/demo/a1/market/demo_ois_JPY_*.txt）から読む。年限を1つ選んで気配を動かし、
 # カーブ（割引係数・ゼロ金利・1暦日フォワード）と、基準カーブのパーレートで固定した OIS（固定払い・TONA 受け）の PV の変化を返す。
-# 計算はすべて RiemannFinMath（ブートストラップの条件は Carmine Studio と同じ：Japan、スポット開始2日、年1回払い、支払ラグ0、
+# 計算はすべて rmql（ブートストラップの条件は Carmine Studio と同じ：Japan、スポット開始2日、年1回払い、支払ラグ0、
 # MonotonicLogCubic、精度 1e-12）。
 #
 # POST /api/analytics/tona-ois {"datasetId":"demo_20261006","bumpTenor":"5Y","bumpBp":1,"swapTenor":"7Y","notional":1e10}
@@ -28,41 +28,41 @@ tona_quotes_QL <- function(dataset_id) {
 
 tona_build_curve_QL <- function(ev, tenors, rates) {
   cv <- TONA_CONV_QL
-  inst <- RiemannFinMath::create_ois_instruments(tenors, rates, cv$settlement_days, cv$payment_frequency, cv$payment_lag)
-  RiemannFinMath::bootstrap_ois_curve(ev, ev, cv$index, cv$curve_day_count, inst, interpolation = cv$interpolation, accuracy = cv$accuracy)
+  inst <- rmql::create_ois_instruments(tenors, rates, cv$settlement_days, cv$payment_frequency, cv$payment_lag)
+  rmql::bootstrap_ois_curve(ev, ev, cv$index, cv$curve_day_count, inst, interpolation = cv$interpolation, accuracy = cv$accuracy)
 }
 
 # スワップの日付：スポット（評価日を調整し2営業日先）から年数ぶん（Carmine Studio と同じ決め方）
 tona_swap_dates_QL <- function(ev, years) {
-  spot <- RiemannFinMath::compute_advanced_date("japan", RiemannFinMath::compute_adjusted_date("japan", ev), "2D")
+  spot <- rmql::compute_advanced_date("japan", rmql::compute_adjusted_date("japan", ev), "2D")
   list(effective = as.Date(spot), termination = seq(as.Date(spot), by = paste(years, "years"), length.out = 2L)[2L])
 }
 
 tona_case_QL <- function(ev, tenors, rates, dates, fixed_rate, notional) {
   curve <- tona_build_curve_QL(ev, tenors, rates)
-  rep <- RiemannFinMath::get_quote_repricing(curve)
-  nodes <- RiemannFinMath::get_discount_nodes(curve)
+  rep <- rmql::get_quote_repricing(curve)
+  nodes <- rmql::get_discount_nodes(curve)
   last <- max(as.Date(rep$pillar_date))
   grid <- sort(unique(c(seq(ev, last - 1L, by = "1 week"), as.Date(rep$pillar_date) - 1L)))
   grid <- grid[grid + 1L <= last]
-  zero_at <- function(d) { z <- RiemannFinMath::compute_zero_rate(curve, d, "actual_365_fixed", "continuous"); z[d == ev] <- NA_real_; z }
-  swap <- RiemannFinMath::create_ois_swap("payer", notional, dates$effective, dates$termination, "tonar", fixed_rate,
+  zero_at <- function(d) { z <- rmql::compute_zero_rate(curve, d, "actual_365_fixed", "continuous"); z[d == ev] <- NA_real_; z }
+  swap <- rmql::create_ois_swap("payer", notional, dates$effective, dates$termination, "tonar", fixed_rate,
                                           fixed_frequency = 1L, overnight_frequency = 1L, payment_lag = 0L)
-  value <- RiemannFinMath::compute_ois_swap_value(swap, curve, ev)
-  flows <- RiemannFinMath::compute_ois_swap_cashflows(swap, curve, ev)
+  value <- rmql::compute_ois_swap_value(swap, curve, ev)
+  flows <- rmql::compute_ois_swap_cashflows(swap, curve, ev)
   node_t <- as.numeric(as.Date(nodes$date) - ev) / 365
   list(
     instruments = data.frame(tenor = rep$tenor, rate = rep$rate, pillar_date = format(as.Date(rep$pillar_date)),
                              implied_rate = rep$implied_rate, reproduction_error = rep$reproduction_error),
     nodes = data.frame(date = format(as.Date(nodes$date)), time = node_t, discount = nodes$discount, zero_continuous = zero_at(as.Date(nodes$date))),
-    curve_points = data.frame(date = format(grid), time = as.numeric(grid - ev) / 365, discount = RiemannFinMath::compute_discount(curve, grid),
+    curve_points = data.frame(date = format(grid), time = as.numeric(grid - ev) / 365, discount = rmql::compute_discount(curve, grid),
                               zero_continuous = zero_at(grid),
-                              forward_1d_simple = RiemannFinMath::compute_forward_rate(curve, grid, grid + 1L, "actual_365_fixed", "simple")),
+                              forward_1d_simple = rmql::compute_forward_rate(curve, grid, grid + 1L, "actual_365_fixed", "simple")),
     swap = list(npv = value$npv, fixed_leg_npv = value$fixed_leg_npv, overnight_leg_npv = value$overnight_leg_npv,
                 fixed_leg_bps = value$fixed_leg_bps, par_rate = value$fair_rate,
                 cashflows = data.frame(leg = flows$leg, accrual_start = format(as.Date(flows$accrual_start)), accrual_end = format(as.Date(flows$accrual_end)),
                                        payment_date = format(as.Date(flows$payment_date)), amount = flows$amount,
-                                       discount = RiemannFinMath::compute_discount(curve, as.Date(flows$payment_date))))
+                                       discount = rmql::compute_discount(curve, as.Date(flows$payment_date))))
   )
 }
 
@@ -82,9 +82,9 @@ compute_tona_ois_QL <- function(body = list()) {
   key <- paste("base", dataset_id, swap_tenor, format(notional, digits = 17))
   base <- TONA_CACHE_QL[[key]]
   if (is.null(base)) {
-    probe <- RiemannFinMath::create_ois_swap("payer", notional, dates$effective, dates$termination, "tonar", 0,
+    probe <- rmql::create_ois_swap("payer", notional, dates$effective, dates$termination, "tonar", 0,
                                              fixed_frequency = 1L, overnight_frequency = 1L, payment_lag = 0L)
-    fixed <- RiemannFinMath::compute_ois_swap_value(probe, tona_build_curve_QL(ev, q$tenor, q$rate), ev)$fair_rate
+    fixed <- rmql::compute_ois_swap_value(probe, tona_build_curve_QL(ev, q$tenor, q$rate), ev)$fair_rate
     base <- list(fixed_rate = fixed, case = tona_case_QL(ev, q$tenor, q$rate, dates, fixed, notional))
     assign(key, base, envir = TONA_CACHE_QL)
   }

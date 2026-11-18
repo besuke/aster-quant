@@ -1,4 +1,4 @@
-# 早期償還（MBS の OAS と経路）の検算（RiemannFinMath と QuantLet の集計）。
+# 早期償還（MBS の OAS と経路）の検算（rmql と QuantLet の集計）。
 #   Rscript tests/early_redemption_checks.R     （どのフォルダーからでもよい。ui/ からは npm run test:early-redemption）
 # この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする。
 local({
@@ -15,21 +15,21 @@ check <- function(name, ok, detail = "") {
 
 d <- compute_early_redemption_QL(list())
 m <- d$mbs
-pool <- RiemannFinMath::create_mbs_pass_through(100, 0.05, 0.045, maturity_months = 360L, psa_multiplier = 1, incentive_sensitivity = 20,
+pool <- rmql::create_mbs_pass_through(100, 0.05, 0.045, maturity_months = 360L, psa_multiplier = 1, incentive_sensitivity = 20,
                                                 refinancing_cost_rate = 0.005, cpr_cap = 0.6, amortization = "fixed_payment")
 
-# 1. 静的 OAS：Carmine Studio が GaussQuant（原稿の uniroot）に照合した値と、0.5 bp 以内（原因は uniroot の精度。Riemann docs/spec_mbs.md）
+# 1. 静的 OAS：Carmine Studio が GaussQuant（原稿の uniroot）に照合した値と、0.5 bp 以内（原因は uniroot の精度。rmql docs/spec_mbs.md）
 ref <- c(92.68562256278896, 9.033250123953447, 113.39435844300418, -10.5489098569278, 130.1085394819889, -26.010199593171425)
 diff <- abs(m$static$table$oas_bp - ref)
 check("静的 OAS 6 点が Carmine の照合済みの値と 0.5 bp 以内", all(diff < 0.5), sprintf("最大差 %.3f bp", max(diff)))
 check("静的 OAS の表は PSA 0・50・100% と価格 95・105 の 6 行", nrow(m$static$table) == 6L && setequal(m$static$table$psa_percent, c(0, 50, 100)))
 
 # 2. ダイナミック OAS：そのスプレッドを短期金利に加えると、経路の平均価格が市場価格に一致する
-rates <- RiemannFinMath::generate_hull_white_monthly_rates(20L, 360L, 0.02, 0.15, 0.012, seed = 48L)
+rates <- rmql::generate_hull_white_monthly_rates(20L, 360L, 0.02, 0.15, 0.012, seed = 48L)
 refi <- pmax(rates + 0.03, 0)
-back <- mean(RiemannFinMath::compute_mbs_path_values(pool, rates + m$oas$dynamic_20_bp / 1e4, refi)$price)
+back <- mean(rmql::compute_mbs_path_values(pool, rates + m$oas$dynamic_20_bp / 1e4, refi)$price)
 check("ダイナミック OAS（20本）を加えた経路の平均価格が市場価格（110）に一致", abs(back - m$oas$price) < 1e-6, sprintf("平均 %.9f", back))
-flat_back <- RiemannFinMath::compute_mbs_path_values(pool, matrix(0.04 + m$oas$static_bp / 1e4, 1, 360), matrix(0.05, 1, 360))$price
+flat_back <- rmql::compute_mbs_path_values(pool, matrix(0.04 + m$oas$static_bp / 1e4, 1, 360), matrix(0.05, 1, 360))$price
 check("静的 OAS を加えた 1 本の経路の価格が市場価格（110）に一致", abs(flat_back - m$oas$price) < 1e-6, sprintf("価格 %.9f", flat_back))
 check("ダイナミック OAS は市場価格が高いほど小さい（95〜125、単調に減少）", all(diff(m$oas$by_price$dynamic_bp) < 0))
 check("静的 OAS は市場価格が高いほど小さい（95〜125、単調に減少）", all(diff(m$oas$by_price$static_bp) < 0))
@@ -53,6 +53,6 @@ out <- do.call(rbind, results)
 print(out, right = FALSE)
 dir.create("tests/results", showWarnings = FALSE)
 write.csv(out, "tests/results/early_redemption_checks.csv", row.names = FALSE, fileEncoding = "UTF-8")
-cat(sprintf("run_at: %s  RiemannFinMath %s  PASS %d / %d\n", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), packageVersion("RiemannFinMath"),
+cat(sprintf("run_at: %s  rmql %s  PASS %d / %d\n", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), packageVersion("rmql"),
             sum(out$result == "PASS"), nrow(out)))
 if (any(out$result != "PASS")) quit(status = 1)

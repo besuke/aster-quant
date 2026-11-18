@@ -4,7 +4,7 @@ import { LineChart } from "../charts/LineChart";
 import { f, NumField, PageHead, Segmented, Status, Tile, useCalc } from "./common";
 
 // 早期償還：コール条項つき債券（Hull-White 1因子）と MBS（パススルー、PSA・借換えインセンティブ）。
-// 計算はサーバー（RiemannFinMath）。Carmine Studio の early-redemption から移した。
+// 計算はサーバー（rmql）。Carmine Studio の early-redemption から移した。
 
 const DEFAULT: EarlyRedemptionRequest = {
   bond: { ratePct: 2, aPct: 15, sigmaPct: 1.2, couponPct: 3, firstCallYear: 1, callPrice: 100 },
@@ -85,7 +85,7 @@ function BondResult({ d }: { d: EarlyRedemptionResponse }) {
         <h2>コール判断：金利がどこまで下がればコールするか</h2>
         <p className="muted small">
           各コール日に、クーポンを除いた以降の支払いの価値（継続価値。以降のコールを織り込み済み）がコール価格を上回れば、発行体はコールします。クーポンが市場金利より高いと、金利が低い側でコールします。
-          境界は、コールする状態のうち最も高い短期金利です。状態は Hull-White の格子（321点）で、計算は RiemannFinMath です。
+          境界は、コールする状態のうち最も高い短期金利です。状態は Hull-White の格子（321点）で、計算は rmql です。
         </p>
         <div className="two-col">
           <LineChart title="コール判断の境界（この短期金利より低ければコール）" origin="2026-11-02" xMin={b.exercise_boundary[0].payment_time - 0.25} xMax={b.exercise_boundary[b.exercise_boundary.length - 1].payment_time + 0.25}
@@ -124,7 +124,7 @@ function BondResult({ d }: { d: EarlyRedemptionResponse }) {
   );
 }
 
-/** ダイナミック OAS（Hull-White の経路）、静的 OAS、経路での評価。計算は RiemannFinMath（compute_mbs_oas・compute_mbs_path_values）。 */
+/** ダイナミック OAS（Hull-White の経路）、静的 OAS、経路での評価。計算は rmql（compute_mbs_oas・compute_mbs_path_values）。 */
 function OasResult({ d }: { d: EarlyRedemptionResponse }) {
   const { paths, oas, static: st } = d.mbs;
   const months = paths.rates[0]?.length ?? 0;

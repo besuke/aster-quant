@@ -14,7 +14,7 @@
 #   invalid_ISIN_check_digit       ISINのチェックディジット不一致
 #   unsupported_redemption_not_100 償還額が100以外
 #   unsupported_redemption_type    満期一括償還（BULLET）以外
-#   unsupported_day_count          RiemannFinMath が扱えない（pricing_riemann.R の対応表にない）日数計算方式
+#   unsupported_day_count          rmql が扱えない（pricing_rmql.R の対応表にない）日数計算方式
 #   unsupported_calendar           calendar_from_name_Curie() が扱えないカレンダー
 #   offer_currency_mismatch        オファー表の通貨と銘柄属性の通貨が不一致
 #   sheet_issue_price_mismatch     オファー表の参考発行価格と銘柄属性の発行価格が不一致

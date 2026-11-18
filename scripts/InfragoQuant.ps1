@@ -1,5 +1,5 @@
 ﻿<#
-InfragoQuant.ps1 — Infrago Quant Server（R API、計算は RiemannFinMath）と画面（クライアント）を起動し、ブラウザーで開く。
+InfragoQuant.ps1 — Infrago Quant Server（R API、計算は rmql）と画面（クライアント）を起動し、ブラウザーで開く。
 
   .\scripts\InfragoQuant.ps1               メニュー（番号で選ぶ）
   .\scripts\InfragoQuant.ps1 -Mode dev     この PC で起動（開発用）。R API 127.0.0.1:8790（npm run api）と画面 http://127.0.0.1:8091/（npm run dev）
@@ -87,7 +87,7 @@ function Wait-Url([string] $url, [int] $seconds, [string] $name) {
   return $false
 }
 
-# R の確認（config/settings.local.env の RSCRIPT → PATH の順に選んだ R の版と、RiemannFinMath などの必須パッケージ）。
+# R の確認（config/settings.local.env の RSCRIPT → PATH の順に選んだ R の版と、rmql などの必須パッケージ）。
 # 読み込めなければ、選ばれた R と不足しているパッケージを表示して false を返す
 function Test-REnvironment {
   Say "      R を確かめています（npm run check:r）..."
@@ -255,7 +255,7 @@ while ($true) {
   $pub = Get-PublicHost
   Say ""
   Say "==============================================================" "Cyan"
-  Say " Infrago Quant 運用分析・業務支援（Infrago Quant Server、計算は RiemannFinMath）" "Cyan"
+  Say " Infrago Quant 運用分析・業務支援（Infrago Quant Server、計算は rmql）" "Cyan"
   Say "==============================================================" "Cyan"
   Say " 1  この PC で起動する：サーバー（8790）とクライアント画面（8091）を開いて表示（開発用、127.0.0.1）"
   Say " 2  社内LANで起動する：画面と API を 8091 でまとめて公開し、http://$($pub.Host):8091/ を開く"

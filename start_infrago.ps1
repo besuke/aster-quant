@@ -6,7 +6,7 @@ http://127.0.0.1:8091/）を立ち上げて、ブラウザーで開く。
   .\start_infrago.ps1 -Mode lan       社内LANで起動（画面をビルドし、画面と API を 8091 でまとめて公開する）
   .\start_infrago.ps1 -Mode server    サーバー（R API）だけを起動する
   .\start_infrago.ps1 -Mode client    クライアント（Web 画面）だけを起動してブラウザーで開く
-  .\start_infrago.ps1 -Mode check     R の確認だけ（使う R の版と、RiemannFinMath などの必須パッケージを読み込めるか）
+  .\start_infrago.ps1 -Mode check     R の確認だけ（使う R の版と、rmql などの必須パッケージを読み込めるか）
   .\start_infrago.ps1 -Mode menu      番号で選ぶメニュー
   .\start_infrago.ps1 -Mode resume    Claude Code をこのフォルダーで開く（セッションがあれば続きから）
 

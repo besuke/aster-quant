@@ -5,7 +5,7 @@ import { DateField, f, NumField, PageHead, Status, Tile, useCalc } from "./commo
 
 // イールドカーブ：ゼロ金利のノードから、割引係数の対数を単調3次補間したカーブと、平行移動したカーブを作る。
 // ノードのシミュレーション：1つのノード（例：30年）のゼロ金利を bp 動かしたときの、割引係数・ゼロクーポン債の価格（額面100）の変化。
-// 計算はサーバー（RiemannFinMath）。Carmine Studio の yield-curves から移した。
+// 計算はサーバー（rmql）。Carmine Studio の yield-curves から移した。
 
 const DEFAULT_EV = "2022-08-19";
 const DEFAULT_NODES: ZeroNode[] = [

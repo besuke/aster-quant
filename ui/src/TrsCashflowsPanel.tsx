@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api, fmt, fmtTrunc3, type SheetRow, type TrsCashflows } from "./api";
 
-// TRS 契約書の案件からキャッシュフロー・スケジュールを作る。日程と金額は RiemannFinMath がサーバーで計算し、画面は表示だけ。
+// TRS 契約書の案件からキャッシュフロー・スケジュールを作る。日程と金額は rmql がサーバーで計算し、画面は表示だけ。
 // 画面では FundingLeg と ReturnLeg を一つの表にまとめ、「レッグ」列で区別する。
 // Excel（FundingLeg・ReturnLeg の2シート）は契約書の PDF と同じベース名で保存される。
 
@@ -29,7 +29,7 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
     <section className="card" data-testid="trs-cashflows">
       <h2>キャッシュフロー・スケジュール（FundingLeg・ReturnLeg）</h2>
       <p className="small">
-        原文と照合した契約条件から、両レッグの計算期間・リセット日・金利決定日・観測期間・支払日・評価日と金額を RiemannFinMath で作り、Excel に保存する。
+        原文と照合した契約条件から、両レッグの計算期間・リセット日・金利決定日・観測期間・支払日・評価日と金額を rmql で作り、Excel に保存する。
         ファイル名は契約書の PDF と同じベース名（{baseName ?? "共通名"}）。
       </p>
       <div className="row controls">
@@ -72,7 +72,7 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
                       <th>レッグ</th>
                       <th>照合</th>
                       <th>契約</th>
-                      <th>RiemannFinMath</th>
+                      <th>rmql</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -129,7 +129,7 @@ export default function TrsCashflowsPanel({ caseId, baseName }: { caseId: string
 }
 
 
-// 両レッグを一つの表に。日程と金額は RiemannFinMath の計算結果（サーバーが返したシートの値）をそのまま並べる
+// 両レッグを一つの表に。日程と金額は rmql の計算結果（サーバーが返したシートの値）をそのまま並べる
 type Leg = "FundingLeg" | "ReturnLeg";
 interface LegRow {
   leg: Leg;

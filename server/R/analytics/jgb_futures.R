@@ -1,5 +1,5 @@
 # 国債先物と CTD（Cheapest-to-Deliver）。Carmine Studio の /api/futures/basket（jgb-futures）から移した。計算はすべて
-# RiemannFinMath。受渡適格銘柄・コンバージョンファクター・日付・Funding Rate は server/data/demo/futures/inputs.json
+# rmql。受渡適格銘柄・コンバージョンファクター・日付・Funding Rate は server/data/demo/futures/inputs.json
 # （教材の例で、現物価格と先物価格は架空）。
 #
 # POST /api/analytics/futures
@@ -16,7 +16,7 @@ fut_setup_QL <- function() {
   inp$basket$issue_date <- as.Date(inp$basket$issue_date)
   inp$basket$maturity_date <- as.Date(inp$basket$maturity_date)
   mk <- function(issue_date, maturity_date, coupon_pct) {
-    RiemannFinMath::create_fixed_rate_bond(
+    rmql::create_fixed_rate_bond(
       settlement_days = 0L, face_amount = 100, effective_date = issue_date, termination_date = maturity_date, tenor = "6M",
       calendar = "japan", convention = "unadjusted", termination_convention = "unadjusted", rule = "backward", end_of_month = FALSE,
       coupon_rate = coupon_pct / 100, day_count = FUT_DC_QL, payment_convention = "following", redemption = 100)
@@ -27,13 +27,13 @@ fut_setup_QL <- function() {
   inp
 }
 
-fut_price_QL <- function(F, bond, y) RiemannFinMath::compute_clean_price(bond, y, FUT_DC_QL, "compounded", 2L, F$valuation_date)
+fut_price_QL <- function(F, bond, y) rmql::compute_clean_price(bond, y, FUT_DC_QL, "compounded", 2L, F$valuation_date)
 fut_dv01_QL <- function(F, bond, y) (fut_price_QL(F, bond, y - 1e-4) - fut_price_QL(F, bond, y + 1e-4)) / 2
 
 fut_basket_QL <- function(F, prices, yields, futures_price, funding) {
   b <- F$basket
-  basis <- RiemannFinMath::compute_future_basket(F$bonds, prices, futures_price, b$conversion_factor, funding, F$valuation_date, F$delivery_date)
-  dur <- vapply(seq_along(F$bonds), function(i) RiemannFinMath::compute_duration(F$bonds[[i]], yields[i], FUT_DC_QL, "compounded", 2L, F$valuation_date, "modified"), 0)
+  basis <- rmql::compute_future_basket(F$bonds, prices, futures_price, b$conversion_factor, funding, F$valuation_date, F$delivery_date)
+  dur <- vapply(seq_along(F$bonds), function(i) rmql::compute_duration(F$bonds[[i]], yields[i], FUT_DC_QL, "compounded", 2L, F$valuation_date, "modified"), 0)
   dv01 <- vapply(seq_along(F$bonds), function(i) fut_dv01_QL(F, F$bonds[[i]], yields[i]), 0)
   ctd <- which(basis$ctd)[1]
   list(
@@ -73,7 +73,7 @@ compute_futures_QL <- function(body = list()) {
   if (mode == "current") {
     funding <- funding_in %||% F$funding_rate
     prices <- F$basket$fictitious_price
-    yields <- vapply(seq_along(F$bonds), function(i) RiemannFinMath::compute_yield_from_price(
+    yields <- vapply(seq_along(F$bonds), function(i) rmql::compute_yield_from_price(
       F$bonds[[i]], prices[i], "clean", FUT_DC_QL, "compounded", 2L, F$valuation_date, accuracy = 1e-8), 0)
     res <- fut_basket_QL(F, prices, yields, F$futures_price, funding)
     yield_pct <- NA

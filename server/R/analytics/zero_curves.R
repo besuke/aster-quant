@@ -1,5 +1,5 @@
 # イールドカーブ（ゼロ金利のノードから、割引カーブと平行移動したカーブを作る）。Carmine Studio の
-# /api/curves/zero（yield-curves）から移した。計算はすべて RiemannFinMath。
+# /api/curves/zero（yield-curves）から移した。計算はすべて rmql。
 #
 # POST /api/analytics/zero-curves
 #   {"evaluationDate":"2022-08-19","nodes":[{"tenor":"0D","date":"2022-08-19","ratePct":0.05},...],"shiftBp":50}
@@ -22,7 +22,7 @@ ZERO_TABLE_TENORS_QL <- c("1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", 
 
 zero_curve_points_QL <- function(curve, dates, ev) {
   t <- as.numeric(dates - ev) / 365
-  df <- RiemannFinMath::compute_discount(curve, dates)
+  df <- rmql::compute_discount(curve, dates)
   zero <- ifelse(t > 0, -log(df) / t, NA_real_)
   fwd <- c(-log(df[-1] / df[-length(df)]) / diff(t), NA_real_)  # 隣り合う格子日のあいだのフォワード（連続複利）
   data.frame(date = format(dates), time = t, discount = df, zero_continuous = zero, forward_step = fwd)
@@ -56,7 +56,7 @@ compute_zero_curves_QL <- function(body = list()) {
   if (dates[1] != ev) { tenors <- c("0D", tenors); rates <- c(rates[1], rates); dates <- c(ev, dates) }  # 基準日のノードがなければ最短の金利で足す
   t_nodes <- as.numeric(dates - ev) / 365
 
-  dcv <- RiemannFinMath::with_extrapolation(RiemannFinMath::create_discount_curve(dates, exp(-rates * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
+  dcv <- rmql::with_extrapolation(rmql::create_discount_curve(dates, exp(-rates * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
   # ノードのシミュレーションの入力（あれば）
   bump <- body$bump
   if (!is.null(bump)) {
@@ -65,7 +65,7 @@ compute_zero_curves_QL <- function(body = list()) {
     if (is.na(bump_i)) an_bad_QL(paste0("bump.tenor がノードにない: ", bump$tenor))
     bump_bp <- an_num_QL(bump, "bp", 0, -1000, 1000)
   }
-  shifted <- RiemannFinMath::create_zero_spreaded_curve(dcv, shift / 1e4, "simple", 1L)
+  shifted <- rmql::create_zero_spreaded_curve(dcv, shift / 1e4, "simple", 1L)
 
   grid <- sort(unique(c(ev + round(seq(0, max(t_nodes), length.out = 300) * 365), dates)))
   tdates <- do.call(c, lapply(ZERO_TABLE_TENORS_QL, function(x) an_add_tenor_QL(ev, x)))
@@ -87,13 +87,13 @@ compute_zero_curves_QL <- function(body = list()) {
   if (!is.null(bump)) {
     rates_b <- rates
     rates_b[bump_i] <- rates_b[bump_i] + bump_bp / 1e4
-    bcv <- RiemannFinMath::with_extrapolation(RiemannFinMath::create_discount_curve(dates, exp(-rates_b * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
+    bcv <- rmql::with_extrapolation(rmql::create_discount_curve(dates, exp(-rates_b * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
     # ノードと標準の年限を日付の順に並べる（同じ日付はノードの年限名を残す）
     all_dates <- c(dates, tdates[keep]); all_tenors <- c(tenors, ZERO_TABLE_TENORS_QL[keep]); is_node <- c(rep(TRUE, length(dates)), rep(FALSE, sum(keep)))
     ord <- order(all_dates); all_dates <- all_dates[ord]; all_tenors <- all_tenors[ord]; is_node <- is_node[ord]
     dup <- duplicated(all_dates); all_dates <- all_dates[!dup]; all_tenors <- all_tenors[!dup]; is_node <- is_node[!dup]
     t <- as.numeric(all_dates - ev) / 365
-    d0 <- RiemannFinMath::compute_discount(dcv, all_dates); d1 <- RiemannFinMath::compute_discount(bcv, all_dates)
+    d0 <- rmql::compute_discount(dcv, all_dates); d1 <- rmql::compute_discount(bcv, all_dates)
     z <- function(d) ifelse(t > 0, -log(d) / t, NA_real_)
     out$bump <- list(
       tenor = tenors[bump_i], bp = bump_bp, node_date = format(dates[bump_i]),

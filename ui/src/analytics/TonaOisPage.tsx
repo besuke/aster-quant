@@ -3,7 +3,7 @@ import { analyticsApi, type TonaCase, type TonaResponse } from "../analyticsApi"
 import { LineChart, type Series } from "../charts/LineChart";
 import { f, NumField, PageHead, pct, Segmented, Status, Tile, useCalc, yen } from "./common";
 
-// TONA OIS カーブとスワップのシナリオ。保存済みの円 OIS 気配（今はデモの架空データ）から RiemannFinMath でカーブを作り、
+// TONA OIS カーブとスワップのシナリオ。保存済みの円 OIS 気配（今はデモの架空データ）から rmql でカーブを作り、
 // 選んだ年限の気配を動かしたときのカーブと、基準カーブのパーレートで固定した OIS（固定払い・TONA 受け）の PV の変化を見る。
 // Carmine Studio の yield-curve-ois から移した。
 

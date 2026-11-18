@@ -15,7 +15,7 @@
   "issue_date", "issue_price",       # 発行日、発行単価（額面100当たり）
   "maturity_date",                   # 最終償還日
   "redemption",                      # 償還額（額面100当たり）
-  "coupon_frequency", "day_count",   # 利払回数（年）、日数計算方式（QuantLib の名前。RiemannFinMath の名前への対応は R/a1/pricing_riemann.R）
+  "coupon_frequency", "day_count",   # 利払回数（年）、日数計算方式（QuantLib の名前。rmql の名前への対応は R/a1/pricing_rmql.R）
   "settlement_days", "calendar",     # 受渡日数、営業日カレンダー
   "payment_convention", "schedule_convention", "maturity_convention", "date_generation"
 )

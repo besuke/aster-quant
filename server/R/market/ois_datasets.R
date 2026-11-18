@@ -1,11 +1,11 @@
-# 保存済みの OIS 気配（評価用）の一覧と、そのカーブ（RiemannFinMath）。オファーシートの ASW と同じ取込・同じカーブ構築を使う。
+# 保存済みの OIS 気配（評価用）の一覧と、そのカーブ（rmql）。オファーシートの ASW と同じ取込・同じカーブ構築を使う。
 #
 # データセット（基準日ごと）
 #   demo       ：data/demo/a1/market/demo_ois_<CCY>_<yyyymmdd>.txt（架空。オファーシートの計算が今使うもの）
 #   bloomberg  ：data/market/bbg_dl/a1_input/bbg_ois_<CCY>_<yyyymmdd>.txt（Bloomberg Data License から取得して変換したもの）
 #                dry run の架空の値（source が SYNTHETIC）は評価用のデータではないので一覧に出さない
-# カーブ：build_ois_curves_Curie（RiemannFinMath bootstrap_ois_curve、MonotonicLogCubic、年1回払い、支払ラグ0、外挿なし）。
-# 表示用のゼロ金利は RiemannFinMath compute_zero_rate（Actual/365 Fixed、連続複利）。
+# カーブ：build_ois_curves_Curie（rmql bootstrap_ois_curve、MonotonicLogCubic、年1回払い、支払ラグ0、外挿なし）。
+# 表示用のゼロ金利は rmql compute_zero_rate（Actual/365 Fixed、連続複利）。
 
 ois_dataset_files_QL <- function(root = Sys.getenv("QUANTLET_ROOT")) {
   find <- function(dir, prefix, kind, label) {
@@ -60,16 +60,16 @@ ois_curves_QL <- function(dataset_id, files = ois_dataset_files_QL()) {
       status = "success", index = cv$index_name, last_date = format(cv$last_date),
       quotes = tibble::tibble(tenor = rep$tenor, quote_pct = rep$rate * 100, pillar_date = format(rep$pillar_date),
                               years = as.numeric(rep$pillar_date - base_date) / 365,
-                              zero_pct = RiemannFinMath::compute_zero_rate(cv$curve, rep$pillar_date, "actual_365_fixed", "continuous") * 100,
+                              zero_pct = rmql::compute_zero_rate(cv$curve, rep$pillar_date, "actual_365_fixed", "continuous") * 100,
                               reproduction_error_bp = rep$reproduction_error * 1e4),
       curve = tibble::tibble(years = as.numeric(grid - base_date) / 365,
-                             zero_pct = RiemannFinMath::compute_zero_rate(cv$curve, grid, "actual_365_fixed", "continuous") * 100)
+                             zero_pct = rmql::compute_zero_rate(cv$curve, grid, "actual_365_fixed", "continuous") * 100)
     ))
   })
   list(id = dataset_id, kind = m[1, 2], label = f$label[1], base_date = format(base_date), curves = unname(per),
        conventions = list(
-         curve = "RiemannFinMath bootstrap_ois_curve（MonotonicLogCubic、年1回払い、支払ラグ0、外挿なし）。オファーシートの ASW と同じ構築",
-         zero = "ゼロ金利は RiemannFinMath compute_zero_rate（Actual/365 Fixed、連続複利）",
+         curve = "rmql bootstrap_ois_curve（MonotonicLogCubic、年1回払い、支払ラグ0、外挿なし）。オファーシートの ASW と同じ構築",
+         zero = "ゼロ金利は rmql compute_zero_rate（Actual/365 Fixed、連続複利）",
          note = "評価用の OIS カーブ。国債の公表利回りとは定義が違う（比較の目的が違う）"))
 }
 

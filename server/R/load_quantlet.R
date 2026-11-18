@@ -3,18 +3,18 @@
 #   source("C:/AnalyticFin/Projects/QuantLet/server/R/load_quantlet.R", encoding = "UTF-8"); load_quantlet()
 #
 # R/common/  Curie の z0_utility から写した共通関数（取込・変換・補間・Excel 書式・コンソール表示・版）と環境の記録
-# R/a1/      A1 オファーシート（データ処理は Curie から写した。計算は pricing_riemann.R が RiemannFinMath を呼ぶ）
+# R/a1/      A1 オファーシート（データ処理は Curie から写した。計算は pricing_rmql.R が rmql を呼ぶ）
 # R/c1/      C1 TRS 確認書（Curie の c1_trs_terms をそのまま写し、環境変数名だけ QUANTLET_* に変えた）
-# R/bloomberg/ Bloomberg Data License からの取得（Riemann tools/market/fetch_bbg_dl_ois.R を関数に分けたもの）
+# R/bloomberg/ Bloomberg Data License からの取得（rmql tools/market/fetch_bbg_dl_ois.R を関数に分けたもの）
 
 .quantlet_packages <- c("dplyr", "purrr", "tibble", "tidyr", "stringr", "readr", "readxl", "writexl", "xml2", "zip",
-                        "rlang", "collapse", "jsonlite", "RiemannFinMath")
+                        "rlang", "collapse", "jsonlite", "rmql")
 
 .quantlet_modules <- list(
   common = c("console.R", "version.R", "isin.R", "parse_utils.R", "import_settings.R", "market_data_import.R",
              "interpolation.R", "attributes.R", "report_format.R", "excel_format.R", "environment_info.R",
              "lagrange/import_data.R", "lagrange/workflows_validate_worksheet.R"),
-  a1 = c("pricing_riemann.R", "convert_offer_sheet.R", "spread_inputs.R", "validate_offer_worksheet.R",
+  a1 = c("pricing_rmql.R", "convert_offer_sheet.R", "spread_inputs.R", "validate_offer_worksheet.R",
          "write_offer_results_excel.R", "workflows_offer_sheet.R", "demo_attributes.R", "a1_service.R"),
   # c1 は jsonlite・xml2・pdftools・openssl・curl・processx を使う（関数を呼んだときに必要）
   c1 = c("trs_fields.R", "verify_quotes.R", "fpml_trs.R", "fpml_validate.R", "acquire_document.R", "reading_data.R",

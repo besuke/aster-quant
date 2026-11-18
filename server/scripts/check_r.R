@@ -1,4 +1,4 @@
-# 選ばれた R の版と、Infrago Quant Server の必須パッケージ（RiemannFinMath など）を読み込めるかを確かめる。
+# 選ばれた R の版と、Infrago Quant Server の必須パッケージ（rmql など）を読み込めるかを確かめる。
 #
 #   npm run check:r           （ui/ で実行。R は ui/scripts/rscript.mjs が選ぶ）
 #   Rscript server/scripts/check_r.R
@@ -40,14 +40,14 @@ if (length(bad)) {
   for (x in bad) {
     cat("  - ", x$package, if (!is.na(x$version)) paste0(" ", x$version), "：", gsub("\\s+", " ", x$error), "\n", sep = "")
   }
-  cat("\nこの R にパッケージを入れるか（RiemannFinMath は Riemann から入れ直す）、",
+  cat("\nこの R にパッケージを入れるか（rmql は rmql から入れ直す）、",
       "別の R を使うときは config/settings.local.env の RSCRIPT にその Rscript.exe を書いてください。\n", sep = "")
   quit(save = "no", status = 1)
 }
 
-rfm <- utils::packageDescription("RiemannFinMath")
+rfm <- utils::packageDescription("rmql")
 built <- sub(";.*$", "", rfm$Built %||% "")
-cat("  必須パッケージ ", length(required), " 個を読み込めました（RiemannFinMath ", rfm$Version,
+cat("  必須パッケージ ", length(required), " 個を読み込めました（rmql ", rfm$Version,
     if (nzchar(built)) paste0("、", built, " でビルド"), "）\n", sep = "")
 
 opt_missing <- optional[!vapply(optional, \(p) nzchar(system.file(package = p)), logical(1))]

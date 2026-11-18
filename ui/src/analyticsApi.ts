@@ -1,7 +1,7 @@
 import { postJson } from "./api";
 
 // 債券キャッシュフロー・イールドカーブ・TONA OIS・クレジット（CDS）の API（server/R/analytics/）。数値はすべてサーバーの
-// RiemannFinMath の計算結果で、画面は表示するだけ。金利は小数（0.0124 = 1.24%）、名前が *Pct・*_pct のものは %。
+// rmql の計算結果で、画面は表示するだけ。金利は小数（0.0124 = 1.24%）、名前が *Pct・*_pct のものは %。
 
 export interface BondRequest {
   tradeDate: string;

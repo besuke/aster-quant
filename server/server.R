@@ -164,7 +164,7 @@ irrbb_cache <- new.env()
 handle_api <- function(req, method, path) {
   if (method == "GET" && path == "/api/server") return(json_response(200, server_info_QL(host, port, static_dir)))
   if (method == "GET" && path == "/api/health") {
-    return(json_response(200, list(status = "ok", name = "Infrago Quant Server", quantlet = curie_version_line_Curie(), engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")),
+    return(json_response(200, list(status = "ok", name = "Infrago Quant Server", quantlet = curie_version_line_Curie(), engine = paste("rmql", packageVersion("rmql")),
                                    started_at = format(started_at, "%Y-%m-%dT%H:%M:%S%z"), data_dir = "server/data")))
   }
   m <- regmatches(path, regexec("^/api/uploads/(a1|c1|reports)$", path))[[1]]
@@ -307,7 +307,7 @@ handle_api <- function(req, method, path) {
     res$seconds <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     return(json_response(200, res))
   }
-  # TRS のキャッシュフロー・スケジュール（RiemannFinMath で両レッグを作り、Excel に保存。名前は PDF と同じベース名）
+  # TRS のキャッシュフロー・スケジュール（rmql で両レッグを作り、Excel に保存。名前は PDF と同じベース名）
   m <- regmatches(path, regexec("^/api/c1/cases/([A-Za-z0-9_-]+)/cashflows(\\.xlsx)?$", path))[[1]]
   if (length(m)) {
     d <- case_dir_of(m[2])
@@ -321,7 +321,7 @@ handle_api <- function(req, method, path) {
         file = basename(x$path), base_name = x$base_name, name_confirmed = !is.na(x$naming$name), name_missing = x$naming$missing,
         sheets = list(FundingLeg = iso_cols(x$funding$sheet), ReturnLeg = iso_cols(x$return_leg$sheet)),
         checks = x$checks, terms = x$terms$log, evaluation_date = format(x$evaluation_date), scenario_return_pct = pct,
-        engine = paste("RiemannFinMath", packageVersion("RiemannFinMath")))))
+        engine = paste("rmql", packageVersion("rmql")))))
     }
     if (method == "GET" && m[3] == ".xlsx") {
       info <- file.path(d, "result", "trs_cashflows.json")

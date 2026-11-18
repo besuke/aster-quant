@@ -1,7 +1,7 @@
 # IRRBB 金利シナリオ：円建て固定利付債のサンプル・ポートフォリオを、バーゼル SRP31.90〜31.93 の金利ショックで再評価する。
 #
 # 分担
-#   RiemannFinMath：年限別のショック（compute_irrbb_shocks・compute_irrbb_curve_points）、ショック後カーブ（create_irrbb_shocked_curve）、
+#   rmql：年限別のショック（compute_irrbb_shocks・compute_irrbb_curve_points）、ショック後カーブ（create_irrbb_shocked_curve）、
 #                   債券のキャッシュフローと再評価（create_fixed_rate_bond・compute_bond_value_on_curve）、基準カーブ（bootstrap_ois_curve）
 #   ここ（R）     ：入力（ポートフォリオ・基準カーブ・シナリオ・フロア）を整え、結果を集計して JSON にする
 # 評価対象はサンプルの固定利付債（data/demo/irrbb/portfolio_jpy_fixed.csv、架空）に限る。
@@ -38,7 +38,7 @@ irrbb_portfolio_QL <- function(root = Sys.getenv("QUANTLET_ROOT")) {
                                           settlement_days = readr::col_integer(), .default = readr::col_character()))
 }
 
-# 基準の円ゼロ金利カーブ：オファーシートと同じデモの円 OIS（TONA）を RiemannFinMath でブートストラップしたもの
+# 基準の円ゼロ金利カーブ：オファーシートと同じデモの円 OIS（TONA）を rmql でブートストラップしたもの
 irrbb_base_curve_QL <- function() {
   ds <- asw_ois_dataset_QL()
   f <- ois_dataset_files_QL()
@@ -60,38 +60,38 @@ compute_irrbb_portfolio_QL <- function(floor = NULL) {
   if (any(pf$maturity_date > base$last_date)) stop("満期が基準カーブの最後の期日より後の銘柄がある（外挿しない）", call. = FALSE)
   bonds <- purrr::pmap(pf, function(bond_id, security_name, issue_date, maturity_date, coupon_pct, coupon_frequency, face_amount,
                                     day_count, calendar, settlement_days, payment_convention) {
-    RiemannFinMath::create_fixed_rate_bond(settlement_days, face_amount, issue_date, maturity_date,
+    rmql::create_fixed_rate_bond(settlement_days, face_amount, issue_date, maturity_date,
                                            c(`1` = "12M", `2` = "6M", `4` = "3M")[[as.character(coupon_frequency)]], calendar,
                                            "unadjusted", "unadjusted", "backward", FALSE, coupon_pct / 100, day_count, payment_convention, 100)
   })
-  pv <- function(curve) purrr::map_dbl(bonds, \(b) RiemannFinMath::compute_bond_value_on_curve(b, curve, vd)$npv)
-  sizes <- RiemannFinMath::get_irrbb_shock_sizes("JPY")
-  base_curve <- RiemannFinMath::create_irrbb_shocked_curve(base$curve, "base", dates, "JPY", floor = floor)
-  base_vals <- purrr::map(bonds, \(b) RiemannFinMath::compute_bond_value_on_curve(b, base_curve, vd))
+  pv <- function(curve) purrr::map_dbl(bonds, \(b) rmql::compute_bond_value_on_curve(b, curve, vd)$npv)
+  sizes <- rmql::get_irrbb_shock_sizes("JPY")
+  base_curve <- rmql::create_irrbb_shocked_curve(base$curve, "base", dates, "JPY", floor = floor)
+  base_vals <- purrr::map(bonds, \(b) rmql::compute_bond_value_on_curve(b, base_curve, vd))
   base_pv <- purrr::map_dbl(base_vals, "npv")
   base_clean <- purrr::map_dbl(base_vals, "clean_price")
   base_dirty <- purrr::map_dbl(base_vals, "dirty_price")
-  settle_dates <- purrr::map_vec(bonds, \(b) RiemannFinMath::compute_settlement_date(b, vd))
-  rem_years <- RiemannFinMath::compute_remaining_years(settle_dates, pf$maturity_date)
+  settle_dates <- purrr::map_vec(bonds, \(b) rmql::compute_settlement_date(b, vd))
+  rem_years <- rmql::compute_remaining_years(settle_dates, pf$maturity_date)
   cy_raw <- purrr::pmap_dbl(
     list(rem_years, pf$coupon_pct, base_clean, pf$coupon_frequency),
-    \(t, c, p, f) RiemannFinMath::compute_compound_yield_from_price(t, c, p, 100, as.integer(f), 2L, on_error = "na")
+    \(t, c, p, f) rmql::compute_compound_yield_from_price(t, c, p, 100, as.integer(f), 2L, on_error = "na")
   )
   risk_tbl <- purrr::pmap(
     list(rem_years, pf$coupon_pct, cy_raw, base_dirty - base_clean, pf$coupon_frequency),
-    \(t, c, y, acc, f) RiemannFinMath::compute_risk_from_compound_yield(t, c, y, 100, acc, as.integer(f), 2L, on_error = "na")
+    \(t, c, y, acc, f) rmql::compute_risk_from_compound_yield(t, c, y, 100, acc, as.integer(f), 2L, on_error = "na")
   ) |> purrr::list_rbind()
   original_pv <- pv(base$curve)
   tenors <- c(0.25, 0.5, 1, 2, 3, 3.5, 5, 7, 10, 15, 20, 25, 30)
   # グラフ用：3か月ごとの点（月次の点から間引く）
   chart_idx <- unique(c(seq(1, length(dates), by = 3), length(dates)))
   scen <- purrr::pmap(irrbb_scenarios_QL, function(id, label, domestic) {
-    pts <- RiemannFinMath::compute_irrbb_curve_points(base$curve, id, dates, "JPY", floor = floor)
-    shocked_pv <- pv(RiemannFinMath::create_irrbb_shocked_curve(base$curve, id, dates, "JPY", floor = floor))
+    pts <- rmql::compute_irrbb_curve_points(base$curve, id, dates, "JPY", floor = floor)
+    shocked_pv <- pv(rmql::create_irrbb_shocked_curve(base$curve, id, dates, "JPY", floor = floor))
     bonds_tbl <- tibble::tibble(bond_id = pf$bond_id, security_name = pf$security_name, base_pv = base_pv, shocked_pv = shocked_pv,
                                 pv_change = shocked_pv - base_pv)
     list(id = id, label = label, domestic = domestic,
-         shocks_by_tenor = tibble::tibble(tenor_years = tenors, shock_bp = RiemannFinMath::compute_irrbb_shocks(tenors, id, sizes)),
+         shocks_by_tenor = tibble::tibble(tenor_years = tenors, shock_bp = rmql::compute_irrbb_shocks(tenors, id, sizes)),
          curve = tibble::tibble(years = pts$time[chart_idx], base_zero_pct = pts$base_zero[chart_idx] * 100,
                                 shocked_zero_pct = pts$shocked_zero[chart_idx] * 100, shock_bp = pts$shock_bp[chart_idx],
                                 floored = pts$floored[chart_idx]),
@@ -103,7 +103,7 @@ compute_irrbb_portfolio_QL <- function(floor = NULL) {
   list(
     title = "IRRBBシナリオによる債券ポートフォリオのPV変化",
     valuation_date = format(vd),
-    base_curve = list(name = "円ゼロ金利カーブ（TONA OIS から RiemannFinMath でブートストラップ）", source = base$source,
+    base_curve = list(name = "円ゼロ金利カーブ（TONA OIS から rmql でブートストラップ）", source = base$source,
                       base_date = format(vd), quote_time = base$quote_time, last_date = format(base$last_date)),
     portfolio = pf |> dplyr::mutate(remaining_years = round(as.numeric(.data$maturity_date - vd) / 365, 2),
                                     compound_yield_pct = .trunc3_QL(cy_raw),
@@ -124,6 +124,6 @@ compute_irrbb_portfolio_QL <- function(floor = NULL) {
       valuation = "PV は評価日時点の現在価値（経過利子を含む。評価日より後のキャッシュフローの割引現在価値）。額面 1 億円ずつ、円",
       scope = "評価対象はサンプルの固定利付債 5 銘柄に限る。IRRBB の ΔEVE（預金・貸出・行動オプションなどを含む銀行勘定全体）ではない"
     ),
-    engine = paste("RiemannFinMath", as.character(utils::packageVersion("RiemannFinMath")))
+    engine = paste("rmql", as.character(utils::packageVersion("rmql")))
   )
 }

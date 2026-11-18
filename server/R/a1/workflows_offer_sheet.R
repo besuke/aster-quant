@@ -47,7 +47,7 @@
        attribute_snapshot = fetched$snapshot_path)
 }
 
-# 実行環境の記録（RiemannFinMath の版と、A1 が呼ぶ関数の一覧）
+# 実行環境の記録（rmql の版と、A1 が呼ぶ関数の一覧）
 .environment_Curie <- function(gaussquant_src = NULL) {
   list(environment = environment_info_QL(),
        gaussquant_check = engine_functions_QL())

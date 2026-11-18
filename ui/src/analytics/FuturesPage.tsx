@@ -4,7 +4,7 @@ import { LineChart } from "../charts/LineChart";
 import { f, NumField, PageHead, Segmented, Status, t3, Tile, useCalc } from "./common";
 
 // 国債先物と CTD。受渡適格銘柄のベーシス・インプライド・レポ・CTD、先物 BPV、利回りの水準ごとの CTD の入れ替わり。
-// 計算はサーバー（RiemannFinMath）。入力の価格は架空のデモ。Carmine Studio の jgb-futures から移した。
+// 計算はサーバー（rmql）。入力の価格は架空のデモ。Carmine Studio の jgb-futures から移した。
 
 type Mode = "current" | "flat";
 

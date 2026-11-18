@@ -5,7 +5,7 @@ import { LineChart } from "../charts/LineChart";
 import { DateField, f, NumField, PageHead, Status, t3, Tile, useCalc, yearsFrom } from "./common";
 
 // 債券キャッシュフロー（固定利付債、半年払い）。単利利回りから単価・複利利回り・経過利子・Zスプレッド・金利リスク・
-// キャッシュフローを出す。計算はサーバー（RiemannFinMath）。Carmine Studio の deterministic-cashflow から移した。
+// キャッシュフローを出す。計算はサーバー（rmql）。Carmine Studio の deterministic-cashflow から移した。
 
 const DEFAULT: BondRequest = { tradeDate: "2022-03-30", issueDate: "2022-04-01", maturityDate: "2062-04-01", couponPct: 7.5, simpleYieldPct: 6.515, zSpreadBp: 50 };
 

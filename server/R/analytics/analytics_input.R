@@ -47,4 +47,4 @@ an_add_tenor_QL <- function(d, tenor) {
   as.Date(sprintf("%d-%02d-%02d", y, m, min(dd, last)))
 }
 
-an_engine_QL <- function() paste("RiemannFinMath", as.character(utils::packageVersion("RiemannFinMath")))
+an_engine_QL <- function() paste("rmql", as.character(utils::packageVersion("rmql")))

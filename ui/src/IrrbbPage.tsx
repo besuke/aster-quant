@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, fmt, fmtTrunc3, type IrrbbResult, type IrrbbScenario } from "./api";
 
-// IRRBB 金利シナリオ。計算（ショック、ショック後カーブ、債券の再評価）はサーバーの RiemannFinMath。全 6 シナリオを一度に受け取り、
+// IRRBB 金利シナリオ。計算（ショック、ショック後カーブ、債券の再評価）はサーバーの rmql。全 6 シナリオを一度に受け取り、
 // 画面はその中でシナリオを切り替えて、グラフと結果表を描き直すだけ。
 
 type SetId = "domestic" | "international";
@@ -68,7 +68,7 @@ export default function IrrbbPage() {
           </div>
         )}
         {error && <div className="error">{error}</div>}
-        {!r && !error && <p className="muted">RiemannFinMath で計算している…</p>}
+        {!r && !error && <p className="muted">rmql で計算している…</p>}
         {r && (
           <div className="source-line" data-testid="irrbb-basis">
             <span>

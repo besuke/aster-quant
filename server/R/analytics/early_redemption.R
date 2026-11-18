@@ -1,8 +1,8 @@
 # 早期償還：コール条項つき債券（Hull-White 1因子）と MBS（パススルー、PSA・借換えインセンティブ）。Carmine Studio の
-# /api/callable（early-redemption）から、RiemannFinMath で計算できる部分を移した。計算はすべて RiemannFinMath。
-# （静的 OAS の表と、Hull-White の金利経路での MBS の評価は、RiemannFinMath の compute_mbs_oas・generate_hull_white_monthly_rates・
-#  compute_mbs_path_values で計算するので移した。経路は RiemannFinMath の乱数（seed 48）で、原稿の set.seed(48) の経路とは数値が違う。
-#  コール判断の境界は RiemannFinMath の compute_hull_white_callable_bond_decisions（0.3.5 から）で計算する。）
+# /api/callable（early-redemption）から、rmql で計算できる部分を移した。計算はすべて rmql。
+# （静的 OAS の表と、Hull-White の金利経路での MBS の評価は、rmql の compute_mbs_oas・generate_hull_white_monthly_rates・
+#  compute_mbs_path_values で計算するので移した。経路は rmql の乱数（seed 48）で、原稿の set.seed(48) の経路とは数値が違う。
+#  コール判断の境界は rmql の compute_hull_white_callable_bond_decisions（0.3.5 から）で計算する。）
 #
 # POST /api/analytics/early-redemption
 #   {"bond":{"ratePct":2,"aPct":15,"sigmaPct":1.2,"couponPct":3,"firstCallYear":1,"callPrice":100},
@@ -44,13 +44,13 @@ er_flows_QL <- function(p) {
              call_price = ifelse(time >= p$firstCallYear & time < 5, p$callPrice, NA_real_))
 }
 er_value_QL <- function(flows, a, sigma, curve) {
-  as.list(RiemannFinMath::compute_hull_white_callable_bond_value(flows$time, flows$coupon, flows$principal, flows$call_price,
+  as.list(rmql::compute_hull_white_callable_bond_value(flows$time, flows$coupon, flows$principal, flows$call_price,
                                                                  a, sigma, curve, points = 321L, limit = 0.13, nodes = 24L))
 }
 
 er_bond_QL <- function(p) er_memo_QL("bond", p, function() {
   r <- p$ratePct / 100; a <- p$aPct / 100; sigma <- p$sigmaPct / 100
-  curve <- RiemannFinMath::create_flat_curve("2026-11-02", r, "actual_365_fixed", "continuous")
+  curve <- rmql::create_flat_curve("2026-11-02", r, "actual_365_fixed", "continuous")
   flows <- er_flows_QL(p)
   v <- er_value_QL(flows, a, sigma, curve)
   vol_grid <- seq(0, 0.025, by = 0.0025)
@@ -59,7 +59,7 @@ er_bond_QL <- function(p) er_memo_QL("bond", p, function() {
     data.frame(volatility = s, callable = x$callable, bullet = x$bullet, issuer_call_value = x$issuer_call_value)
   }))
   # コール判断：各コール日の、状態ごとの継続価値（クーポン除き）とコール価格の比べ。コールするのは継続価値がコール価格を上回る状態（金利が低い側）
-  dc <- RiemannFinMath::compute_hull_white_callable_bond_decisions(flows$time, flows$coupon, flows$principal, flows$call_price, a, sigma, curve,
+  dc <- rmql::compute_hull_white_callable_bond_decisions(flows$time, flows$coupon, flows$principal, flows$call_price, a, sigma, curve,
                                                                    points = 321L, limit = 0.13, nodes = 24L)
   call_times <- sort(unique(dc$decisions$payment_time))
   show_time <- if (any(call_times >= 2)) min(call_times[call_times >= 2]) else call_times[1]
@@ -74,16 +74,16 @@ er_pool_key_QL <- function(p) p[c("psaPct", "incentive", "refiCostPct")]
 
 er_mbs_QL <- function(p) er_memo_QL("mbs", er_pool_key_QL(p), function() {
   m <- ER_MBS_QL
-  pool <- RiemannFinMath::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
+  pool <- rmql::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
                                                   psa_multiplier = p$psaPct / 100, incentive_sensitivity = p$incentive,
                                                   refinancing_cost_rate = p$refiCostPct / 100, cpr_cap = 0.6, amortization = "fixed_payment")
   names3 <- c("借換え金利低下", "金利一定", "借換え金利上昇")
   paths <- list(c(rep(0.05, 24), rep(0.035, m$months - 24)), rep(0.05, m$months), c(rep(0.05, 24), rep(0.065, m$months - 24)))
-  cfs <- lapply(paths, function(f) RiemannFinMath::compute_mbs_cashflows(pool, f))
+  cfs <- lapply(paths, function(f) rmql::compute_mbs_cashflows(pool, f))
   scen <- do.call(rbind, lapply(seq_along(paths), function(i) {
     f <- paths[[i]]
-    fixed <- RiemannFinMath::compute_mbs_path_values(pool, matrix(0.04, 1, m$months), matrix(f, 1))
-    path <- RiemannFinMath::compute_mbs_path_values(pool, matrix(f - 0.01, 1), matrix(f, 1))
+    fixed <- rmql::compute_mbs_path_values(pool, matrix(0.04, 1, m$months), matrix(f, 1))
+    path <- rmql::compute_mbs_path_values(pool, matrix(f - 0.01, 1), matrix(f, 1))
     data.frame(scenario = names3[i], weighted_average_life = fixed$weighted_average_life, price_fixed_discount = fixed$price,
                price_path_discount = path$price, total_principal = sum(cfs[[i]]$scheduled_principal + cfs[[i]]$prepaid_principal))
   }))
@@ -101,29 +101,29 @@ er_mbs_QL <- function(p) er_memo_QL("mbs", er_pool_key_QL(p), function() {
 er_static_QL <- function() er_memo_QL("static", list(), function() {
   m <- ER_MBS_QL
   grid <- expand.grid(assumed_price = c(95, 105), psa_percent = c(0, 50, 100))[, c("psa_percent", "assumed_price")]
-  pool_at <- function(psa) RiemannFinMath::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
+  pool_at <- function(psa) rmql::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
                                                                    psa_multiplier = psa / 100, incentive_sensitivity = 0)
   r4 <- matrix(0.04, 1, m$months); f5 <- matrix(0.05, 1, m$months)
-  grid$oas_bp <- mapply(function(psa, price) 1e4 * RiemannFinMath::compute_mbs_oas(pool_at(psa), price, r4, f5), grid$psa_percent, grid$assumed_price)
+  grid$oas_bp <- mapply(function(psa, price) 1e4 * rmql::compute_mbs_oas(pool_at(psa), price, r4, f5), grid$psa_percent, grid$assumed_price)
   spreads <- seq(-200, 300, by = 10)
   price_curve <- do.call(rbind, lapply(c(0, 50, 100), function(psa) {
     pool <- pool_at(psa)
     data.frame(psa_percent = psa, spread_bp = spreads,
-               price = vapply(spreads, function(s) RiemannFinMath::compute_mbs_path_values(pool, r4 + s / 1e4, f5)$price, 0))
+               price = vapply(spreads, function(s) rmql::compute_mbs_path_values(pool, r4 + s / 1e4, f5)$price, 0))
   }))
   list(table = grid, price_curve = price_curve)
 })
 
 # Hull-White（初期カーブ 2%、a = 0.15、sigma = 0.012）の月次の短期金利の経路で MBS を評価する。割引率は短期金利 + 3%（下限 0）、借換え金利は短期金利
-# 20 本は画面に描く経路。2000 本は平均価格とその標準誤差。乱数は RiemannFinMath のもの（seed 48）
+# 20 本は画面に描く経路。2000 本は平均価格とその標準誤差。乱数は rmql のもの（seed 48）
 er_paths_QL <- function(p) er_memo_QL("paths", er_pool_key_QL(p), function() {
   m <- ER_MBS_QL
-  pool <- RiemannFinMath::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
+  pool <- rmql::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
                                                   psa_multiplier = p$psaPct / 100, incentive_sensitivity = p$incentive,
                                                   refinancing_cost_rate = p$refiCostPct / 100, cpr_cap = 0.6, amortization = "fixed_payment")
   value <- function(n) {
-    rates <- RiemannFinMath::generate_hull_white_monthly_rates(n, m$months, 0.02, 0.15, 0.012, seed = 48L)
-    list(rates = rates, v = RiemannFinMath::compute_mbs_path_values(pool, rates, pmax(rates + 0.03, 0)))
+    rates <- rmql::generate_hull_white_monthly_rates(n, m$months, 0.02, 0.15, 0.012, seed = 48L)
+    list(rates = rates, v = rmql::compute_mbs_path_values(pool, rates, pmax(rates + 0.03, 0)))
   }
   s <- value(20L)
   big <- value(2000L)$v
@@ -135,18 +135,18 @@ er_paths_QL <- function(p) er_memo_QL("paths", er_pool_key_QL(p), function() {
   )
 })
 
-# ダイナミック OAS：Hull-White の経路（20本・500本）の平均価格が、市場価格に一致するスプレッド（短期金利に加える）。RiemannFinMath の compute_mbs_oas
+# ダイナミック OAS：Hull-White の経路（20本・500本）の平均価格が、市場価格に一致するスプレッド（短期金利に加える）。rmql の compute_mbs_oas
 # 静的 OAS は、金利 4% 一定・借換え金利 5% 一定の 1 本の経路で解いたもの。価格ごとの OAS の表は 20 本の経路で作る
 er_oas_QL <- function(p) er_memo_QL("oas", p, function() {
   m <- ER_MBS_QL
-  pool <- RiemannFinMath::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
+  pool <- rmql::create_mbs_pass_through(m$balance, m$mortgage_rate, m$pass_through_rate, maturity_months = m$months,
                                                   psa_multiplier = p$psaPct / 100, incentive_sensitivity = p$incentive,
                                                   refinancing_cost_rate = p$refiCostPct / 100, cpr_cap = 0.6, amortization = "fixed_payment")
   # 20 本は画面に描く経路と同じ（20 本として作ったもの）。500 本は別に作る
-  rates20 <- RiemannFinMath::generate_hull_white_monthly_rates(20L, m$months, 0.02, 0.15, 0.012, seed = 48L)
-  rates500 <- RiemannFinMath::generate_hull_white_monthly_rates(500L, m$months, 0.02, 0.15, 0.012, seed = 48L)
-  oas <- function(price, r = rates500) 1e4 * RiemannFinMath::compute_mbs_oas(pool, price, r, pmax(r + 0.03, 0))
-  flat <- function(price) 1e4 * RiemannFinMath::compute_mbs_oas(pool, price, matrix(0.04, 1, m$months), matrix(0.05, 1, m$months))
+  rates20 <- rmql::generate_hull_white_monthly_rates(20L, m$months, 0.02, 0.15, 0.012, seed = 48L)
+  rates500 <- rmql::generate_hull_white_monthly_rates(500L, m$months, 0.02, 0.15, 0.012, seed = 48L)
+  oas <- function(price, r = rates500) 1e4 * rmql::compute_mbs_oas(pool, price, r, pmax(r + 0.03, 0))
+  flat <- function(price) 1e4 * rmql::compute_mbs_oas(pool, price, matrix(0.04, 1, m$months), matrix(0.05, 1, m$months))
   grid <- seq(95, 125, by = 5)
   list(price = p$oasPrice, dynamic_20_bp = oas(p$oasPrice, rates20), dynamic_500_bp = oas(p$oasPrice), static_bp = flat(p$oasPrice),
        by_price = data.frame(price = grid, dynamic_bp = vapply(grid, oas, 0, r = rates20), static_bp = vapply(grid, flat, 0)))

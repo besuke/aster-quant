@@ -1,5 +1,5 @@
 # 正規化した Bloomberg の表 → A1 の OIS 気配ファイル（Curie の形：marketdate|quote_time|currency|instrument|instrument_type|tenor|rate_pct|quote_side|source）。
-# この形にすれば、A1 は従来の取込（import_ois_files_Curie）→ RiemannFinMath のカーブ構築をそのまま使える。
+# この形にすれば、A1 は従来の取込（import_ois_files_Curie）→ rmql のカーブ構築をそのまま使える。
 # 値は PX_LAST をそのまま％として使う（Data License の単位は未確認。README「Bloomberg 連携」）。指定した市場日の行だけを使い、別の日付で補わない。
 
 .bbg_ois_instruments_QL <- c(JPY = "TONAR_OIS", USD = "SOFR_OIS", EUR = "ESTR_OIS")

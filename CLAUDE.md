@@ -6,8 +6,8 @@
 
 | 場所 | 担当 | やらないこと |
 |---|---|---|
-| `server/`（R、httpuv） | HTTP API。データの取得・取込・整形・結合・集計・検証は R と tidyverse | 金融計算の実装。足りない計算は RiemannFinMath に足す |
-| `../Riemann`（RiemannFinMath） | 金融計算（カーブ、債券、ASW、TRS の両レッグ、IRRBB のショックなど） | — |
+| `server/`（R、httpuv） | HTTP API。データの取得・取込・整形・結合・集計・検証は R と tidyverse | 金融計算の実装。足りない計算は rmql に足す |
+| `../rmql`（rmql） | 金融計算（カーブ、債券、ASW、TRS の両レッグ、IRRBB のショックなど） | — |
 | `ui/`（React＋TypeScript） | 入力、API 呼び出し、JSON の表・グラフ表示 | 計算し直さない |
 
 - 画面は Carmine Studio と同じ構成（上の帯と、その下の4グループの左サイドバー。最初から全部開き、自動では閉じない。名前のクリックでそのグループだけ手動で開閉。構成は `ui/src/nav.ts`）。トップ URL はレポートサマリーの掲示板。グループ：レポートと市場分析（イールドカーブ分析、レポートサマリー、発行体格付け推移）、オファーレベル（オファーシート）、商品評価（アセットスワップ、早期償還）、リスク計算（IRRBB、クレジットVaR、格付け枠管理）。未実装は「準備中」（発行体格付け推移、クレジットVaR、格付け枠管理）。債券キャッシュフロー・国債先物・CTD・クレジット・CDS・TRS契約書連携は関連画面のリンクから開く。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。タブのタイトルは「Infrago Quantlet/メニュー名」
@@ -23,7 +23,7 @@
 - **デモデータはすべて架空**（`server/data/demo/`）。実在の銘柄・価格・契約書・市場データは Git に入れない。`server/data/` は掲示板のサンプル案件 1 件を除いて Git の対象外
 - **Aladdin**：送信先の見本は `https://aladdin.example.invalid/`。実際の送信先はローカル設定（`server/tmp/aladdin_endpoint.json` と `server/tmp/.Renviron` の `QUANTLET_ALADDIN_ENDPOINT`）。送信はしない（下書きのみ）
 - **IRRBB**：SRP31（2024-07-16 公表、2026-01-01 適用）。円 100/100/100 bp。金利フロアは既定でなし（金融庁の扱いは未確認）。基準 PV は月次点から作り直したカーブで評価し、元の TONA OIS カーブより合計 130 円大きい（計算上の前提として README に記録）
-- **Curie は変更しない**（移行中も従来の手順で使えるように）。Riemann に機能を足すときは Riemann の `CLAUDE.md` の手順（照合 → 実装 → テスト → 仕様書 → 全テストと clippy）に従う。Riemann の R パッケージを入れ直すときは、DLL を使っている Infrago Quant の R API を先に止める
+- **Curie は変更しない**（移行中も従来の手順で使えるように）。rmql に機能を足すときは rmql の `CLAUDE.md` の手順（照合 → 実装 → テスト → 仕様書 → 全テストと clippy）に従う。rmql の R パッケージを入れ直すときは、DLL を使っている Infrago Quant の R API を先に止める
 
 ## 作業のきまり
 

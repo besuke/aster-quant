@@ -1,9 +1,9 @@
-# A1 の照合：QuantLet（RiemannFinMath）と Curie の旧デモ結果（GaussQuant・QuantLib 1.42）。
+# A1 の照合：QuantLet（rmql）と Curie の旧デモ結果（GaussQuant・QuantLib 1.42）。
 #
 #   Rscript tests/reconciliation/a1/reconcile_a1.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/tests/reconciliation/a1/reconcile_a1.R）
 #
 # 基準：Curie output/offer_results_{JPY,ISO}_demo_20261006.xlsx の「オファー結果」シート（2026-10-27 作成、QuantLet の
-# tests/reconciliation/curie_reference/a1/ に写した）。入力は同じデモデータ（架空）。Curie・GaussQuant・Riemann は変更しない。
+# tests/reconciliation/curie_reference/a1/ に写した）。入力は同じデモデータ（架空）。Curie・GaussQuant・rmql は変更しない。
 # 結果は tests/reconciliation/a1/results/ に書く。
 suppressPackageStartupMessages({ library(dplyr); library(readxl) })
 # この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
@@ -49,7 +49,7 @@ print(num |> filter(!is.na(curie) | !is.na(quantlet)) |> group_by(workflow, item
 print(status |> select(workflow, ISIN, curie_pricing_status, quantlet_pricing_status, status_match), n = 50)
 print(status |> filter(!status_match | curie_message != quantlet_message) |> select(ISIN, curie_message, quantlet_message), width = 200)
 writeLines(c(paste("run_at:", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")), paste("R:", R.version.string),
-             paste("RiemannFinMath:", as.character(packageVersion("RiemannFinMath")), "built", packageDescription("RiemannFinMath")$Built),
+             paste("rmql:", as.character(packageVersion("rmql")), "built", packageDescription("rmql")$Built),
              paste("numeric checks:", nrow(num), "fail:", sum(!num$pass)), paste("status mismatches:", sum(!status$status_match))),
            file.path(out_dir, "session_info.txt"))
 cat(readLines(file.path(out_dir, "session_info.txt")), sep = "\n")

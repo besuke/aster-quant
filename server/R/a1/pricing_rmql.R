@@ -1,16 +1,16 @@
-# A1 の計算層（RiemannFinMath）。
+# A1 の計算層（rmql）。
 #
-# Curie の次の関数を、同じ名前・同じ入出力の列で RiemannFinMath に置き換えたもの。
+# Curie の次の関数を、同じ名前・同じ入出力の列で rmql に置き換えたもの。
 #   R/z0_utility/bond_build.R      calendar_from_name_Curie, frequency_period_Curie, build_fixed_rate_bond_Curie
 #   R/z0_utility/curve_build.R     build_ois_curves_Curie, summarise_ois_curves_Curie
 #   R/z0_utility/bond_yield_YEN.R  compound_yield_YEN_Curie, compute_jgb_yields_Curie
 #   R/a1_offer_sheet/compute_offer_pricing.R  pricing_settings_Curie, price_offer_row_Curie, compute_offer_pricing_Curie
 # Curie は GaussQuant と QuantLib（R バインディング）で計算していた。計算規約は Curie と同じにする。
 #   - OIS カーブ：spot OIS の気配、受渡2営業日（SONIA は0）、年1回払い、支払ラグ0、MonotonicLogCubic、外挿なし
-#   - 債券：銘柄属性の規約（QuantLib の名前を RiemannFinMath の名前に変換）、額面100、終期は計算終期
+#   - 債券：銘柄属性の規約（QuantLib の名前を rmql の名前に変換）、額面100、終期は計算終期
 #   - ASW：受渡日に開始、翌日物レッグは pricing_settings の払い方（既定は半年払い・支払ラグ0。Curie のデモの仮定）
-#   - 円債の複利利回り：残存年数は満年数＋端数 ACT/365、小数第7位で切り捨て（Riemann docs/spec_bonds.md 5.1）
-# 計算そのものは RiemannFinMath を呼ぶだけで、ここでは数式を実装しない（JGB・ベーシスの補間は spread_inputs.R の R の処理）。
+#   - 円債の複利利回り：残存年数は満年数＋端数 ACT/365、小数第7位で切り捨て（rmql docs/spec_bonds.md 5.1）
+# 計算そのものは rmql を呼ぶだけで、ここでは数式を実装しない（JGB・ベーシスの補間は spread_inputs.R の R の処理）。
 
 .ois_index_QL <- list(
   JPY = list(index = "tonar", index_name = "TONAR", day_count = "actual_365_fixed", settlement_days = 2L),
@@ -19,7 +19,7 @@
   GBP = list(index = "sonia", index_name = "SONIA", day_count = "actual_365_fixed", settlement_days = 0L)
 )
 
-# 銘柄属性の名前（QuantLib の名前）→ RiemannFinMath の名前。表にないものは未対応としてエラーにする
+# 銘柄属性の名前（QuantLib の名前）→ rmql の名前。表にないものは未対応としてエラーにする
 .calendar_names_QL <- c(Japan = "japan", UnitedStates_GovernmentBond = "us_government_bond", TARGET = "target",
                         UnitedKingdom = "united_kingdom")
 .day_count_names_QL <- c(Actual365Fixed = "actual_365_fixed", Actual360 = "actual_360",
@@ -58,7 +58,7 @@ frequency_period_Curie <- function(coupon_frequency) {
 
 # 銘柄属性の1行から固定利付債を作る（額面100、終期は計算終期）
 build_fixed_rate_bond_Curie <- function(row) {
-  RiemannFinMath::create_fixed_rate_bond(
+  rmql::create_fixed_rate_bond(
     settlement_days = as.integer(row$settlement_days), face_amount = 100,
     effective_date = as.Date(row$issue_date), termination_date = as.Date(row$calculation_end_date),
     tenor = frequency_period_Curie(row$coupon_frequency), calendar = calendar_from_name_Curie(row$calendar),
@@ -80,17 +80,17 @@ build_ois_curves_Curie <- function(ois, valuation_date, currencies) {
         return(list(error = paste0(ccy, " の評価日 ", valuation_date, " のOIS気配がない（別の日付では補わない）")))
       }
       spec <- .ois_index_QL[[ccy]]
-      if (is.null(spec)) return(list(error = paste0("RiemannFinMath の OIS カーブは TONAR・SOFR・€STR・SONIA のみ（", ccy, " は未対応）")))
+      if (is.null(spec)) return(list(error = paste0("rmql の OIS カーブは TONAR・SOFR・€STR・SONIA のみ（", ccy, " は未対応）")))
       if (!"instrument_type" %in% names(quotes)) quotes$instrument_type <- "spot_ois"
       if (any(quotes$instrument_type != "spot_ois")) {
         return(list(error = paste0(ccy, " の気配に spot_ois 以外（", paste(unique(setdiff(quotes$instrument_type, "spot_ois")), collapse = ", "),
-                                   "）がある。RiemannFinMath の OIS カーブは spot OIS の気配だけを使う")))
+                                   "）がある。rmql の OIS カーブは spot OIS の気配だけを使う")))
       }
       tryCatch({
-        instruments <- RiemannFinMath::create_ois_instruments(toupper(trimws(quotes$tenor)), quotes$rate_pct / 100, spec$settlement_days, 1L, 0L)
-        curve <- RiemannFinMath::bootstrap_ois_curve(valuation_date, valuation_date, spec$index, spec$day_count, instruments,
+        instruments <- rmql::create_ois_instruments(toupper(trimws(quotes$tenor)), quotes$rate_pct / 100, spec$settlement_days, 1L, 0L)
+        curve <- rmql::bootstrap_ois_curve(valuation_date, valuation_date, spec$index, spec$day_count, instruments,
                                                      interpolation = "monotonic_log_cubic")
-        rep <- RiemannFinMath::get_quote_repricing(curve)
+        rep <- rmql::get_quote_repricing(curve)
         list(
           curve = curve, currency = ccy, index = spec$index, index_name = spec$index_name, marketdate = valuation_date,
           quotes = quotes, repricing = rep, last_date = max(rep$pillar_date),
@@ -110,7 +110,7 @@ summarise_ois_curves_Curie <- function(curves) {
       ois_curve_id = x$curve_id, index = x$index_name, marketdate = x$marketdate,
       quote_time = x$quote_time, quotes = nrow(x$quotes), last_tenordate = max(x$repricing$maturity_date),
       max_abs_quote_error_bp = max(x$repricing$reproduction_error) * 1e4,
-      engine = "RiemannFinMath bootstrap_ois_curve（monotonic_log_cubic、年1回払い、支払ラグ0）"
+      engine = "rmql bootstrap_ois_curve（monotonic_log_cubic、年1回払い、支払ラグ0）"
     )
   }) |> purrr::list_rbind()
 }
@@ -120,8 +120,8 @@ summarise_ois_curves_Curie <- function(curves) {
 
 compound_yield_YEN_Curie <- function(settlement_date, maturity_date, coupon_rate, clean_price,
                                      redemption, coupon_frequency, compound_frequency) {
-  t <- RiemannFinMath::compute_remaining_years(as.Date(settlement_date), as.Date(maturity_date))
-  RiemannFinMath::compute_compound_yield_from_price(t, coupon_rate * 100, clean_price, redemption,
+  t <- rmql::compute_remaining_years(as.Date(settlement_date), as.Date(maturity_date))
+  rmql::compute_compound_yield_from_price(t, coupon_rate * 100, clean_price, redemption,
                                                     as.integer(coupon_frequency), as.integer(compound_frequency))
 }
 
@@ -141,14 +141,14 @@ compute_jgb_yields_Curie <- function(jgb, compound_frequency = 2) {
       compound_yield_pct = purrr::map_dbl(.data$result, "y"),
       yield_message = purrr::map_chr(.data$result, "msg"),
       compound_frequency = compound_frequency,
-      remaining_years = RiemannFinMath::compute_remaining_years(.data$settlement_date, .data$maturity_date)
+      remaining_years = rmql::compute_remaining_years(.data$settlement_date, .data$maturity_date)
     ) |>
     dplyr::select(-"result")
 }
 
 # ---- オファーの計算 --------------------------------------------------------------------------------
 .jpy_asw_model_note_Curie <- paste(
-  "簡易モデル（RiemannFinMath compute_yen_asset_swap。Curie の compute_asset_swap_basis_JPY と同じ定義）：",
+  "簡易モデル（rmql compute_yen_asset_swap。Curie の compute_asset_swap_basis_JPY と同じ定義）：",
   "円担保・元本固定・開始日と満期に元本交換。満期に対応するベーシス1点（気配を補間した値）で外貨割引の一定スプレッドを校正する。",
   "CCSの期間構造全体を校正したモデルではない。MtMリセット・FXスワップ調整・取引費用・クオント調整・信用等の調整は含まない"
 )
@@ -191,8 +191,8 @@ pricing_settings_Curie <- function(
   out$jpy_compound_yield_pct <- compound_yield_YEN_Curie(
     row$offer_settlementdate, row$calculation_end_date, row$coupon_rate, row$offer_price,
     row$redemption, row$coupon_frequency, settings$jgb_compound_frequency)
-  t_rem <- RiemannFinMath::compute_remaining_years(as.Date(row$offer_settlementdate), as.Date(row$calculation_end_date))
-  risk_jpy <- RiemannFinMath::compute_risk_from_compound_yield(
+  t_rem <- rmql::compute_remaining_years(as.Date(row$offer_settlementdate), as.Date(row$calculation_end_date))
+  risk_jpy <- rmql::compute_risk_from_compound_yield(
     t_rem, row$coupon_rate * 100, out$jpy_compound_yield_pct, row$redemption, out$accrued_per_100,
     as.integer(row$coupon_frequency), as.integer(settings$jgb_compound_frequency), on_error = "na"
   )
@@ -200,7 +200,7 @@ pricing_settings_Curie <- function(
   out$modified_duration <- .trunc3_QL(risk_jpy$modified_duration)
   out$convexity <- .trunc3_QL(risk_jpy$convexity)
   out$jgb_yield_convention <- paste0(
-    "RiemannFinMath::compute_compound_yield_from_price、クリーン単価、受渡日 ", row$offer_settlementdate,
+    "rmql::compute_compound_yield_from_price、クリーン単価、受渡日 ", row$offer_settlementdate,
     "、利払年", row$coupon_frequency, "回・複利年", settings$jgb_compound_frequency,
     "回、残存年数は満年数＋端数ACT/365（対象債・JGB共通）")
   spread <- jgb_spread_Curie(jgb_avg, row$offer_date, row$offer_settlementdate, row$calculation_end_date,
@@ -218,11 +218,11 @@ pricing_settings_Curie <- function(
   ccy <- row$currency
   dc_iso <- day_count_from_name_QL(row$day_count)
   freq_iso <- as.integer(row$coupon_frequency)
-  y_iso <- RiemannFinMath::compute_yield_from_price(
+  y_iso <- rmql::compute_yield_from_price(
     bond, row$offer_price, "clean", dc_iso, "compounded", freq_iso, row$offer_settlementdate, on_error = "na"
   )
   if (!is.na(y_iso)) {
-    bv_iso <- RiemannFinMath::compute_bond_values(
+    bv_iso <- rmql::compute_bond_values(
       bond, y_iso, dc_iso, "compounded", freq_iso, row$offer_settlementdate, on_error = "na"
     )
     out$compound_yield_pct <- .trunc3_QL(y_iso * 100)
@@ -259,7 +259,7 @@ pricing_settings_Curie <- function(
     paste0("満期 ", row$calculation_end_date, " がJPYカーブの最後のピラー ", jpy_curve$last_date, " より後（外挿しない）")
   } else ""
   if (nzchar(reason)) return(list(out = out, message = paste0("円換算ASW未計算: ", reason)))
-  y <- RiemannFinMath::compute_yen_asset_swap(
+  y <- rmql::compute_yen_asset_swap(
     bond, row$offer_price, curve$curve, jpy_curve$curve, out$fx_spot, out$basis_bp, row$offer_date,
     foreign_payment_frequency = .payment_frequency_QL(settings$asw_payment_frequency),
     yen_payment_frequency = .payment_frequency_QL(settings$jpy_payment_frequency),
@@ -268,7 +268,7 @@ pricing_settings_Curie <- function(
   out$jpy_asw_bp <- y$yen_asw_bp
   out$simple_sum_bp <- y$simple_sum_bp
   out$calibrated_discount_spread_bp <- y$calibrated_discount_spread_bp
-  # RiemannFinMath は CCS 校正の残差を返さない（README「RiemannFinMath で対応していない部分」）。NA のまま
+  # rmql は CCS 校正の残差を返さない（README「rmql で対応していない部分」）。NA のまま
   out$ccs_repricing_npv_jpy <- NA_real_
   # spread_bp = 0 の NPV に、フェアスプレッド × アニュイティを足したもの（0 になるはず）
   out$fair_spread_npv_jpy <- y$npv_yen + y$yen_asw_bp / 1e4 * y$spread_annuity_yen
@@ -304,12 +304,12 @@ price_offer_row_Curie <- function(workflow, row, curves, market, basis_avg, jgb_
       return(fail(paste0("計算終期 ", row$calculation_end_date, " が ", row$currency, " カーブの最後のピラー ", curve$last_date, " より後（外挿しない）")))
     }
     bond <- build_fixed_rate_bond_Curie(row)
-    out$bond_settlement_date <- RiemannFinMath::compute_settlement_date(bond, row$offer_date)
+    out$bond_settlement_date <- rmql::compute_settlement_date(bond, row$offer_date)
     if (out$bond_settlement_date != row$offer_settlementdate) {
       return(fail(paste0("受渡日の不一致: 債券の受渡日 ", out$bond_settlement_date, "（評価日+", row$settlement_days,
                          "営業日）とオファー受渡日 ", row$offer_settlementdate, " が異なる")))
     }
-    v <- RiemannFinMath::compute_ois_asset_swap(bond, row$offer_price, curve$curve, row$offer_date,
+    v <- rmql::compute_ois_asset_swap(bond, row$offer_price, curve$curve, row$offer_date,
                                                 payment_frequency = .payment_frequency_QL(settings$asw_payment_frequency),
                                                 payment_lag = settings$asw_payment_lag, on_error = "na")
     if (!is.na(v$error)) return(fail(paste("計算エラー:", v$error)))

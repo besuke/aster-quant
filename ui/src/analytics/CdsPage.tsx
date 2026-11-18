@@ -4,7 +4,7 @@ import { LineChart } from "../charts/LineChart";
 import { DateField, f, NumField, PageHead, pct, Segmented, Status, Tile, useCalc, yen } from "./common";
 
 // クレジット・CDS（標準 CDS の評価）。市場スプレッドから Hazard Rate を求め、契約クーポンでの NPV・Upfront・生存確率・
-// キャッシュフローを出す。計算はサーバー（RiemannFinMath）。Carmine Studio の credit-cds から移した。
+// キャッシュフローを出す。計算はサーバー（rmql）。Carmine Studio の credit-cds から移した。
 
 const DEFAULT: CdsRequest = { tradeDate: "2022-08-19", tenor: "5Y", spreadBp: 30.426, couponBp: 100, recoveryPct: 40, ratePct: 0.25, notional: 1e7, engine: "isda" };
 const TENORS = ["1Y", "2Y", "3Y", "4Y", "5Y", "7Y", "10Y"];

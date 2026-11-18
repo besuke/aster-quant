@@ -1,9 +1,9 @@
 # C1：TRS のキャッシュフロー・スケジュール（FundingLeg・ReturnLeg）を作り、Excel に保存する。
 #
 # 役割の分担
-#   QuantLet（ここ）：C1 が原文と照合した契約条件（確認済みの値だけ）を読み、RiemannFinMath の引数に変換して検証する。
+#   QuantLet（ここ）：C1 が原文と照合した契約条件（確認済みの値だけ）を読み、rmql の引数に変換して検証する。
 #                    不足・前提を列ごとに記録し、結果を Excel（FundingLeg・ReturnLeg の2シート）に整形する
-#   RiemannFinMath  ：両レッグの日程（計算期間・リセット日・金利決定日・観測日・支払日・評価日）と金額
+#   rmql  ：両レッグの日程（計算期間・リセット日・金利決定日・観測日・支払日・評価日）と金額
 #                    （create_trs_funding_leg・compute_trs_funding_cashflows・create_trs_return_leg・compute_trs_return_cashflows）
 # 金額の状態：確定（公表値だけ）／試算（市場データ・シナリオを使う）／算出不可（空欄。理由を示す）。
 # 市場データは A1 と同じ規則：評価日と同じ市場日のデータだけを使う（デモの JPY OIS は 2026-10-06、架空）。
@@ -20,7 +20,7 @@
 
 .lookup_QL <- function(x, table) if (is.na(x)) NA_character_ else unname(table[tolower(trimws(x))])
 
-# 契約条件 → RiemannFinMath の引数。値ごとに、原文の値・変換後・状態（記載あり／不足／前提）を残す
+# 契約条件 → rmql の引数。値ごとに、原文の値・変換後・状態（記載あり／不足／前提）を残す
 trs_terms_QL <- function(conditions) {
   g <- .condition_getter_c1(conditions)
   log <- list()
@@ -61,7 +61,7 @@ trs_terms_QL <- function(conditions) {
     f_lookback = item("funding.lookback_days", "FundingLeg ルックバック（営業日）", g("funding.lookback_days"), num("funding.lookback_days")),
     f_shift = item("funding.observation_shift", "FundingLeg 観測期間のシフト", shift, if (identical(toupper(shift %|% ""), "NO")) "なし" else NA,
                    status = if (is.na(shift)) "不足" else if (toupper(shift) == "NO") "原文どおり" else "未対応",
-                   note = "観測期間のシフトありは RiemannFinMath の TRS が未対応"),
+                   note = "観測期間のシフトありは rmql の TRS が未対応"),
     f_reset = item("funding.reset_relative_to", "FundingLeg リセット日", g("funding.reset_relative_to"),
                    c(PERIOD_START = "period_start", PERIOD_END = "period_end")[toupper(g("funding.reset_relative_to") %|% "")]),
     f_fixing_offset = item("funding.fixing_offset_days", "FundingLeg 金利決定日（リセット日からの営業日）", g("funding.fixing_offset_days"), num("funding.fixing_offset_days")),
@@ -105,7 +105,7 @@ trs_fixings_QL <- function(index) {
   if (is.na(from) || is.na(to)) return(NA_integer_)
   if (to == from) return(0L)
   s <- if (to > from) seq(from + 1, to, by = "day") else seq(to + 1, from, by = "day")
-  n <- sum(RiemannFinMath::is_business_day(calendar, s))
+  n <- sum(rmql::is_business_day(calendar, s))
   if (to > from) n else -n
 }
 
@@ -134,7 +134,7 @@ build_trs_cashflows_QL <- function(case_dir, scenario_return_pct = NULL) {
     cv <- build_ois_curves_Curie(q, evaluation_date, "JPY")$JPY
     if (is.null(cv$error)) {
       curve <- cv$curve
-      curve_note <- paste0("A1 のデモの JPY OIS カーブ（", evaluation_date, "、架空。RiemannFinMath bootstrap_ois_curve）で翌日物の先渡金利を試算")
+      curve_note <- paste0("A1 のデモの JPY OIS カーブ（", evaluation_date, "、架空。rmql bootstrap_ois_curve）で翌日物の先渡金利を試算")
     }
   }
   fixings <- if (!length(f_missing)) trs_fixings_QL(t$f_index) else NULL
@@ -143,13 +143,13 @@ build_trs_cashflows_QL <- function(case_dir, scenario_return_pct = NULL) {
   funding <- if (length(f_missing)) {
     list(sheet = tibble::tibble(状態 = "算出不可", 不足項目 = label_of(f_missing)), checks = NULL, rows = NULL)
   } else {
-    leg <- RiemannFinMath::create_trs_funding_leg(
+    leg <- rmql::create_trs_funding_leg(
       t$effective_date, t$termination_date, t$f_frequency, t$f_payment_calendar, period_convention, t$f_payment_calendar,
       t$f_payment_convention, t$f_payment_lag, t$f_index, t$f_day_count, t$notional, t$f_spread_bp, lookback = t$f_lookback,
       reset_relative_to = t$f_reset, fixing_offset = t$f_fixing_offset, fixing_calendar = t$f_fixing_calendar,
       fixing_convention = t$f_fixing_convention)
-    s <- RiemannFinMath::get_trs_funding_schedule(leg)
-    a <- RiemannFinMath::compute_trs_funding_cashflows(leg, evaluation_date, fixings, curve)
+    s <- rmql::get_trs_funding_schedule(leg)
+    a <- rmql::compute_trs_funding_cashflows(leg, evaluation_date, fixings, curve)
     same_unadjusted <- all(s$unadjusted_start == s$accrual_start & s$unadjusted_end == s$accrual_end)
     status_ja <- c(fixed = "確定", projected = "試算", missing = "算出不可")
     basis <- dplyr::case_when(
@@ -193,18 +193,18 @@ build_trs_cashflows_QL <- function(case_dir, scenario_return_pct = NULL) {
   return_leg <- if (length(r_missing)) {
     list(sheet = tibble::tibble(状態 = "算出不可", 不足項目 = label_of(r_missing)), checks = NULL)
   } else {
-    make <- function(anchor, with_payment) RiemannFinMath::create_trs_return_leg(
+    make <- function(anchor, with_payment) rmql::create_trs_return_leg(
       t$effective_date, t$termination_date, t$r_frequency, t$r_valuation_calendar, period_convention,
       if (with_payment) t$f_payment_calendar else NULL, if (with_payment) t$f_payment_convention else NULL,
       if (with_payment) t$f_payment_lag else NULL, t$notional, t$r_initial_price, anchor, t$r_valuation_offset,
       t$r_valuation_calendar, "preceding", final_valuation_date = if (is.na(t$r_final_valuation)) NULL else t$r_final_valuation)
     # 「Payment Date」の読み方：ReturnLeg の支払日は原文で定義されていない。FundingLeg の支払日と読む場合と、計算期間の終了日と
-    # 読む場合を RiemannFinMath で計算し、原文の最終評価日と一致する読み方を採る（一致しなければ要確認）
+    # 読む場合を rmql で計算し、原文の最終評価日と一致する読み方を採る（一致しなければ要確認）
     readings <- list()
     if (identical(t$r_valuation_anchor, "payment_date") && !length(f_missing)) {
-      readings$funding_payment <- RiemannFinMath::get_trs_return_schedule(make("payment_date", TRUE))
+      readings$funding_payment <- rmql::get_trs_return_schedule(make("payment_date", TRUE))
     }
-    readings$period_end <- RiemannFinMath::get_trs_return_schedule(make("period_end", FALSE))
+    readings$period_end <- rmql::get_trs_return_schedule(make("period_end", FALSE))
     final_by <- purrr::map(readings, \(s) dplyr::last(s$valuation_date_by_rule))
     agrees <- purrr::map_lgl(final_by, \(d) !is.na(t$r_final_valuation) && d == t$r_final_valuation)
     chosen <- if (identical(t$r_valuation_anchor, "period_end")) "period_end" else if (isTRUE(agrees[["funding_payment"]])) "funding_payment" else
@@ -221,7 +221,7 @@ build_trs_cashflows_QL <- function(case_dir, scenario_return_pct = NULL) {
       yrs <- as.numeric(s$valuation_date - t$effective_date) / 365
       levels <- tibble::tibble(date = s$valuation_date, level = t$r_initial_price * (1 + scenario_return_pct / 100)^yrs, kind = "scenario")
     }
-    a <- RiemannFinMath::compute_trs_return_cashflows(leg, levels)
+    a <- rmql::compute_trs_return_cashflows(leg, levels)
     status_ja <- c(fixed = "確定", scenario = "試算", missing = "算出不可")
     basis <- dplyr::case_when(
       a$status == "fixed" ~ "公表された指数値",
