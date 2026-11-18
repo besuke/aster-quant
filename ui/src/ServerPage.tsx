@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, fmt, type ServerInfo } from "./api";
-import { useServerConnection } from "./serverConnection";
+import { SERVER_NAME, SERVER_NAMES, useServerConnection } from "./serverConnection";
 
-// AsterQuant Server の接続確認ページ（Carmine Studio の接続ページにならう）。右上の表示から開く。
+// Infrago Quant Server の接続確認ページ（Carmine Studio の接続ページにならう）。右上の表示から開く。
 
 export default function ServerPage() {
   const { last, history, checking, intervalSec, checkNow } = useServerConnection();
@@ -30,7 +30,7 @@ export default function ServerPage() {
   return (
     <div className="page">
       <section className="intro">
-        <h1>AsterQuant Server</h1>
+        <h1>Infrago Quant Server</h1>
       </section>
       <section className="card" data-testid="server-status">
         <div className="row spread">
@@ -88,7 +88,7 @@ export default function ServerPage() {
             <section className="card" data-testid="server-info">
               <h2>サーバー</h2>
               <dl className="detail">
-                <div><dt>名前</dt><dd>{info.name === "QuantLet Server" ? "AsterQuant Server" : info.name}（{info.app_version}）</dd></div>
+                <div><dt>名前</dt><dd>{SERVER_NAMES.includes(info.name) ? SERVER_NAME : info.name}（{info.app_version}）</dd></div>
                 <div><dt>計算エンジン</dt><dd>{info.engine.name} {info.engine.version}</dd></div>
                 <div><dt>待ち受け</dt><dd className="mono">{info.listen.host}:{info.listen.port}{info.listen.serves_page ? "（画面も配る）" : "（API だけ）"}</dd></div>
                 <div><dt>R</dt><dd>{info.runtime.r_version}（{info.runtime.platform}、PID {info.runtime.pid}、論理プロセッサ {info.runtime.logical_processors}）</dd></div>
@@ -113,7 +113,7 @@ export default function ServerPage() {
                   </thead>
                   <tbody>
                     {info.routes.map((r) => (
-                      <tr key={r.method + r.path}><td>{r.method}</td><td className="mono">{r.path}</td><td>{r.page.replace("QuantLet Server", "AsterQuant Server")}</td></tr>
+                      <tr key={r.method + r.path}><td>{r.method}</td><td className="mono">{r.path}</td><td>{r.page.replace(/(AsterQuant|QuantLet) Server/, SERVER_NAME)}</td></tr>
                     ))}
                   </tbody>
                 </table>

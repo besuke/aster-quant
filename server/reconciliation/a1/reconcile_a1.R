@@ -1,11 +1,18 @@
 # A1 の照合：QuantLet（RiemannFinMath）と Curie の旧デモ結果（GaussQuant・QuantLib 1.42）。
 #
-#   "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/a1/reconcile_a1.R     （server/ で実行）
+#   Rscript reconciliation/a1/reconcile_a1.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/reconciliation/a1/reconcile_a1.R）
 #
 # 基準：Curie output/offer_results_{JPY,ISO}_demo_20261006.xlsx の「オファー結果」シート（2026-10-27 作成、QuantLet の
 # reconciliation/curie_reference/a1/ に写した）。入力は同じデモデータ（架空）。Curie・GaussQuant・Riemann は変更しない。
 # 結果は reconciliation/a1/results/ に書く。
 suppressPackageStartupMessages({ library(dplyr); library(readxl) })
+# この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
+local({
+  f <- sub("^--file=", "", grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
+  d <- if (length(f)) dirname(normalizePath(f[1L], winslash = "/")) else normalizePath(getwd(), winslash = "/")
+  while (!file.exists(file.path(d, "VERSION")) && dirname(d) != d) d <- dirname(d)
+  setwd(d)
+})
 source("R/load_quantlet.R", encoding = "UTF-8"); load_quantlet(getwd())
 out_dir <- file.path("reconciliation", "a1", "results"); dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 demo <- a1_demo_inputs_QL()

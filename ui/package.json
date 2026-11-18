@@ -1,18 +1,23 @@
 {
-  "name": "aster-quant-ui",
+  "name": "infrago-quant-ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "AsterQuant の Web 画面（React＋TypeScript）。入力・アップロード・API の呼び出し・結果の表示だけを行い、計算はしない",
+  "description": "Infrago Quant の Web 画面（React＋TypeScript）。入力・アップロード・API の呼び出し・結果の表示だけを行い、計算はしない",
   "scripts": {
     "dev": "node scripts/check-port.mjs 8091 && vite",
-    "api": "node scripts/run-r.mjs ../server/server.R --port 8790",
+    "api": "node scripts/run-r.mjs --check ../server/server.R --port 8790",
     "build": "tsc -b && vite build",
     "preview": "node scripts/check-port.mjs 8091 && vite preview",
     "typecheck": "tsc -b",
-    "lan": "npm run build && node scripts/check-port.mjs 8091 0.0.0.0 && node scripts/run-r.mjs ../server/server.R --host 0.0.0.0 --port 8091 --static ../ui/dist",
+    "test:nav": "node tests/nav.e2e.mjs",
+    "lan": "npm run build && node scripts/check-port.mjs 8091 0.0.0.0 && node scripts/run-r.mjs --check ../server/server.R --host 0.0.0.0 --port 8091 --static ../ui/dist",
     "reconcile:a1": "node scripts/run-r.mjs ../server/reconciliation/a1/reconcile_a1.R",
-    "reconcile:c1": "node scripts/run-r.mjs ../server/reconciliation/c1/reconcile_c1.R"
+    "reconcile:c1": "node scripts/run-r.mjs ../server/reconciliation/c1/reconcile_c1.R",
+    "check:r": "node scripts/run-r.mjs --check",
+    "r": "node scripts/run-r.mjs",
+    "test:irrbb": "node scripts/run-r.mjs ../server/tests/irrbb_checks.R",
+    "demo:offer": "node scripts/run-r.mjs ../server/scripts/make_single_offer_demo.R"
   },
   "dependencies": {
     "react": "19.1.10",

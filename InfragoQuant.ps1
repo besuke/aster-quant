@@ -1,20 +1,20 @@
 ﻿<#
-AsterQuant.ps1 — AsterQuant Server（R API、計算は RiemannFinMath）と画面（クライアント）を起動し、ブラウザーで開く。
+InfragoQuant.ps1 — Infrago Quant Server（R API、計算は RiemannFinMath）と画面（クライアント）を起動し、ブラウザーで開く。
 
-  .\AsterQuant.ps1               メニュー（番号で選ぶ）
-  .\AsterQuant.ps1 -Mode dev     この PC で起動（開発用）。R API 127.0.0.1:8790（npm run api）と画面 http://127.0.0.1:8091/（npm run dev）
-  .\AsterQuant.ps1 -Mode lan     社内LANで起動（配備）。画面をビルドし、画面と API を 8091 でまとめて公開する（npm run lan）
-  .\AsterQuant.ps1 -Mode server  サーバー（R API、127.0.0.1:8790）だけを起動する
-  .\AsterQuant.ps1 -Mode client  クライアント（Web 画面、http://127.0.0.1:8091/）だけを起動してブラウザーで開く
-  .\AsterQuant.ps1 -Mode resume  Claude Code をこのフォルダーで開く（セッションがあれば claude --resume）
+  .\InfragoQuant.ps1               メニュー（番号で選ぶ）
+  .\InfragoQuant.ps1 -Mode dev     この PC で起動（開発用）。R API 127.0.0.1:8790（npm run api）と画面 http://127.0.0.1:8091/（npm run dev）
+  .\InfragoQuant.ps1 -Mode lan     社内LANで起動（配備）。画面をビルドし、画面と API を 8091 でまとめて公開する（npm run lan）
+  .\InfragoQuant.ps1 -Mode server  サーバー（R API、127.0.0.1:8790）だけを起動する
+  .\InfragoQuant.ps1 -Mode client  クライアント（Web 画面、http://127.0.0.1:8091/）だけを起動してブラウザーで開く
+  .\InfragoQuant.ps1 -Mode resume  Claude Code をこのフォルダーで開く（セッションがあれば claude --resume）
 
-フォルダー名を aster-quant に変更したあとも、そのまま動く（パスはすべて $PSScriptRoot からの相対）。
+フォルダー名を InfragoQuant に変更したあとも、そのまま動く（パスはすべて $PSScriptRoot からの相対）。
 #>
 param([ValidateSet("menu", "dev", "lan", "server", "client", "resume")] [string] $Mode = "menu")
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
-$Host.UI.RawUI.WindowTitle = "AsterQuant"
+$Host.UI.RawUI.WindowTitle = "Infrago Quant"
 
 $Root = $PSScriptRoot
 $UI = Join-Path $Root "ui"
@@ -28,12 +28,12 @@ if (-not $Claude) { $Claude = Join-Path $env:USERPROFILE ".local\bin\claude.exe"
 
 function Say([string] $text, [string] $color = "Gray") { Write-Host $text -ForegroundColor $color }
 
-# 利用者に案内するホスト：deploy.local.env の ASTERQUANT_PUBLIC_HOST または QUANTLET_PUBLIC_HOST、なければこの PC の LAN の IPv4
+# 利用者に案内するホスト：deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST または QUANTLET_PUBLIC_HOST、なければこの PC の LAN の IPv4
 function Get-PublicHost {
   $file = Join-Path $Root "deploy.local.env"
   if (Test-Path $file) {
     foreach ($line in Get-Content $file -Encoding UTF8) {
-      if ($line -match '^\s*(?:ASTERQUANT_PUBLIC_HOST|QUANTLET_PUBLIC_HOST)\s*=\s*(\S*)\s*$' -and $Matches[1]) {
+      if ($line -match '^\s*(?:INFRAGO_QUANT_PUBLIC_HOST|QUANTLET_PUBLIC_HOST)\s*=\s*(\S*)\s*$' -and $Matches[1]) {
         return [pscustomobject]@{ Host = $Matches[1]; Source = "deploy.local.env の設定" }
       }
     }
@@ -47,14 +47,14 @@ function Get-PublicHost {
 function Get-Text([string] $url) {
   try { (Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 3).Content } catch { $null }
 }
-# AsterQuant Server は /api/health に {"status":"ok","name":"AsterQuant Server",...} と答える
-function Test-AsterQuantApi([string] $url) {
+# Infrago Quant Server は /api/health に {"status":"ok","name":"Infrago Quant Server",...} と答える（旧名 AsterQuant Server・QuantLet Server も受け付ける）
+function Test-InfragoQuantApi([string] $url) {
   $t = Get-Text $url
-  [bool]($t -and ($t -match '"name"\s*:\s*"AsterQuant Server"' -or $t -match '"name"\s*:\s*"QuantLet Server"'))
+  [bool]($t -and ($t -match '"name"\s*:\s*"(Infrago Quant|AsterQuant|QuantLet) Server"'))
 }
-function Test-AsterQuantPage([string] $url) {
+function Test-InfragoQuantPage([string] $url) {
   $t = Get-Text $url
-  [bool]($t -and ($t -match "<title>AsterQuant</title>" -or $t -match "<title>QuantLet</title>"))
+  [bool]($t -and ($t -match "<title>(Infrago Quantlet|AsterQuant|QuantLet)</title>"))
 }
 
 # ポートが空いているか。使われていれば、番号と使っているプロセスを示す
@@ -67,7 +67,7 @@ function Assert-PortFree([int] $port, [string] $bind, [string] $name) {
   } catch {
     $owner = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
     $proc = if ($owner) { (Get-Process -Id $owner.OwningProcess -ErrorAction SilentlyContinue).ProcessName } else { "不明" }
-    Say "ポート $port は AsterQuant 以外のプロセス（$proc、PID $($owner.OwningProcess)）が使っています。$name を起動できません。別のポートには切り替えません。" "Red"
+    Say "ポート $port は Infrago Quant 以外のプロセス（$proc、PID $($owner.OwningProcess)）が使っています。$name を起動できません。別のポートには切り替えません。" "Red"
     return $false
   } finally { if ($listener) { $listener.Stop() } }
 }
@@ -81,6 +81,16 @@ function Wait-Url([string] $url, [int] $seconds, [string] $name) {
   return $false
 }
 
+# R の確認（settings.local.env の RSCRIPT → PATH の順に選んだ R の版と、RiemannFinMath などの必須パッケージ）。
+# 読み込めなければ、選ばれた R と不足しているパッケージを表示して false を返す
+function Test-REnvironment {
+  Say "      R を確かめています（npm run check:r）..."
+  Push-Location $UI
+  try { & $Npm run --silent check:r | Out-Host; $ok = ($LASTEXITCODE -eq 0) } finally { Pop-Location }
+  if (-not $ok) { Say "R の確認で止めました。上の表示を見て、パッケージを入れるか $Root\settings.local.env の RSCRIPT を直してください。" "Red" }
+  return $ok
+}
+
 # 新しいウィンドウで npm のスクリプトを動かす（ウィンドウを閉じると止まる）
 function Start-NpmWindow([string] $title, [string] $script) {
   Start-Process powershell.exe -WorkingDirectory $UI -ArgumentList @(
@@ -89,26 +99,27 @@ function Start-NpmWindow([string] $title, [string] $script) {
 
 function Start-ServerOnly {
   Say ""
-  if (Test-AsterQuantApi $Api) {
-    Say "AsterQuant Server（R API）はすでに起動しています（127.0.0.1:8790）。" "Green"
+  if (Test-InfragoQuantApi $Api) {
+    Say "Infrago Quant Server（R API）はすでに起動しています（127.0.0.1:8790）。" "Green"
     return $true
   }
   if (-not (Assert-PortFree 8790 "127.0.0.1" "R API")) { return $false }
-  Say "AsterQuant Server（R API）を別のウィンドウで起動します（127.0.0.1:8790、npm run api）..."
-  Start-NpmWindow "AsterQuant Server (8790)" "api"
-  return (Wait-Url $Api 120 "AsterQuant Server")
+  if (-not (Test-REnvironment)) { return $false }
+  Say "Infrago Quant Server（R API）を別のウィンドウで起動します（127.0.0.1:8790、npm run api）..."
+  Start-NpmWindow "Infrago Quant Server (8790)" "api"
+  return (Wait-Url $Api 120 "Infrago Quant Server")
 }
 
 function Start-ClientOnly {
   Say ""
-  if (Test-AsterQuantPage $Page) {
-    Say "AsterQuant の画面（クライアント）はすでに起動しています（$Page）。ブラウザで開きます。" "Green"
+  if (Test-InfragoQuantPage $Page) {
+    Say "Infrago Quant の画面（クライアント）はすでに起動しています（$Page）。ブラウザで開きます。" "Green"
     Start-Process $Page
     return $true
   }
   if (-not (Assert-PortFree 8091 "127.0.0.1" "画面")) { return $false }
   Say "クライアント（Web 画面）を別のウィンドウで起動します（$Page、npm run dev）..."
-  Start-NpmWindow "AsterQuant Client (8091)" "dev"
+  Start-NpmWindow "Infrago Quant Client (8091)" "dev"
   if (-not (Wait-Url $Page 60 "画面")) { return $false }
   Say "ブラウザで $Page を開きます。"
   Start-Process $Page
@@ -117,20 +128,21 @@ function Start-ClientOnly {
 
 function Start-Dev {
   Say ""
-  if (Test-AsterQuantApi $Api) {
-    Say "[1/3] AsterQuant Server の R API はすでに起動しています（127.0.0.1:8790）。そのまま使います。"
+  if (Test-InfragoQuantApi $Api) {
+    Say "[1/3] Infrago Quant Server の R API はすでに起動しています（127.0.0.1:8790）。そのまま使います。"
   } else {
     if (-not (Assert-PortFree 8790 "127.0.0.1" "R API")) { return $false }
+    if (-not (Test-REnvironment)) { return $false }
     Say "[1/3] R API を別のウィンドウで起動します（127.0.0.1:8790、npm run api）..."
-    Start-NpmWindow "AsterQuant Server (8790)" "api"
+    Start-NpmWindow "Infrago Quant Server (8790)" "api"
     if (-not (Wait-Url $Api 120 "R API")) { return $false }
   }
-  if (Test-AsterQuantPage $Page) {
-    Say "[2/3] AsterQuant の画面はすでに起動しています（$Page）。そのまま使います。"
+  if (Test-InfragoQuantPage $Page) {
+    Say "[2/3] Infrago Quant の画面はすでに起動しています（$Page）。そのまま使います。"
   } else {
     if (-not (Assert-PortFree 8091 "127.0.0.1" "画面")) { return $false }
     Say "[2/3] 画面を別のウィンドウで起動します（$Page、npm run dev）..."
-    Start-NpmWindow "AsterQuant Client (8091)" "dev"
+    Start-NpmWindow "Infrago Quant Client (8091)" "dev"
     if (-not (Wait-Url $Page 60 "画面")) { return $false }
   }
   if (-not (Wait-Url $PageApi 30 "画面から R API への接続")) { return $false }
@@ -138,22 +150,23 @@ function Start-Dev {
   Start-Process $Page
   Say ""
   Say "起動しました（開発用）。社内のほかの端末に配るときは 2 を使ってください。" "Green"
-  Say "止めるときは「AsterQuant Server (8790)」と「AsterQuant Client (8091)」のウィンドウを閉じてください。"
+  Say "止めるときは「Infrago Quant Server (8790)」と「Infrago Quant Client (8091)」のウィンドウを閉じてください。"
   return $true
 }
 
 function Start-Lan {
   Say ""
   $pub = Get-PublicHost
-  if (-not $pub.Host) { Say "社内に案内するホスト名・IP アドレスが決まりません。$Root\deploy.local.env の QUANTLET_PUBLIC_HOST に書いてください。" "Red"; return $false }
+  if (-not $pub.Host) { Say "社内に案内するホスト名・IP アドレスが決まりません。$Root\deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST に書いてください。" "Red"; return $false }
   $publicUrl = "http://$($pub.Host):8091/"
-  if (Test-AsterQuantPage $Page) { Say "AsterQuant の画面がすでに 8091 で起動しています。社内LANで公開するときは、先にそのウィンドウを閉じてください。" "Red"; return $false }
+  if (Test-InfragoQuantPage $Page) { Say "Infrago Quant の画面がすでに 8091 で起動しています。社内LANで公開するときは、先にそのウィンドウを閉じてください。" "Red"; return $false }
   if (-not (Assert-PortFree 8091 "0.0.0.0" "社内LAN用のサーバー")) { return $false }
+  if (-not (Test-REnvironment)) { return $false }
   Say "[1/3] 画面をビルドし、画面と API を 8091 でまとめて公開します（別のウィンドウ、npm run lan）..."
   Say "      案内するアドレス：$publicUrl（$($pub.Source)）"
   $env:QUANTLET_PUBLIC_HOST = $pub.Host
   $env:QUANTLET_PUBLIC_HOST_SOURCE = $pub.Source
-  Start-NpmWindow "AsterQuant LAN (8091)" "lan"
+  Start-NpmWindow "Infrago Quant LAN (8091)" "lan"
   if (-not (Wait-Url $PageApi 300 "社内LAN用のサーバー")) { return $false }
   Say "[2/3] 案内するアドレスで応答を確かめます（$($publicUrl)api/health）..."
   if (-not (Wait-Url "$($publicUrl)api/health" 20 $publicUrl)) { return $false }
@@ -163,16 +176,16 @@ function Start-Lan {
   Say "利用者には次のアドレスを案内してください：" "Green"
   Say "  $publicUrl" "Green"
   Say "社内のほかの端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可してください（この PC の設定）。"
-  Say "止めるときは「AsterQuant LAN (8091)」のウィンドウを閉じてください。"
+  Say "止めるときは「Infrago Quant LAN (8091)」のウィンドウを閉じてください。"
   return $true
 }
 
 function Open-Page {
   $pub = Get-PublicHost
   $publicUrl = if ($pub.Host) { "http://$($pub.Host):8091/" } else { $null }
-  if ($publicUrl -and (Test-AsterQuantPage $publicUrl)) { Start-Process $publicUrl; return }
-  if (Test-AsterQuantPage $Page) { Start-Process $Page; return }
-  Say "AsterQuant の画面がまだ起動していません。先に 1 か 2 を実行してください。" "Yellow"
+  if ($publicUrl -and (Test-InfragoQuantPage $publicUrl)) { Start-Process $publicUrl; return }
+  if (Test-InfragoQuantPage $Page) { Start-Process $Page; return }
+  Say "Infrago Quant の画面がまだ起動していません。先に 1 か 2 を実行してください。" "Yellow"
 }
 
 function Start-Claude {
@@ -200,7 +213,7 @@ while ($true) {
   $pub = Get-PublicHost
   Say ""
   Say "==============================================================" "Cyan"
-  Say " AsterQuant 運用分析・業務支援（AsterQuant Server、計算は RiemannFinMath）" "Cyan"
+  Say " Infrago Quant 運用分析・業務支援（Infrago Quant Server、計算は RiemannFinMath）" "Cyan"
   Say "==============================================================" "Cyan"
   Say " 1  この PC で起動する：サーバー（8790）とクライアント画面（8091）を開いて表示（開発用、127.0.0.1）"
   Say " 2  社内LANで起動する：画面と API を 8091 でまとめて公開し、http://$($pub.Host):8091/ を開く"

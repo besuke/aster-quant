@@ -1,5 +1,12 @@
 # IRRBB 金利シナリオの検算（RiemannFinMath と QuantLet の集計）。
-#   "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" tests/irrbb_checks.R     （server/ で実行）
+#   Rscript tests/irrbb_checks.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/tests/irrbb_checks.R）
+# この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
+local({
+  f <- sub("^--file=", "", grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
+  d <- if (length(f)) dirname(normalizePath(f[1L], winslash = "/")) else normalizePath(getwd(), winslash = "/")
+  while (!file.exists(file.path(d, "VERSION")) && dirname(d) != d) d <- dirname(d)
+  setwd(d)
+})
 source("R/load_quantlet.R", encoding = "UTF-8"); load_quantlet(getwd())
 results <- list()
 check <- function(name, ok, detail = "") {

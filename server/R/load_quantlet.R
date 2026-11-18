@@ -24,7 +24,9 @@
   yields = c("jgb_ust_yields.R"),
   reports = c("report_reader.R", "report_store.R", "report_feedback.R"),
   market = c("ois_datasets.R"),
-  irrbb = c("irrbb_scenarios.R")
+  irrbb = c("irrbb_scenarios.R"),
+  # 債券キャッシュフロー・イールドカーブ・クレジット（CDS）。Carmine Studio の3画面から移した
+  analytics = c("analytics_input.R", "bond_cashflow.R", "zero_curves.R", "credit_cds.R", "tona_ois_scenario.R", "jgb_futures.R", "early_redemption.R")
 )
 
 load_quantlet <- function(root = Sys.getenv("QUANTLET_ROOT", ""), envir = globalenv()) {

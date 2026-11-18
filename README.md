@@ -1,63 +1,54 @@
-# AsterQuant
+# Infrago Quant
 
-運用の分析・業務支援を行う Web アプリである（旧称 QuantLet）。対象は債券に限らず、市場分析・ポートフォリオ分析・リスク管理（IRRBB など）の画面を足していく。Curie（`../Curie`、R Project）の後継として、まず次の2つを移植した。
+運用の分析・業務支援を行う Web アプリ（旧称 QuantLet）。債券・金利・クレジット・リスク（IRRBB）の計算画面と、オファーシート・TRS 契約書・レポート掲示板の業務画面を持つ。計算は R の HTTP API（`server/`）が RiemannFinMath を呼んで行い、画面（`ui/`、React＋TypeScript）は入力と表示だけをする。
+
+- 始めるには：[`HANDOVER.md`](HANDOVER.md)（引き継ぎの正本：新しい PC・R の版が違う PC の準備、コマンド、社内LANでの公開、未了）。起動は [起動](#起動)
+- 画面の構成と、できること：[画面](#画面)。API：下の「API」の節
+- Claude Code 向けの決めごと：[`CLAUDE.md`](CLAUDE.md)
+
+Curie（`../Curie`、R Project）の後継で、Curie の次の2つを移植し、画面を足してきた（Curie は変更していない。移行中も従来の手順 `source("scripts/run_demo_JPY.R")` などで使える）。
 
 - **A1 オファーシート**：円債・外債のオファー Excel の取込、銘柄属性と市場データの結合、ASW の計算、Excel 出力
 - **C1 TRS 確認書の連携**：確認書の取込、契約条件の抽出、原文との照合、条件 JSON・FpML の作成、未確定の項目と Aladdin 向けの下書き
 
-Curie は変更していない。移行中も Curie は従来の手順（`source("scripts/run_demo_JPY.R")` など）で使える。
-
 | ディレクトリ | 担当 |
 |---|---|
-| `server/` | R の HTTP API（httpuv）。金融計算は `RiemannFinMath` を呼ぶ。取込・整形・結合・集計・検証は R と tidyverse で行う（Curie から移植） |
+| `server/` | R の HTTP API（httpuv）。金融計算は `RiemannFinMath` を呼ぶ。取込・整形・結合・集計・検証は R と tidyverse で行う（Curie から移植）。新しい計算画面の計算は `server/R/analytics/` |
 | `ui/` | React＋TypeScript の Web 画面。ファイルのアップロード、入力、API の呼び出し、JSON で返る結果の表示を担当する。計算はしない |
 
 データはすべて架空のデモデータである（Curie のデモと同じもの）。実在の銘柄・市場価格ではない。
 
 ## 起動
 
-R 4.6.0（`C:/Program Files/R/R-4.6.0`）、RiemannFinMath 0.3.0、Node.js 23.6 以上（確認は 26.13.0）。
+準備（npm install、R のパッケージ、RiemannFinMath）、R の選び方、全コマンド、社内LANでの公開、確認の手順は、**`HANDOVER.md`** にまとめてある（引き継ぎの正本）。準備ができていれば、起動はこの1行。
 
 ```powershell
-cd C:/AnalyticFin/Projects/aster-quant
-.\AsterQuant.ps1       # メニューから起動（1：この PC で開発起動、2：社内LANで公開、4：サーバーのみ、5：クライアントのみ）
-.\Start-Server.ps1     # サーバー（R API 127.0.0.1:8790）だけを起動
-.\Start-Client.ps1     # クライアント（Web 画面 http://127.0.0.1:8091/）だけを起動
+.\start_infrago.ps1    # R API（127.0.0.1:8790）と画面（http://127.0.0.1:8091/）を起動し、ブラウザーで開く
 ```
-
-または `ui/` ディレクトリから直接起動する：
-
-```powershell
-cd C:/AnalyticFin/Projects/aster-quant/ui
-npm install          # 初回だけ
-npm run api          # R の API を 127.0.0.1:8790 で起動（別のターミナルで開いたままにする）
-npm run dev          # 画面を http://127.0.0.1:8091/ で起動
-```
-
-- ポートは画面 8091、API 8790。Carmine Studio（8081・8787）とは重ならない。8091 が使用中なら `npm run dev` は別のポートへ移らずに止まる
-- `npm run api` は `server/server.R` を Rscript で起動するだけである。直接起動する場合は `"C:/Program Files/R/R-4.6.0/bin/Rscript.exe" server/server.R --port 8790`
-- 一つのポートで画面と API をまとめて出す場合：`npm run lan`（ビルドして `server.R --static ../ui/dist` で配信。`--host 0.0.0.0` で LAN に公開する）
-
-### 社内の端末に配る（配備）
-
-`127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
-
-1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`ASTERQUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
-2. `AsterQuant.ps1` で **2（社内LANで起動）** を選ぶ。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する（`.\AsterQuant.ps1 -Mode lan` でメニューなしでも起動できる）
-3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。AsterQuant からは変えない）
-
-AsterQuant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（1、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
-
-ホスト名にアンダースコア（例 `CHIRO_FMV_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
-
-R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl, writexl, xml2, zip, rlang, collapse, jsonlite, httpuv, RiemannFinMath（C1 はさらに pdftools, openssl, curl, processx）。GaussQuant と QuantLib（R バインディング）は使わない。
 
 ## 画面
 
-左のアイコン付きサイドメニューで切り替える（この順。`ui/src/App.tsx` の `PAGES` に項目を足せば画面を増やせる。アイコンだけの幅にも折りたためる）。ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）で、Carmine Studio と同じ方針で横幅を活かして配置する。右上の「AsterQuant Server：接続中／未接続」は全画面共通で、15 秒ごとに `/api/health` の実際の応答で決める。クリックすると接続確認ページ（`#server`：案内用の URL、待ち受け、RiemannFinMath の版、稼働時間、計算の時間、応答する経路）を開く。アドレスは `#reports`・`#rates`・`#offers`・`#trs`・`#irrbb`（以前の `#a1`・`#c1`・`#yields` も開ける）。
+画面の構成は Carmine Studio と同じ：上の帯（左にロゴと「Infrago Quantlet」、右に Infrago Quant Server の接続表示）と、その下の左サイドバー。サイドバーは4つのグループで、最初から全部開いている（自動では閉じない）。名前をクリックすると、そのグループだけ手動で開閉できる。構成は `ui/src/nav.ts`（項目を足すときはここ）。
+
+| グループ | 項目（表示順） | 実装状況 |
+|---|---|---|
+| レポートと市場分析 | イールドカーブ分析（イールドカーブ・TONA OIS・スワップ・日米の国債金利・OIS を切り替え）／レポートサマリー（掲示板・レポート登録・レポート一覧）／発行体格付け推移 | 発行体格付け推移は準備中 |
+| オファーレベル | オファーシート（取り込み・一覧。関連画面：TRS契約書連携） | 実装済み（比較の専用画面はない） |
+| 商品評価 | アセットスワップ（銘柄の入口。関連画面：債券キャッシュフロー・国債先物・CTD）／早期償還（コール債・MBS） | 実装済み |
+| リスク計算 | IRRBB／クレジットVaR（関連画面：クレジット・CDS）／格付け枠管理 | クレジットVaR・格付け枠管理は準備中（クレジット・CDS は動く） |
+
+トップ URL では「レポートサマリー」の掲示板を表示する。個別ページの URL（`#curves` など）を直接開くと、そのページを表示し、そのグループの項目を選択状態にする。ブラウザのタブのタイトルは「Infrago Quantlet/（開いているメニュー名）」。アセットスワップはオファーシートの最新の計算結果から銘柄を探し、詳細は `#offers/<ISIN>` で開く（計算は A1 と同じ処理を再利用）。サーバー接続（`#server`）は右上の接続ステータスから開く。ブラウザでの確認は `npm run test:nav`（`ui/tests/nav.e2e.mjs`、サーバーと画面を起動しておく）。
+
+色は深い緑（`--accent: #166534`）、ボタン・入力欄・選択・スライダーは Carmine Studio と同じ Aqua 風（光沢・角丸・影）、グラフと表は白地。右上の「Infrago Quant Server：接続中／未接続」は 15 秒ごとに `/api/health` の実際の応答で決める。
 
 | メニュー | できること |
 |---|---|
+| イールドカーブ | ゼロ金利のノード（年限・日付・金利を編集、足す・削除）から、割引係数の対数を単調3次補間したカーブと、平行移動したカーブ（bp、スライダー）を作り、ゼロ金利・割引係数・フォワードの3グラフと年限ごとの表を出す。Carmine Studio の yield-curves から移した |
+| TONA OIS・スワップ | 保存済みの円 OIS 気配（今はデモの架空データ）から TONA カーブを作り、選んだ年限の気配を ±bp 動かしたときの割引係数・ゼロ金利・1暦日フォワードとその差、基準カーブのパーレートで固定した OIS（固定払い・TONA 受け、年限と想定元本を選ぶ）の PV の変化、キャッシュフローを出す。Carmine Studio の yield-curve-ois から移した（Carmine の気配は GaussQuant のサンプルなので使わない） |
+| 債券キャッシュフロー | 固定利付債（半年払い、30/360）の取引日・発行日・償還日・クーポン・単利利回り・Zスプレッドから、単価・複利利回り・経過利子・BPV・修正デュレーション・コンベクシティ・Zスプレッドの価格、キャッシュフローの棒グラフと表、価格と利回りの曲線（一次・二次の近似つき）を出す。Carmine Studio の deterministic-cashflow から、説明用の部分（解析式との比較、求根法の比較、模式図）を除いて移した |
+| 早期償還（コール債・MBS） | コール条項つき債券（5年、半年クーポン、Hull-White 1因子。金利・a・σ・クーポン・最初のコール・コール価格を選ぶ）のコール付き価格・ブレット価格・発行体のコール・オプションの価値と、σ を動かしたときの変化。MBS（パススルー、PSA・借換えの感応度・借換え費用）の借換え金利シナリオ別の価格・加重平均life・CPR・キャッシュフロー。Carmine Studio の early-redemption から、RiemannFinMath で計算できる部分だけを移した（コール判断の境界・20本の経路・静的 OAS は原稿の独自の R 関数や乱数に依るので移していない） |
+| 国債先物・CTD | 受渡適格銘柄（教材の例、価格は架空）のベーシス・インプライド・レポ・CTD・先物BPV・Carry の内訳。「現在の市場」と「全銘柄を同じ利回りで評価」（ストレス）を切り替え、利回りの水準ごとの CTD の入れ替わりを示す。Carmine Studio の jgb-futures から移した（入力は `server/data/demo/futures/inputs.json`） |
+| クレジット・CDS | 標準 CDS（CDS2015、取引日・年限・市場スプレッド・契約クーポン・回収率・割引率・想定元本、ISDA／MidPoint）の NPV・Fair Upfront・Hazard Rate・生存確率・両レッグ、累積デフォルト確率と「市場スプレッドと Fair Upfront」のグラフ、キャッシュフロー表。Carmine Studio の credit-cds の標準5年物を、取引日と年限を選べる形にして移した |
 | レポート分析掲示板 | 画面上部のタブで3画面を切り替える。**掲示板**（`#reports`）：新着順に発行元・執筆者、短い見出し、反応数。詳細から「いいね」「ダメ」、コメント、返信。**レポート登録**（`#reports/register`）：PDF・HTML の選択と登録、処理状況（保存・AI の読解・原文根拠の照合・紐づけ）。**レポート一覧**（`#reports/list`）：登録済みのレポートの表と、要約・原文根拠・オファーとの紐づけ（`#reports/list/<id>`。以前の `#reports/<id>` もここを開く） |
 | 日米の国債金利・OIS | 「国債の公表利回り」（選んだ月の日米イールドカーブ、`YYYYMM` スライダー、再生・一時停止、観測日と欠損の表）と「評価用 OIS」（保存済みの OIS 気配から RiemannFinMath で作ったゼロ金利カーブと気配の表）を切り替える。それぞれ出典と基準日を示す |
 | オファーシート作成 | 円建て・外貨建てのオファーシートを別々にアップロードして計算する（OIS ASW、JGB スプレッド・円換算 ASW、状態と理由、詳細、関連レポート、Excel）。ASW が使う OIS の基準日と、Bloomberg からの更新（失敗したときは理由と、今使えるデータの基準日） |
@@ -90,6 +81,12 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 | `POST /api/c1/run` | `{"uploadId":…,"reader":"saved"\|"claude_code"}` → 状態、判定、条件、ページ本文、FpML、Aladdin の下書き |
 | `GET /api/c1/cases/<caseId>/{document,fpml,aladdin}` | 原資料、FpML、Aladdin の下書き |
 | `GET /api/bloomberg/status`、`POST /api/bloomberg/ois` | 接続設定の有無、取得（既定は dry run） |
+| `POST /api/analytics/zero-curves` | `{"evaluationDate","nodes":[{"tenor","date","ratePct"}],"shiftBp"}` → ゼロ金利・割引・平行移動のカーブ（`server/R/analytics/zero_curves.R`） |
+| `POST /api/analytics/tona-ois` | `{"datasetId","bumpTenor","bumpBp","swapTenor","notional"}` → 気配・カーブ・OIS の基準とシナリオ（`tona_ois_scenario.R`） |
+| `POST /api/analytics/bond` | `{"tradeDate","issueDate","maturityDate","couponPct","simpleYieldPct","zSpreadBp"}` → 価格・利回り・リスク・キャッシュフロー（`bond_cashflow.R`） |
+| `POST /api/analytics/cds` | `{"tradeDate","tenor","spreadBp","couponBp","recoveryPct","ratePct","notional","engine"}` → 標準 CDS の評価（`credit_cds.R`） |
+| `POST /api/analytics/futures` | `{"mode":"current"\|"flat","yieldPct","fundingPct"}` → 国債先物・CTD・先物BPV（`jgb_futures.R`） |
+| `POST /api/analytics/early-redemption` | `{"bond":{…},"mbs":{…}}` → コール条項つき債券（Hull-White）と MBS（`early_redemption.R`） |
 
 不正な入力は 400 と日本語のメッセージを返す。httpuv は一つの R プロセスで要求を順に処理するので、C1 を Claude Code で読む間（数分）は他の要求が待つ。
 
@@ -97,7 +94,7 @@ R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl
 
 C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cases/<caseId>/cashflows`）で、両レッグの日程と金額を作り、Excel に保存する。
 
-- **分担**：日程の生成と金額の計算は RiemannFinMath（`create_trs_funding_leg`・`compute_trs_funding_cashflows`・`create_trs_return_leg`・`compute_trs_return_cashflows`。Riemann `docs/spec_trs.md`）。AsterQuant（`server/R/c1/trs_cashflows.R`）は、C1 が原文で確認した契約条件だけを読み、RiemannFinMath の引数に変換し、不足と前提を記録し、Excel に整形する
+- **分担**：日程の生成と金額の計算は RiemannFinMath（`create_trs_funding_leg`・`compute_trs_funding_cashflows`・`create_trs_return_leg`・`compute_trs_return_cashflows`。Riemann `docs/spec_trs.md`）。Infrago Quant（`server/R/c1/trs_cashflows.R`）は、C1 が原文で確認した契約条件だけを読み、RiemannFinMath の引数に変換し、不足と前提を記録し、Excel に整形する
 - **列**：FundingLeg は計算期間（調整前・調整後）、リセット日、金利決定日、観測期間の開始・終了（ルックバック）、支払日、日数・年数・営業日数、複利金利、金額。ReturnLeg は計算期間、期初の評価日、評価日、規則による評価日、支払日、期初・期末の水準、騰落率、金額。頻度・カレンダー・営業日調整・支払ラグはレッグごとに当てる
 - **状態**：各行に「金額の状態」（確定＝公表値だけ／試算＝市場データやシナリオを使う／算出不可＝空欄）と「金額の根拠」、「日程の状態」（前提の有無）、「不足項目」を書く。前提が不足する金額は空欄にする
 - **市場データ**：A1 と同じく評価日と同じ市場日のデータだけを使う。FundingLeg の試算はデモの JPY OIS カーブ（2026-10-06、架空）から翌日物の先渡金利を作る。TONA の公表値は `server/data/market/fixings/tonar.csv`（`date`・`rate`）があれば使う（今はない）。ReturnLeg は指数値がないので算出不可で、画面でシナリオ（指数の年率）を入れたときだけ試算する
@@ -116,7 +113,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 - **ポートフォリオ**：`server/data/demo/irrbb/portfolio_jpy_fixed.csv`（架空）。残存約 2・5・10・20・30 年の円建て固定利付債 5 銘柄、額面 1 億円ずつ、年 2 回利払、Actual/365 Fixed、発行日 2026-09-20
 - **基準カーブ**：オファーシートと同じデモの円 OIS（TONA、基準日 2026-10-06、架空）を RiemannFinMath でブートストラップしたもの。評価日も 2026-10-06
-- **分担**：年限別のショック、ショック後カーブ、債券のキャッシュフローと再評価は RiemannFinMath（`get_irrbb_shock_sizes`・`compute_irrbb_shocks`・`compute_irrbb_curve_points`・`create_irrbb_shocked_curve`・`create_fixed_rate_bond`・`compute_bond_value_on_curve`。Riemann `docs/spec_irrbb.md`）。AsterQuant の R（`server/R/irrbb/irrbb_scenarios.R`）は入力を整え、6 シナリオを一度に計算して JSON で返す（`GET /api/irrbb?floor=none|zero`）。画面はシナリオの切り替えと表・グラフだけ
+- **分担**：年限別のショック、ショック後カーブ、債券のキャッシュフローと再評価は RiemannFinMath（`get_irrbb_shock_sizes`・`compute_irrbb_shocks`・`compute_irrbb_curve_points`・`create_irrbb_shocked_curve`・`create_fixed_rate_bond`・`compute_bond_value_on_curve`。Riemann `docs/spec_irrbb.md`）。Infrago Quant の R（`server/R/irrbb/irrbb_scenarios.R`）は入力を整え、6 シナリオを一度に計算して JSON で返す（`GET /api/irrbb?floor=none|zero`）。画面はシナリオの切り替えと表・グラフだけ
 - **シナリオ**：国内基準行は上方パラレル・下方パラレル・スティープ化の 3 つ、国際統一基準行はさらにフラット化・短期金利上昇・短期金利低下を加えた 6 つ
 - **参照文書**：BCBS「Basel Framework SRP31」（2024-07-16 公表、2026-01-01 適用。SRP31.90〜31.93）。金融庁・日本銀行の 2024-10-15 の資料（国内基準行の 3 シナリオ）。金融庁の 2025-03-31 公表の告示改正（金利ショックの水準の修正。本邦の適用日は本実装では確認していない）。画面にも表で示す
 - **前提**：円のショック幅はパラレル・短期・長期とも 100 bp（SRP31.90 Table 2）、形状は SRP31.91（x = 4）。ショックは基準カーブのゼロ金利（連続複利、Actual/365 Fixed）に加え、評価日から最後の期日まで月ごとの点を線形補間したカーブで評価する（基準 PV も同じ作り方。PV 変化がショックだけから生じるように）。**金利フロアは既定でなし**（SRP31.93 は各国当局が 0 以下のフロアを設けることを認める。金融庁の扱いは確認していない）。画面で 0% のフロア（参考）を選べる
@@ -158,7 +155,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 データ処理は Curie のファイルを写し、計算の層だけを RiemannFinMath に置き換えた。関数名と出力の列は Curie と同じにしたので、Excel の列構成も同じである。
 
-| Curie | AsterQuant | 変更 |
+| Curie | Infrago Quant | 変更 |
 |---|---|---|
 | `R/z0_utility/`（取込設定・取込・ISIN・補間・属性・Excel 書式・表示・版）、`lagrange/import_data.R`、`lagrange/workflows_validate_worksheet.R` | `server/R/common/` | なし（環境変数名を `QUANTLET_*` に変更） |
 | `R/a1_offer_sheet/convert_offer_sheet.R`、`spread_inputs.R`、`validate_offer_worksheet.R`、`write_offer_results_excel.R`、`workflows_offer_sheet.R` | `server/R/a1/` | 日数計算の対応確認と、実行環境・説明の文言だけ RiemannFinMath に変更 |
@@ -170,12 +167,12 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 **RiemannFinMath で対応していない部分**
 
-| 部分 | AsterQuant での扱い |
+| 部分 | Infrago Quant での扱い |
 |---|---|
 | 円換算 ASW の CCS 校正の残差（Curie の `ccs_repricing_npv_jpy`） | `compute_yen_asset_swap` が返さないので NA にした。`fair_spread_npv_jpy` は返り値（spread 0 の NPV ＋ フェアスプレッド × アニュイティ）から作る |
 | OIS 指標 AONIA（AUD） | RiemannFinMath の OIS カーブは TONAR・SOFR・€STR・SONIA に限る（Riemann の決定事項）。AUD のオファーは「OIS カーブを構築できない」と理由を付けて計算しない。Curie は QuantLib で AUD も作れた。デモに AUD はない |
 | 翌日物の預金（`instrument_type = deposit`）の気配 | RiemannFinMath のカーブは spot OIS の気配だけを使う。deposit を含む通貨は理由を付けて計算しない。デモにはない |
-| カーブの外挿 | Curie は QuantLib の外挿禁止のエラーで止まっていた。AsterQuant は計算終期が最後のピラーより後なら、理由を付けて計算しない（同じく外挿しない）。デモにはない |
+| カーブの外挿 | Curie は QuantLib の外挿禁止のエラーで止まっていた。Infrago Quant は計算終期が最後のピラーより後なら、理由を付けて計算しない（同じく外挿しない）。デモにはない |
 | 変動利付債・期限前償還条項付き債 | Curie と同じく対象外（`unsupported`。固定利付債として代用しない） |
 
 ### C1 TRS 確認書
@@ -194,7 +191,7 @@ Curie の `R/c1_trs_terms/` の13ファイルを `server/R/c1/` にそのまま�
 
 `tools/market/fetch_jbts_bb_close.R` と `check_bb_price_from_simple.R` の「BB」は日本相互証券（Japan Bond Trading）の BB 引値（ウェブページの公表値）で、Bloomberg ではない。移植の対象外とした。
 
-INDIGO は現時点で存在しない（ソースに参照もない）。Bloomberg のデータの取得は将来 INDIGO に移す予定なので、AsterQuant では次のように分けた。
+INDIGO は現時点で存在しない（ソースに参照もない）。Bloomberg のデータの取得は将来 INDIGO に移す予定なので、Infrago Quant では次のように分けた。
 
 | 段階 | ファイル | INDIGO に移すとき |
 |---|---|---|
@@ -239,20 +236,32 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 | Aladdin の下書き本文（`{}`）と状態（未確定 1 項目） | 一致 |
 | 未確定の項目の理由の文言 | 差あり（下記） |
 
-理由の文言の差は設定の違いによるもので、コードの差ではない。Curie の案件は自社の名前（`our_party_names`）が設定され、受取者・支払者のどちらとも一致しない状態で作られた（値は記録されていない）。AsterQuant の照合は名前が未設定なので「名前が対応表にない」という別の文言になる。一致しない仮の名前を設定すると、文言も Curie と一致した（照合スクリプトの14項目め）。
+理由の文言の差は設定の違いによるもので、コードの差ではない。Curie の案件は自社の名前（`our_party_names`）が設定され、受取者・支払者のどちらとも一致しない状態で作られた（値は記録されていない）。Infrago Quant の照合は名前が未設定なので「名前が対応表にない」という別の文言になる。一致しない仮の名前を設定すると、文言も Curie と一致した（照合スクリプトの14項目め）。
 
-なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。AsterQuant のデモには案件の原資料（`source/original.pdf`）を写した。
+なお、Curie の `data/demo_c1_trs/pdf/DEMO_TRS_confirmation.pdf` は案件の作成後（2026-10-27 23:54）に作り直されていて、案件の原資料と SHA-256 が違う（大きさは同じ）。Infrago Quant のデモには案件の原資料（`source/original.pdf`）を写した。
+
+## Carmine Studio から移した6画面の照合（2026-11-18）
+
+計算は RiemannFinMath 0.3.2（R 4.6.0）。同じ入力で Carmine Studio の R 関数と比べた。
+
+- クレジット・CDS：既定の標準5年物（取引日 2022-08-19、スプレッド 30.426bp、クーポン 100bp、回収率 40%、割引率 0.25%）で、Hazard Rate 0.005139809・NPV −334,962.6 円・Fair Upfront −334,974 円。Carmine の `cds_isda()` との差は Hazard Rate・NPV とも 0
+- イールドカーブ：既定のノード（Carmine と同じ日付）で、年限ごとの割引係数の差は 0（Carmine の `curve_compute()`）
+- 債券キャッシュフロー：既定（40年債、クーポン 7.5%、単利 6.515%）で単価 110.926、複利利回り 6.710%、修正デュレーション 13.650、コンベクシティ 321.173。Carmine と同じ RiemannFinMath の関数・引数。価格と利回りの曲線は Carmine の解析式ではなく RiemannFinMath の `compute_price_from_compound_yield` で描く
+- TONA OIS：気配が Carmine（GaussQuant のサンプル）と違うので数値の照合はしていない。デモ（2026-10-06）で 7Y 気配 +1bp のとき、7Y OIS（100億円）の PV の変化は計算できることを確かめた
+- 国債先物・CTD：既定（現在の市場）で CTD は 373回債、先物BPV 0.08793833。ストレス（8%・9%）で CTD 383回債、先物BPV 0.06749607。Carmine の `fut_compute()` との差は先物BPV・Net Basis・CTD とも 0
+- 早期償還：既定でコール付き価格 100.4516、ブレット 104.6871、コール・オプション 4.2355。MBS の3シナリオの価格と加重平均 life も Carmine の `cb_bond()`・`cb_mbs()` との差が 0
+- Hazard Rate は Carmine と同じく `uniroot`（RiemannFinMath の CDS 評価値の NPV がゼロになる点）で求める。RiemannFinMath の `bootstrap_hazard_curve` は契約の既定が違うので使っていない
 
 ## 再現手順
 
 ```powershell
-cd C:/AnalyticFin/Projects/aster-quant/server
-& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/a1/reconcile_a1.R    # A1 の照合
-& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" reconciliation/c1/reconcile_c1.R    # C1 の照合
-& "C:/Program Files/R/R-4.6.0/bin/Rscript.exe" scripts/make_single_offer_demo.R    # 円債オファー1件のデモ Excel を作り直す
+cd C:/AnalyticFin/Projects/InfragoQuant/ui
+npm run reconcile:a1    # A1 の照合
+npm run reconcile:c1    # C1 の照合
+npm run demo:offer      # 円債オファー1件のデモ Excel を作り直す
 ```
 
-`ui/` からは `npm run reconcile:a1`・`npm run reconcile:c1` でも実行できる。照合の基準ファイルは `server/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
+R は「どの R を使うか」と同じ決め方で選ばれる。R のスクリプトは自分の場所から `server/`（`VERSION` のあるフォルダー）を探して作業ディレクトリにするので、`Rscript server/reconciliation/a1/reconcile_a1.R` のように直接起動してもよい。照合の基準ファイルは `server/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
 
 画面での確認：`npm run api` と `npm run dev` を起動し、A1 タブで `demo_offer_JPY_single_JPTEST000022.xlsx` を「円債オファーシート」にアップロードして計算する。C1 タブで `server/data/demo/c1/DEMO_TRS_confirmation.pdf` をアップロードし、読み方「保存済みの抽出結果」で実行する。
 
@@ -276,10 +285,4 @@ AI の出力は実行ごとに少し変わる（見出しは1回目が20文字�
 
 ## 未了
 
-- 実データの入力：Aladdin API による銘柄属性の取得、実際のオファー Excel・市場データへの対応（Curie と同じ未了事項）、A1 の市場データを画面から選ぶ・アップロードする機能
-- Bloomberg の live 取得と、取得した OIS 気配を A1 の入力に選ぶ経路
-- C1：FpML の公式 XSD、承認済みの AI API の接続先、Aladdin への送信
-- テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認は手で実行する
-- レポート掲示板：本番の発行体ID体系、承認済みの AI API（配布用。C1 と同じく未設定）、レポートの削除・再読解、オファーシートの Excel 出力からのレポートへのリンク（Curie の A3 の構想）
-- 日米国債金利：取得の定期実行（今は画面のボタンで取得する）
-- サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、RiemannFinMath に Node 版がないうちは、計算は R に残す
+未了・次にやること・機能ごとの未了は、`HANDOVER.md` の「未了・次にやること」にまとめてある。
