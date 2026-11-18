@@ -38,7 +38,15 @@ export interface ZeroCurvesResponse {
   nodes: { tenor: string; date: string; time: number; zero_rate: number }[];
   curve: ZeroCurveBlock;
   shifted_curve: ZeroCurveBlock;
+  /** ノードを1つだけ動かしたシミュレーション（リクエストに bump を付けたとき） */
+  bump?: ZeroBump;
 }
+export interface ZeroBumpRow {
+  tenor: string; date: string; time: number; is_node: boolean; is_bumped: boolean;
+  discount_base: number; discount_bumped: number; price_base: number; price_bumped: number; price_change: number; price_change_pct: number;
+  zero_base: number | null; zero_bumped: number | null;
+}
+export interface ZeroBump { tenor: string; bp: number; node_date: string; table: ZeroBumpRow[]; points: ZeroCurvePoint[] }
 
 export interface TonaRequest { datasetId?: string; bumpTenor: string; bumpBp: number; swapTenor: string; notional: number }
 export interface TonaCase {
@@ -135,7 +143,7 @@ export interface EarlyRedemptionResponse {
 
 export const analyticsApi = {
   bond: (body: Partial<BondRequest>) => postJson<BondResponse>("/api/analytics/bond", body),
-  zeroCurves: (body: { evaluationDate?: string; nodes?: ZeroNode[]; shiftBp?: number }) => postJson<ZeroCurvesResponse>("/api/analytics/zero-curves", body),
+  zeroCurves: (body: { evaluationDate?: string; nodes?: ZeroNode[]; shiftBp?: number; bump?: { tenor: string; bp: number } }) => postJson<ZeroCurvesResponse>("/api/analytics/zero-curves", body),
   tonaOis: (body: Partial<TonaRequest>) => postJson<TonaResponse>("/api/analytics/tona-ois", body),
   cds: (body: Partial<CdsRequest>) => postJson<CdsResponse>("/api/analytics/cds", body),
   earlyRedemption: (body: EarlyRedemptionRequest) => postJson<EarlyRedemptionResponse>("/api/analytics/early-redemption", body),

@@ -7,13 +7,15 @@
 #   カーブ    ：ノードのゼロ金利（連続複利、Actual/365 Fixed）を割引係数に直し、単調な対数3次補間（monotonic_log_cubic）
 #              ゼロ金利の線形補間や割引係数の対数線形補間は、フォワード金利が折れ線・階段状になるので使わない
 #   平行移動  ：カーブに単利・年1回の複利でスプレッドを加える
+#   ノードのシミュレーション："bump":{"tenor":"30Y","bp":100} を付けると、そのノードのゼロ金利だけを bp 動かしてカーブを作り直し、
+#              基準との割引係数・ゼロクーポン債の価格（額面100 × 割引係数）・ゼロ金利を、ノードと標準の年限ごとに返す（bump）
 
 ZERO_DEFAULTS_QL <- list(
   evaluationDate = "2022-08-19",
-  tenors = c("0D", "1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "10Y"),
+  tenors = c("0D", "1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "10Y", "20Y", "30Y"),
   # Carmine Studio と同じノードの日付（週末を避けた日）
-  dates = c("2022-08-19", "2022-09-19", "2022-11-21", "2023-02-20", "2023-08-21", "2024-08-19", "2025-08-19", "2027-08-19", "2032-08-19"),
-  ratesPct = c(0.05, 0.06, 0.08, 0.11, 0.18, 0.32, 0.48, 0.75, 1.15),
+  dates = c("2022-08-19", "2022-09-19", "2022-11-21", "2023-02-20", "2023-08-21", "2024-08-19", "2025-08-19", "2027-08-19", "2032-08-19", "2042-08-19", "2052-08-19"),
+  ratesPct = c(0.05, 0.06, 0.08, 0.11, 0.18, 0.32, 0.48, 0.75, 1.15, 1.55, 1.80),
   shiftBp = 50
 )
 ZERO_TABLE_TENORS_QL <- c("1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "15Y", "20Y", "30Y")
@@ -27,7 +29,7 @@ zero_curve_points_QL <- function(curve, dates, ev) {
 }
 
 compute_zero_curves_QL <- function(body = list()) {
-  an_unknown_QL(body, c("evaluationDate", "nodes", "shiftBp"))
+  an_unknown_QL(body, c("evaluationDate", "nodes", "shiftBp", "bump"))
   ev <- an_date_QL(body, "evaluationDate", ZERO_DEFAULTS_QL$evaluationDate)
   shift <- an_num_QL(body, "shiftBp", ZERO_DEFAULTS_QL$shiftBp, -500, 500)
   if (is.null(body$nodes)) {
@@ -55,6 +57,14 @@ compute_zero_curves_QL <- function(body = list()) {
   t_nodes <- as.numeric(dates - ev) / 365
 
   dcv <- RiemannFinMath::with_extrapolation(RiemannFinMath::create_discount_curve(dates, exp(-rates * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
+  # ノードのシミュレーションの入力（あれば）
+  bump <- body$bump
+  if (!is.null(bump)) {
+    if (!is.list(bump) || !is.character(bump$tenor) || length(bump$tenor) != 1L) an_bad_QL("bump は {\"tenor\":\"30Y\",\"bp\":100} の形にする")
+    bump_i <- match(toupper(bump$tenor), tenors)
+    if (is.na(bump_i)) an_bad_QL(paste0("bump.tenor がノードにない: ", bump$tenor))
+    bump_bp <- an_num_QL(bump, "bp", 0, -1000, 1000)
+  }
   shifted <- RiemannFinMath::create_zero_spreaded_curve(dcv, shift / 1e4, "simple", 1L)
 
   grid <- sort(unique(c(ev + round(seq(0, max(t_nodes), length.out = 300) * 365), dates)))
@@ -64,7 +74,7 @@ compute_zero_curves_QL <- function(body = list()) {
     p <- zero_curve_points_QL(curve, tdates[keep], ev)
     data.frame(tenor = ZERO_TABLE_TENORS_QL[keep], date = p$date, discount = p$discount, zero_continuous = p$zero_continuous)
   }
-  list(
+  out <- list(
     evaluation_date = format(ev), shift_bp = shift,
     conventions = list(day_count = "Actual/365 Fixed",
                        curve = "ノードのゼロ金利を割引係数に直し、割引係数の対数を単調3次補間（MonotonicLogCubic）",
@@ -74,4 +84,24 @@ compute_zero_curves_QL <- function(body = list()) {
     curve = list(table = table(dcv), points = zero_curve_points_QL(dcv, grid, ev)),
     shifted_curve = list(table = table(shifted), points = zero_curve_points_QL(shifted, grid, ev))
   )
+  if (!is.null(bump)) {
+    rates_b <- rates
+    rates_b[bump_i] <- rates_b[bump_i] + bump_bp / 1e4
+    bcv <- RiemannFinMath::with_extrapolation(RiemannFinMath::create_discount_curve(dates, exp(-rates_b * t_nodes), "actual_365_fixed", "monotonic_log_cubic"))
+    # ノードと標準の年限を日付の順に並べる（同じ日付はノードの年限名を残す）
+    all_dates <- c(dates, tdates[keep]); all_tenors <- c(tenors, ZERO_TABLE_TENORS_QL[keep]); is_node <- c(rep(TRUE, length(dates)), rep(FALSE, sum(keep)))
+    ord <- order(all_dates); all_dates <- all_dates[ord]; all_tenors <- all_tenors[ord]; is_node <- is_node[ord]
+    dup <- duplicated(all_dates); all_dates <- all_dates[!dup]; all_tenors <- all_tenors[!dup]; is_node <- is_node[!dup]
+    t <- as.numeric(all_dates - ev) / 365
+    d0 <- RiemannFinMath::compute_discount(dcv, all_dates); d1 <- RiemannFinMath::compute_discount(bcv, all_dates)
+    z <- function(d) ifelse(t > 0, -log(d) / t, NA_real_)
+    out$bump <- list(
+      tenor = tenors[bump_i], bp = bump_bp, node_date = format(dates[bump_i]),
+      table = data.frame(tenor = all_tenors, date = format(all_dates), time = t, is_node = is_node, is_bumped = all_dates == dates[bump_i],
+                         discount_base = d0, discount_bumped = d1, price_base = 100 * d0, price_bumped = 100 * d1,
+                         price_change = 100 * (d1 - d0), price_change_pct = 100 * (d1 / d0 - 1), zero_base = z(d0), zero_bumped = z(d1)),
+      points = zero_curve_points_QL(bcv, grid, ev)
+    )
+  }
+  out
 }
