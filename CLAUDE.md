@@ -31,11 +31,6 @@
 - 確かめていないことを断定しない。照合結果は実行した日付と数値で書く
 - ブラウザーでの確認は、ヘッドレスの Chrome を DevTools Protocol で操作して行ってきた（ブラウザー操作のツールはこの環境で使えなかった）
 
-## 状態（2026-11-18）
+## 状態
 
-引き継ぎ・次にやること・新しい PC での準備は `HANDOVER.md`。要点：
-
-- Infrago Quant：GitHub `besuke/infrago`（旧 `infrago-quant`、転送される）。2026-11-18 の確認では**公開（public）**で、以前書いていた「private」と食い違う（意図は未確認）。作業は `rename-infrago-quant-and-analytics` ブランチ（PR #1、`main` 向け、未マージ）。起動の入口は `start_infrago.ps1`、R は自動検出（`ui/scripts/rscript.mjs`）、ブラウザーの確認は `npm run test:nav`
-- フォルダー名の `Infrago` への変更は未了（Claude Code がそのフォルダーを開いていると変えられない）
-- Riemann：RiemannFinMath は、この PC に 0.3.2 が入っている（Riemann は 0.3.4 まで進んでいる。未確認）。公開バイナリは Windows の R 4.6 用だけ。入れ方は Riemann の `docs/client_guide.md`
-- 未了：Carmine Studio のフォワード金利の直し、残りの画面の移植、準備中の3項目（発行体格付け推移・クレジットVaR・格付け枠管理）、Bloomberg の実接続、実データ（オファー・市場データ・銘柄属性の Aladdin 取得）、FpML の公式 XSD、承認済み AI API、金融庁の IRRBB フロアの確認、Curie にある Aladdin の実 URL の扱い
+状態・引き継ぎ・未了・新しい PC での準備は、すべて `HANDOVER.md`（正本）。ここには書かない。

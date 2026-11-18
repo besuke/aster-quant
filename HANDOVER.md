@@ -2,14 +2,14 @@
 
 Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクローン先）で続けるための書類。2026-11-18 時点。アプリの仕様と照合結果は `README.md`、Claude Code 向けの決めごとは `CLAUDE.md`。この書類は「手元で動かして続ける」ことだけを書く。
 
-## 1. いまの状態
+## いまの状態
 
 - リポジトリ：<https://github.com/besuke/infrago>（旧名 `infrago-quant`。古い URL は転送される）。2026-11-18 の確認では**公開（public）**で、CLAUDE.md の「private」と食い違っている。意図した公開かは未確認。
 - ブランチ：作業は `rename-infrago-quant-and-analytics`（PR #1、`main` 向け、未マージ）。`main` はまだ改名前の `7cb0cc3`。続きは、この PR をマージしたあとの `main` か、このブランチから始める。
 - 画面：4グループのサイドバー（`ui/src/nav.ts`）。実装済みはイールドカーブ分析（イールドカーブ・TONA OIS・日米の国債金利）、レポートサマリー、オファーシート（関連：TRS契約書連携）、アセットスワップ（関連：債券キャッシュフロー・国債先物・CTD）、早期償還、IRRBB。**準備中**は発行体格付け推移、クレジットVaR（関連のクレジット・CDS は動く）、格付け枠管理。
 - 計算は R（`server/`、RiemannFinMath）、画面は React（`ui/`）。画面は計算しない。
 
-## 2. 新しい PC で動かす
+## 新しい PC で動かす
 
 ### 必要なもの
 
@@ -81,7 +81,7 @@ install.packages(
 
 デモデータは**すべて架空**。実在の銘柄・価格・契約書・市場データは Git に入れない。
 
-## 3. 起動のコマンド（入口は `start_infrago.ps1` だけ）
+## 起動のコマンド（入口は `start_infrago.ps1` だけ）
 
 | コマンド | することは |
 |---|---|
@@ -99,7 +99,19 @@ install.packages(
 - `ui/` で個別に起動するとき：`npm run api`（R API）、`npm run dev`（画面）、`npm run lan`（画面と API を 8091 で公開）。
 - R の作業は RStudio（Positron）で `InfragoQuant.Rproj` を開く。開くと、使い方が表示される。`iq_check()` で、いま使っている R の確認ができる。
 
-## 4. 確認のコマンド（`ui/` で実行）
+### 社内LANで公開する（配備）
+
+`127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
+
+1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
+2. `.\start_infrago.ps1 -Mode lan` で起動する。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する
+3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。Infrago Quant からは変えない）
+
+Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（`.\start_infrago.ps1`、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
+
+ホスト名にアンダースコア（例 `MY_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
+
+## 確認のコマンド（`ui/` で実行）
 
 | コマンド | 確認すること | 前提 |
 |---|---|---|
@@ -112,7 +124,7 @@ install.packages(
 
 `test:nav` の最後に最後まで通した実行は、59 件 PASS・7 件 FAIL（タブのタイトルだけ。原因は修正済み）。**修正後に最後まで通した実行はまだない**。
 
-## 5. どこに何があるか
+## どこに何があるか
 
 | 場所 | 内容 |
 |---|---|
@@ -128,7 +140,7 @@ install.packages(
 
 画面を足す手順：R の計算を `server/R/analytics/` に書く（金融計算は RiemannFinMath。足りなければ Riemann に足す）→ `load_quantlet.R` の `analytics` に足す → `server.R` に経路を足す → `ui/src/analyticsApi.ts` に型と呼び出し → `ui/src/analytics/` に画面 → `ui/src/nav.ts` に項目。
 
-## 6. 決めたこと（要点。全文は `CLAUDE.md`）
+## 決めたこと（要点。全文は `CLAUDE.md`）
 
 - 計算は RiemannFinMath、R の API は取り込み・整形・集計・検証、画面は表示だけ（計算し直さない）。
 - 市場データは、評価日と同じ市場日のものだけを使い、別の日付で補わない。
@@ -137,7 +149,7 @@ install.packages(
 - Curie（`../Curie`）は変更しない。
 - コミットと push は頼まれたときだけ。ステージした差分に、認証情報・個人のパス・社内 URL・実データがないことを確かめる。
 
-## 7. 未了・次にやること
+## 未了・次にやること
 
 1. **フォルダー名を `Infrago` に変える**（この PC。Claude Code がそのフォルダーを開いていると変えられない）。Claude Code を終了して、フォルダー名を変え、デスクトップのショートカットと `InfragoClaude.bat` のパスを直す。
 2. **公開の範囲を決める**：GitHub のリポジトリは 2026-11-18 の確認で public。意図したものでなければ非公開に戻す（Settings → Danger Zone → Change visibility）。決めたら CLAUDE.md の記述を直す。
@@ -148,9 +160,19 @@ install.packages(
 7. 準備中の3項目（発行体格付け推移、クレジットVaR、格付け枠管理）。RiemannFinMath にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
 8. 数値の確認が残っているもの：TONA OIS は Infrago のデモ気配（Carmine は別の気配）なので、Carmine との数値照合をしていない。早期償還の、コール判断の境界・乱数経路・静的 OAS は移していない（原稿の独自の R 関数に依るため）。CDS の Hazard Rate は、Carmine と同じ `uniroot` で求めている（RiemannFinMath の `bootstrap_hazard_curve` は契約の既定が違うので使っていない）。
 9. Riemann の新しい版（0.3.4。OIS スワップの日付を期間から作る関数など）への更新。TONA OIS の `tona_swap_dates_QL` を置き換えられる可能性がある。更新後は、`npm run test:irrbb` と、各画面の既定値の照合をやり直す。
-10. 実データ（オファー・市場データ・銘柄属性の Aladdin 取得）、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API、金融庁の IRRBB フロアの確認、Curie にある Aladdin の実 URL の扱い（`CLAUDE.md` の「未了」）。
+10. 機能ごとの未了（実データ、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API など）は、下の「機能ごとの未了」。そこにないもの：金融庁の IRRBB フロアの扱いの確認（既定はフロアなし）、Curie にある Aladdin の実 URL の扱い。
 
-## 8. 気をつけること
+### 機能ごとの未了
+
+- 実データの入力：Aladdin API による銘柄属性の取得、実際のオファー Excel・市場データへの対応（Curie と同じ未了事項）、A1 の市場データを画面から選ぶ・アップロードする機能
+- Bloomberg の live 取得と、取得した OIS 気配を A1 の入力に選ぶ経路
+- C1：FpML の公式 XSD、承認済みの AI API の接続先、Aladdin への送信
+- テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認（`npm run test:nav`）は手で実行する
+- レポート掲示板：本番の発行体ID体系、承認済みの AI API（配布用。C1 と同じく未設定）、レポートの削除・再読解、オファーシートの Excel 出力からのレポートへのリンク（Curie の A3 の構想）
+- 日米国債金利：取得の定期実行（今は画面のボタンで取得する）
+- サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、RiemannFinMath に Node 版がないうちは、計算は R に残す
+
+## 気をつけること
 
 - **R の API（8790）が RiemannFinMath の DLL を使っている**間は、RiemannFinMath を入れ替えられない。先に R API を止める。
 - 起動したウィンドウは、Claude Code のツールから起動すると、呼び出しが終わったときに閉じられることがある。確認のために立ち上げたサーバーは、確認が終わったら止める（8790・8091 が空いていることを確かめる）。
