@@ -14,7 +14,7 @@
 - デザインは Carmine Studio（`../carmine-studio`）と同じ方針：ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）、上の帯の左に深い緑の SVG ロゴと「Infrago Quantlet」（日本語副題なし）、右に `Infrago Quant Server` の接続状態表示、横幅を活かした配置。色は深い緑（`#166534`）、ボタン・入力欄・選択・スライダーは Carmine と同じ Aqua 風（利用者の好み）
 - ポート：画面 8091、R API 8790（Carmine Studio の 8081・8787 と分ける）。起動は `InfragoQuant.ps1`（1 でこの PC、2 で社内LAN、4 でサーバーのみ、5 でクライアントのみ。`-Mode dev|lan|server|client|resume` でメニューなし）、個別起動は `Start-Server.ps1`・`Start-Client.ps1`、または `ui/` で `npm run api` と `npm run dev`
 - 社内に配る URL は `http://<ホスト>:8091/`。ホストは `deploy.local.env` の `INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`、Git に入れない）、空なら LAN の IPv4。`127.0.0.1` は開発と内部通信だけ
-- R のパスはコードに固定しない。`ui/scripts/rscript.mjs` が環境変数 `RSCRIPT` → `settings.local.env`（Git に入れない）の `RSCRIPT` → PATH の順に選び、`npm run check:r`（`server/scripts/check_r.R`）で版と必須パッケージを確かめる。この PC は R が PATH になく、`settings.local.env` に R 4.6.0 を書いてある。`Rscript -e` は引用符で失敗しやすいのでスクリプトファイルにする
+- R のパスも版もコードに決め打ちしない。`ui/scripts/rscript.mjs` が環境変数 `RSCRIPT` → `settings.local.env`（Git に入れない）の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R（自動検出）の順に選び、`npm run check:r`（`server/scripts/check_r.R`）で版と必須パッケージを確かめる。この PC は R が PATH になくても自動検出で動くので、`settings.local.env` は不要。`Rscript -e` は引用符で失敗しやすいのでスクリプトファイルにする
 
 ## 決めたこと
 
@@ -31,8 +31,11 @@
 - 確かめていないことを断定しない。照合結果は実行した日付と数値で書く
 - ブラウザーでの確認は、ヘッドレスの Chrome を DevTools Protocol で操作して行ってきた（ブラウザー操作のツールはこの環境で使えなかった）
 
-## 状態（2026-11-16）
+## 状態（2026-11-18）
 
-- Infrago Quant：GitHub `besuke/infrago-quant`（**private**）の `main` に push 済み（名称を QuantLet から Infrago Quant に変更、ライトテーマ・アイコン付きサイドバー・横幅配置、IRRBB、配備用 URL、Infrago Quant Server の接続表示・接続確認ページ、レポートの3画面、`InfragoQuant.ps1`・`Start-Server.ps1`・`Start-Client.ps1` まで）
-- Riemann：`main` は `22e504e`（TRS）、IRRBB は `irrbb-scenarios`（`4def5bc`）で取り込み待ち。どちらも未 push。Infrago Quant の TRS と IRRBB はこの RiemannFinMath の関数を使うので、他の PC で動かすには Riemann 側の公開も要る
-- 未了：Bloomberg の実接続、実データ（オファー・市場データ・銘柄属性の Aladdin 取得）、FpML の公式 XSD、承認済み AI API、金融庁の IRRBB フロアの確認、Curie にある Aladdin の実 URL の扱い
+引き継ぎ・次にやること・新しい PC での準備は `HANDOVER.md`。要点：
+
+- Infrago Quant：GitHub `besuke/infrago`（旧 `infrago-quant`、転送される）。2026-11-18 の確認では**公開（public）**で、以前書いていた「private」と食い違う（意図は未確認）。作業は `rename-infrago-quant-and-analytics` ブランチ（PR #1、`main` 向け、未マージ）。起動の入口は `start_infrago.ps1`、R は自動検出（`ui/scripts/rscript.mjs`）、ブラウザーの確認は `npm run test:nav`
+- フォルダー名の `Infrago` への変更は未了（Claude Code がそのフォルダーを開いていると変えられない）
+- Riemann：RiemannFinMath は、この PC に 0.3.2 が入っている（Riemann は 0.3.4 まで進んでいる。未確認）。公開バイナリは Windows の R 4.6 用だけ。入れ方は Riemann の `docs/client_guide.md`
+- 未了：Carmine Studio のフォワード金利の直し、残りの画面の移植、準備中の3項目（発行体格付け推移・クレジットVaR・格付け枠管理）、Bloomberg の実接続、実データ（オファー・市場データ・銘柄属性の Aladdin 取得）、FpML の公式 XSD、承認済み AI API、金融庁の IRRBB フロアの確認、Curie にある Aladdin の実 URL の扱い

@@ -14,63 +14,56 @@ Curie は変更していない。移行中も Curie は従来の手順（`source
 
 データはすべて架空のデモデータである（Curie のデモと同じもの）。実在の銘柄・市場価格ではない。
 
+始めるには「起動」の節（準備は `HANDOVER.md`）。
+
 ## 起動
 
-R（確認は 4.6.0）、RiemannFinMath 0.3.0 以上（確認は 0.3.2）、Node.js 23.6 以上（確認は 26.13.0）。
+初めて使う PC（クローン先、R の版が違う PC を含む）の準備は **`HANDOVER.md`**（npm install、R のパッケージ、RiemannFinMath の入れ方、R の版が違うときの注意）。準備ができたら、起動の入口は `start_infrago.ps1` の 1 つ。
+
+```powershell
+.\start_infrago.ps1                 # この PC で起動（開発用）：R API 127.0.0.1:8790 と画面 http://127.0.0.1:8091/ を別のウィンドウで起動し、ブラウザーで開く
+.\start_infrago.ps1 -Mode lan       # 社内LANで公開（画面をビルドして、画面と API を 8091 でまとめて公開）
+.\start_infrago.ps1 -Mode server    # R API だけ
+.\start_infrago.ps1 -Mode client    # 画面だけ
+.\start_infrago.ps1 -Mode check     # R の確認だけ（使う R の版と、必須パッケージを読み込めるか）
+.\start_infrago.ps1 -Mode menu      # 番号で選ぶメニュー
+.\start_infrago.ps1 -Mode resume    # Claude Code をこのフォルダーで開く
+```
+
+- 起動の前に、使う R と必須パッケージ（RiemannFinMath など）を確かめる。読み込めなければ、選ばれた R と不足を表示して止まる。ポート 8790・8091 が使われていれば、別のポートには移らずに、使っているプロセスを示して止まる。
+- 止めるときは、開いた「Infrago Quant Server (8790)」「Infrago Quant Client (8091)」のウィンドウを閉じる。
+- 処理の本体は `InfragoQuant.ps1`。`Start-Server.ps1`・`Start-Client.ps1` は、そのウィンドウで直接起動する版。パスはすべてスクリプトの場所（`$PSScriptRoot`）からの相対で、フォルダー名は問わない。
+- `ui/` から個別に起動する場合（`npm install` は初回だけ）：`npm run api`（R API）、`npm run dev`（画面）、`npm run lan`（画面と API を 8091 で公開。`server.R --static ../ui/dist`、`--host 0.0.0.0`）。直接 R で起動するなら `& <Rscript.exe のパス> server/server.R --port 8790`。
+- ポートは画面 8091、API 8790（Carmine Studio の 8081・8787 とは重ならない）。
+- RStudio（Positron）で `InfragoQuant.Rproj` を開くと、使い方が表示される（`.Rprofile`、対話のときだけ）。`iq_check()` で、いま使っている R の確認ができる。
+
+### 必要なもの
+
+Node.js 23.6 以上、R 4.x（RiemannFinMath を入れた版）、RiemannFinMath 0.3.0 以上（確認は 0.3.2）。R の必須パッケージは `dplyr`、`purrr`、`tibble`、`tidyr`、`stringr`、`readr`、`readxl`、`writexl`、`xml2`、`zip`、`rlang`、`collapse`、`jsonlite`、`httpuv`、`RiemannFinMath`（確認は `-Mode check`）。TRS 契約書連携・レポート・Bloomberg 取得は、さらに `pdftools`、`openssl`、`curl`、`processx`、`ps`、`httr2`、`flextable`、`stringi`、`later`、`future`、`furrr`（その機能を使うときだけ要る）。GaussQuant と QuantLib（R バインディング）は使わない。照合を取った版は、「Carmine Studio から移した画面の照合」の節に日付つきで書く。
 
 ### どの R を使うか
 
-R のパスはコードに固定しない。`ui/scripts/rscript.mjs` が次の順に Rscript.exe を選ぶ（指定したパスに Rscript がなければ、ほかの R に切り替えずに止まる）。
+R のパスも版も、コードに決め打ちしない。`ui/scripts/rscript.mjs` が次の順に Rscript.exe を選び、使う R と版を起動のたびに表示する。
 
 1. 環境変数 `RSCRIPT`（そのときだけ別の R で動かすとき）
 2. プロジェクト直下の `settings.local.env` の `RSCRIPT=`（この PC の設定。`settings.example.env` を写して作る。Git に入れない）
 3. PATH 上の `Rscript.exe`
+4. 環境変数 `R_HOME` の R
+5. この PC にインストールされている R のうち、いちばん新しい版（`C:/Program Files/R` と `%LOCALAPPDATA%/Programs/R` の `R-x.y.z` を、版を数値で比べて選ぶ）
 
-```powershell
-Copy-Item settings.example.env settings.local.env
-# settings.local.env に書く：RSCRIPT=C:/Program Files/R/R-4.6.0/bin/Rscript.exe
-cd ui; npm run check:r   # 選ばれた R の版と、RiemannFinMath などの必須パッケージを読み込めるかを表示する
-```
-
-`npm run api`・`npm run lan`・`InfragoQuant.ps1` の 1・2・4 は、起動の前に同じ確認をする。読み込めないパッケージがあれば、選ばれた R と不足しているパッケージを表示して止まる。RiemannFinMath は R の版ごとのライブラリに入るので、別の版の R を使うときはその R に Riemann から入れ直す。
-
-### 起動のしかた
-
-デスクトップのショートカット「Infrago Quant」（メニュー）と「Infrago Quant - Claude Code」（`-Mode resume`）は `C:\AnalyticFin\Projects\InfragoQuant\InfragoQuant.ps1` を呼ぶ。スクリプトは自分の置き場所（`$PSScriptRoot`、`ui/scripts/` からは 2 つ上）からプロジェクトルートを決めるので、フォルダーを動かしたときはショートカットのパスだけ直せばよい。
-
-```powershell
-cd C:/AnalyticFin/Projects/InfragoQuant
-.\InfragoQuant.ps1       # メニューから起動（1：この PC で開発起動、2：社内LANで公開、4：サーバーのみ、5：クライアントのみ）
-.\Start-Server.ps1     # サーバー（R API 127.0.0.1:8790）だけを起動
-.\Start-Client.ps1     # クライアント（Web 画面 http://127.0.0.1:8091/）だけを起動
-```
-
-または `ui/` ディレクトリから直接起動する：
-
-```powershell
-cd C:/AnalyticFin/Projects/InfragoQuant/ui
-npm install          # 初回だけ
-npm run api          # R の API を 127.0.0.1:8790 で起動（別のターミナルで開いたままにする）
-npm run dev          # 画面を http://127.0.0.1:8091/ で起動
-```
-
-- ポートは画面 8091、API 8790。Carmine Studio（8081・8787）とは重ならない。8091 が使用中なら `npm run dev` は別のポートへ移らずに止まる
-- `npm run api` は R を確かめてから `server/server.R` を Rscript で起動する。直接起動する場合は `& <Rscript.exe のパス> server/server.R --port 8790`
-- 一つのポートで画面と API をまとめて出す場合：`npm run lan`（ビルドして `server.R --static ../ui/dist` で配信。`--host 0.0.0.0` で LAN に公開する）
+1・2 で指定した Rscript がなければ、ほかの R に切り替えずに止まる。指定がなければ 3〜5 で自動で決まるので、普通は `settings.local.env` は要らない。複数の版の R が入っていて、最新でない R を使うときだけ指定する。RiemannFinMath は R の版ごとのライブラリに入る（公開しているバイナリは Windows の R 4.6 用だけ）。別の版の R を使うときは、その R に入れ直す（`HANDOVER.md`）。
 
 ### 社内の端末に配る（配備）
 
 `127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
 
 1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
-2. `InfragoQuant.ps1` で **2（社内LANで起動）** を選ぶ。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する（`.\InfragoQuant.ps1 -Mode lan` でメニューなしでも起動できる）
+2. `.\start_infrago.ps1 -Mode lan` で起動する。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する
 3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。Infrago Quant からは変えない）
 
-Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（1、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
+Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが渡す）を読み、接続確認ページ（`#server`、`GET /api/server`）に利用者向けの URL を出す。開発用の起動（`.\start_infrago.ps1`、`npm run api`・`npm run dev`）は今までどおり `127.0.0.1` で、この PC の中だけで開ける。
 
-ホスト名にアンダースコア（例 `CHIRO_FMV_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
-
-R の必要パッケージ：dplyr, purrr, tibble, tidyr, stringr, readr, readxl, writexl, xml2, zip, rlang, collapse, jsonlite, httpuv, RiemannFinMath（C1 はさらに pdftools, openssl, curl, processx）。GaussQuant と QuantLib（R バインディング）は使わない。
+ホスト名にアンダースコア（例 `MY_PC`）を含む Windows のコンピューター名は、DNS の名前として正しくなく、ブラウザーによっては開けない。その場合は IP アドレスか、社内 DNS に登録した名前を使う。
 
 ## 画面
 
@@ -331,10 +324,13 @@ AI の出力は実行ごとに少し変わる（見出しは1回目が20文字�
 
 ## 未了
 
+引き継ぎ・次にやること・新しい PC での準備は **`HANDOVER.md`** にまとめてある。ここは機能ごとの未了。
+
 - 実データの入力：Aladdin API による銘柄属性の取得、実際のオファー Excel・市場データへの対応（Curie と同じ未了事項）、A1 の市場データを画面から選ぶ・アップロードする機能
 - Bloomberg の live 取得と、取得した OIS 気配を A1 の入力に選ぶ経路
 - C1：FpML の公式 XSD、承認済みの AI API の接続先、Aladdin への送信
-- テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認は手で実行する
+- テストの自動化（API の回帰テスト）。照合スクリプトとブラウザーの確認（`npm run test:nav`）は手で実行する
 - レポート掲示板：本番の発行体ID体系、承認済みの AI API（配布用。C1 と同じく未設定）、レポートの削除・再読解、オファーシートの Excel 出力からのレポートへのリンク（Curie の A3 の構想）
 - 日米国債金利：取得の定期実行（今は画面のボタンで取得する）
+- 画面：発行体格付け推移・クレジットVaR・格付け枠管理は準備中。Carmine Studio のフォワード金利の直し、残りの画面（ブラック・モデル、金利モデルなど）の移植は未了
 - サーバーの TypeScript 化は保留（2026-11-15 の指示）。する場合も、RiemannFinMath に Node 版がないうちは、計算は R に残す
