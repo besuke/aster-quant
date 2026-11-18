@@ -2,7 +2,7 @@
 #
 # 作業フォルダ（案件フォルダの agents/claude/）に次を置き、Claude にはその原資料を直接読ませる（元の URL から再取得させない）。
 #   document.pdf／document.htm … 取得した原資料（そのまま）
-#   instructions.md            … 抽出指示書（docs/c1_trs_extraction_instructions.md）
+#   instructions.md            … 抽出指示書（agent_instructions/c1_trs_extraction_instructions.md）
 #   prompt.md                  … 依頼文
 # Claude が作るファイル：reviewed.json（条件）、fpml.xml（FpML 案）、review_items.md（要確認事項）
 # 使えるツールは Read と Write だけ（ウェブ取得なし。読み書きは作業フォルダ内）。PDF を読むのに poppler（pdftoppm）が必要。

@@ -93,7 +93,11 @@ install.packages(
 | `.\start_infrago.ps1 -Mode menu` | 番号で選ぶメニュー |
 | `.\start_infrago.ps1 -Mode resume` | Claude Code をこのフォルダーで開く |
 
-- 起動の処理の本体は `InfragoQuant.ps1`。`Start-Server.ps1`・`Start-Client.ps1` は、そのウィンドウで直接起動する版。
+- 起動の処理の本体は `InfragoQuant.ps1`（`start_infrago.ps1` から呼ばれる）。
+- **サーバーとクライアントを別の PC で動かす**：サーバーの PC（R・RiemannFinMath が要る）で `.\start_infrago_server.ps1`。R API を 0.0.0.0:8790 で起動し、クライアントに渡すアドレス（`http://<この PC>:8790`）を表示する。クライアントの PC（Node.js と `ui/` だけでよい。R は要らない）で `.\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`。画面（127.0.0.1:8091）は、`/api` をそのアドレスへ転送する。`-ApiUrl` の代わりに `deploy.local.env` の `INFRAGO_QUANT_API_URL` でもよい。サーバーの PC では Windows ファイアウォールで 8790 の受信を許可する。
+  - 確認済み（2026-11-18）：1 台の PC の中で、LAN の IP アドレス経由でサーバーとクライアントをつなぎ、画面から `/api/health` が通ることを確かめた。**別の PC どうしでの接続（ファイアウォール越し）は未確認**
+  - アドレスは **LAN の IP アドレス**（`http://192.168.x.x:8790`）を正とする。`127.0.0.1`・`localhost` は別の PC では使えず、クライアントのスクリプトも拒否する
+  - コンピューター名・DNS 名（`-ApiUrl http://<名前>:8790`）は、2026-11-19 にサーバーの PC 自身から試したところ応答しなかった。名前が先に IPv6 に解決され、R API は IPv4（0.0.0.0）でしか待ち受けないため。名前を使うなら、DNS に IPv4 の A レコードを登録して IPv4 に解決させるか、IPv6 での待ち受けを調べる（未調査）
 - 止めるときは、開いた「Infrago Quant Server (8790)」「Infrago Quant Client (8091)」のウィンドウを閉じる。
 - ポートが使われていると、別のポートには移らずに止まり、使っているプロセスを示す。
 - `ui/` で個別に起動するとき：`npm run api`（R API）、`npm run dev`（画面）、`npm run lan`（画面と API を 8091 で公開）。

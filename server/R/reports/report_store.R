@@ -103,7 +103,7 @@ decide_issuer_link_RP <- function(case_dir, mention_index, issuer_id = NULL) {
 
 # ---- 1件の登録（取込 → 本文 → AI → 保存 → 照合 → 紐づけ）---------------------------------------------------------
 register_report_RP <- function(source_path, original_name, reader = c("claude_code", "saved"), saved_dir = NULL, report_id = NULL,
-                               root_dir = reports_dir_RP(), instruction_path = file.path(Sys.getenv("QUANTLET_ROOT"), "docs", "report_summary_instructions.md")) {
+                               root_dir = reports_dir_RP(), instruction_path = file.path(Sys.getenv("QUANTLET_ROOT"), "agent_instructions", "report_summary_instructions.md")) {
   reader <- match.arg(reader)
   report_id <- report_id %||% paste0("RPT_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", paste(sample(c(0:9, letters[1:6]), 4, TRUE), collapse = ""))
   case_dir <- file.path(root_dir, report_id)

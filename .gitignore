@@ -32,7 +32,7 @@ ui/dist/
 config/*_local.*
 
 # 照合の出力（再実行で作り直す。session_info と CSV は残す）
-/server/reconciliation/*/results/*.xlsx
+/server/tests/reconciliation/*/results/*.xlsx
 
 ~$*
 *.tmp

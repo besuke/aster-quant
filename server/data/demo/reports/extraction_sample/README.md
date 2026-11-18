@@ -1,6 +1,6 @@
 # サンプルレポートの保存済み抽出結果
 
 `../sample_report_ABC_XYZ.pdf`（架空）を Claude Code（2.1.325）が読んで作った `summary.json` をそのまま保存したもの
-（2026-11-15 15:28〜15:29、`docs/report_summary_instructions.md`、7 ターン、Claude Code の費用の目安 0.29 USD）。
+（2026-11-15 15:28〜15:29、`agent_instructions/report_summary_instructions.md`、7 ターン、Claude Code の費用の目安 0.29 USD）。
 掲示板の読み方「保存済みの抽出結果」で、AI を呼ばずにサンプルの登録を再現するために使う。サンプル以外のレポートには使わない。
 R の照合では、原文根拠 16 件がすべて指定ページの本文と一致した（見出し 20 文字）。

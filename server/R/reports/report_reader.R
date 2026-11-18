@@ -2,7 +2,7 @@
 #
 # 取込と本文の抽出は C1 の関数（acquire_document_c1、document_pages_c1）を、AI の起動は C1 の run_claude_c1 を使う
 # （Claude Code を R から processx で起動する。使えるツールは Read と Write だけで、作業フォルダの外は読み書きしない）。
-# 指示書は docs/report_summary_instructions.md。読み方（reader）：
+# 指示書は agent_instructions/report_summary_instructions.md。読み方（reader）：
 #   claude_code  Claude Code が原資料を読む（開発用。数分かかる）
 #   saved        保存済みの抽出結果を使う（AI を呼ばない。サンプルの再現用）
 # AI の結果は推測を含みうるので、R が引用（quote）を原資料の本文と照合する。照合は NFKC で全角・半角をそろえ、空白・改行を除いて行う

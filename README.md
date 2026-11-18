@@ -132,7 +132,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 ## レポート掲示板
 
-**登録の流れ**（`server/R/reports/`）：アップロード（`data/uploads/reports/`）→ 案件フォルダーを作り原資料と本文を保存 → AI（Claude Code、C1 と同じ起動方法。使えるツールは Read と Write だけ）が指示書 `server/docs/report_summary_instructions.md` に従って `summary.json` を作る → R が原文根拠を照合 → オファーとの紐づけ → 掲示板に表示。
+**登録の流れ**（`server/R/reports/`）：アップロード（`data/uploads/reports/`）→ 案件フォルダーを作り原資料と本文を保存 → AI（Claude Code、C1 と同じ起動方法。使えるツールは Read と Write だけ）が指示書 `server/agent_instructions/report_summary_instructions.md` に従って `summary.json` を作る → R が原文根拠を照合 → オファーとの紐づけ → 掲示板に表示。
 
 - **AI が作るもの**：日本語の見出し（20文字程度、多くても22文字。発行元・執筆者は入れない）、詳細サマリー、発行元、執筆者・担当者、発行日、対象発行体、ISIN、格付け・アウトルックの変更、投資判断の変更、主な理由、サマリーの根拠。原文に記載のある範囲だけで、記載がなければ「記載なし」。値ごとに原文のページと引用を付ける
 - **R の照合**：引用が指定ページの本文にあるかを確かめる（NFKC で全角・半角をそろえ、空白・改行を除く。PDF の本文は文の途中で改行されるため）。結果は「一致」「ページ違い」「原文にない」など。すべて一致し見出しが22文字以内なら「確認済み」、それ以外は「要確認」
@@ -177,7 +177,7 @@ C1 の案件詳細の「キャッシュフローを作る」（`POST /api/c1/cas
 
 ### C1 TRS 確認書
 
-Curie の `R/c1_trs_terms/` の13ファイルを `server/R/c1/` にそのまま写した。変えたのは環境変数名（`Curie_*` → `QUANTLET_*`）と、表示・記録の名前（User-Agent、FpML のコメント、manifest の版の項目名）だけである。抽出指示書は `server/docs/c1_trs_extraction_instructions.md`。
+Curie の `R/c1_trs_terms/` の13ファイルを `server/R/c1/` にそのまま写した。変えたのは環境変数名（`Curie_*` → `QUANTLET_*`）と、表示・記録の名前（User-Agent、FpML のコメント、manifest の版の項目名）だけである。抽出指示書は `server/agent_instructions/c1_trs_extraction_instructions.md`。
 
 - **読み方**：画面からは `saved`（保存済みの抽出結果。AI を呼ばない）と `claude_code`（Claude Code。開発用）を選べる。`saved` の抽出結果はデモの確認書のもの（`server/data/demo/c1/extraction_DEMO_TRS/`）で、別の契約書に使うと原文との照合で不一致になる。`api`（承認済みの AI API）は Curie と同じく接続先が未実装で、画面からは選べない
 - **未確定の項目と Aladdin 向けの下書き**：Curie と同じ。送信はしない（送信先がテスト環境か本番環境か未確認、認証情報は未提供）。自社の名前（`QUANTLET_OUR_PARTY_NAMES`）と Aladdin の対応表（`QUANTLET_ALADDIN_MAP`）は `server/tmp/.Renviron` に書く。設定がなければ CP・Pay leg・Receive leg は Unknown、payLeg／recLeg は未確定になる
@@ -206,7 +206,7 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 
 ## Curie との照合
 
-**A1**（2026-11-15 14:39 実行、`server/reconciliation/a1/results/`）。基準は Curie の旧デモ結果 `output/offer_results_{JPY,ISO}_demo_20261006.xlsx`（2026-10-27 作成、GaussQuant 2026.9.12.1・QuantLib 1.42）の「オファー結果」シート。入力は同じデモデータ。
+**A1**（2026-11-15 14:39 実行、`server/tests/reconciliation/a1/results/`）。基準は Curie の旧デモ結果 `output/offer_results_{JPY,ISO}_demo_20261006.xlsx`（2026-10-27 作成、GaussQuant 2026.9.12.1・QuantLib 1.42）の「オファー結果」シート。入力は同じデモデータ。
 
 | 項目 | 件数 | 最大の差 | 許容誤差 |
 |---|---|---|---|
@@ -226,7 +226,7 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 
 画面からの1件：円債オファー1件（テスト円債B 0.90% 2031/3、JPTEST000022、単価 98.15。`server/data/demo/a1/offers/demo_offer_JPY_single_JPTEST000022.xlsx`）をアップロードして計算すると、ASW 10.4841258717 bp、JGB スプレッド 11.5189351854 bp、ダーティ価格 98.2067123288 になり、上の照合の値と同じだった。
 
-**C1**（2026-11-15 14:42 実行、`server/reconciliation/c1/results/`）。基準は Curie の案件 `output/c1_trs/cases/DEMO_TRS_confirmation_20261027_081517`（2026-10-27）。同じ原資料（SHA-256 が一致するもの）と、その案件に残る Claude の抽出結果を `saved` で読ませた。
+**C1**（2026-11-15 14:42 実行、`server/tests/reconciliation/c1/results/`）。基準は Curie の案件 `output/c1_trs/cases/DEMO_TRS_confirmation_20261027_081517`（2026-10-27）。同じ原資料（SHA-256 が一致するもの）と、その案件に残る Claude の抽出結果を `saved` で読ませた。
 
 | 項目 | 結果 |
 |---|---|
@@ -261,7 +261,7 @@ npm run reconcile:c1    # C1 の照合
 npm run demo:offer      # 円債オファー1件のデモ Excel を作り直す
 ```
 
-R は「どの R を使うか」と同じ決め方で選ばれる。R のスクリプトは自分の場所から `server/`（`VERSION` のあるフォルダー）を探して作業ディレクトリにするので、`Rscript server/reconciliation/a1/reconcile_a1.R` のように直接起動してもよい。照合の基準ファイルは `server/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
+R は「どの R を使うか」と同じ決め方で選ばれる。R のスクリプトは自分の場所から `server/`（`VERSION` のあるフォルダー）を探して作業ディレクトリにするので、`Rscript server/tests/reconciliation/a1/reconcile_a1.R` のように直接起動してもよい。照合の基準ファイルは `server/tests/reconciliation/curie_reference/` に写したもので、Curie のファイルは読まない。
 
 画面での確認：`npm run api` と `npm run dev` を起動し、A1 タブで `demo_offer_JPY_single_JPTEST000022.xlsx` を「円債オファーシート」にアップロードして計算する。C1 タブで `server/data/demo/c1/DEMO_TRS_confirmation.pdf` をアップロードし、読み方「保存済みの抽出結果」で実行する。
 

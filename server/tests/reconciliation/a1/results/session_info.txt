@@ -1,0 +1,5 @@
+run_at: 2026-11-19 00:41:44 JST
+R: R version 4.6.0 (2026-04-24 ucrt)
+RiemannFinMath: 0.3.2 built R 4.6.0; x86_64-w64-mingw32; 2026-11-17 15:02:32 UTC; windows
+numeric checks: 84 fail: 0
+status mismatches: 0

@@ -36,7 +36,7 @@ c1_inbox_config <- function(root = Sys.getenv("QUANTLET_C1_INBOX_ROOT", ""), inb
   c(purrr::map(dirs, \(d) normalizePath(d, winslash = "/", mustWork = FALSE)),
     list(root = root, history = file.path(root, "history.jsonl"), events = file.path(dirs$logs, "events.jsonl"),
          stable_sec = stable_sec, project_root = project_root,
-         instruction_path = file.path(project_root, "docs", "c1_trs_extraction_instructions.md")))
+         instruction_path = file.path(project_root, "agent_instructions", "c1_trs_extraction_instructions.md")))
 }
 
 # ---- 共通名 ---------------------------------------------------------------------------------

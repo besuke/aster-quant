@@ -6,11 +6,17 @@ InfragoQuant.ps1 — Infrago Quant Server（R API、計算は RiemannFinMath）�
   .\InfragoQuant.ps1 -Mode lan     社内LANで起動（配備）。画面をビルドし、画面と API を 8091 でまとめて公開する（npm run lan）
   .\InfragoQuant.ps1 -Mode server  サーバー（R API、127.0.0.1:8790）だけを起動する
   .\InfragoQuant.ps1 -Mode client  クライアント（Web 画面、http://127.0.0.1:8091/）だけを起動してブラウザーで開く
+  .\InfragoQuant.ps1 -Mode server -Remote          サーバーだけを 0.0.0.0:8790 で起動（別の PC の画面から使う。start_infrago_server.ps1）
+  .\InfragoQuant.ps1 -Mode client -ApiUrl http://<サーバーのPC>:8790   画面だけを起動し、別の PC の R API につなぐ（start_infrago_client.ps1）
   .\InfragoQuant.ps1 -Mode resume  Claude Code をこのフォルダーで開く（セッションがあれば claude --resume）
 
 フォルダー名を InfragoQuant に変更したあとも、そのまま動く（パスはすべて $PSScriptRoot からの相対）。
 #>
-param([ValidateSet("menu", "dev", "lan", "server", "client", "resume")] [string] $Mode = "menu")
+param(
+  [ValidateSet("menu", "dev", "lan", "server", "client", "resume")] [string] $Mode = "menu",
+  [switch] $Remote,      # server：別の PC の画面からも使えるよう 0.0.0.0:8790 で待ち受ける
+  [string] $ApiUrl = ""  # client：別の PC で動く R API のアドレス（例 http://サーバーのPC:8790）。空ならこの PC の 127.0.0.1:8790
+)
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -97,21 +103,56 @@ function Start-NpmWindow([string] $title, [string] $script) {
     "-NoExit", "-NoProfile", "-Command", "`$Host.UI.RawUI.WindowTitle = '$title'; & '$Npm' run $script")
 }
 
+function Show-RemoteAddresses {
+$pub = Get-PublicHost
+$fqdn = try { [Net.Dns]::GetHostEntry($env:COMPUTERNAME).HostName } catch { $env:COMPUTERNAME }
+$names = @($pub.Host, $fqdn, $env:COMPUTERNAME) | Where-Object { $_ } | Select-Object -Unique
+Say ""
+Say "クライアントの PC には、次のどれかを渡してください（127.0.0.1 は使えません）：" "Green"
+foreach ($n in $names) { Say "  -ApiUrl http://${n}:8790" "Green" }
+Say "（IP アドレス：$($pub.Source)。DNS 名・コンピューター名は、クライアントの PC から名前で引けるときだけ使えます）"
+foreach ($n in $names) {
+  $ok = Test-InfragoQuantApi "http://${n}:8790/api/health"
+  Say ("  この PC から http://${n}:8790 : " + $(if ($ok) { "応答あり" } else { "応答なし（名前が引けないか、ファイアウォール）" })) $(if ($ok) { "Green" } else { "Yellow" })
+}
+Say "クライアントの PC から届かないときは、Windows ファイアウォールで 8790 の受信を許可してください（この PC の設定）。"
+}
+
 function Start-ServerOnly {
   Say ""
   if (Test-InfragoQuantApi $Api) {
     Say "Infrago Quant Server（R API）はすでに起動しています（127.0.0.1:8790）。" "Green"
+    if ($Remote) { Show-RemoteAddresses }
     return $true
   }
-  if (-not (Assert-PortFree 8790 "127.0.0.1" "R API")) { return $false }
+  $bind = if ($Remote) { "0.0.0.0" } else { "127.0.0.1" }
+  if (-not (Assert-PortFree 8790 $bind "R API")) { return $false }
   if (-not (Test-REnvironment)) { return $false }
-  Say "Infrago Quant Server（R API）を別のウィンドウで起動します（127.0.0.1:8790、npm run api）..."
-  Start-NpmWindow "Infrago Quant Server (8790)" "api"
-  return (Wait-Url $Api 120 "Infrago Quant Server")
+  if ($Remote) {
+    Say "Infrago Quant Server（R API）を別のウィンドウで起動します（0.0.0.0:8790、npm run api:remote）..."
+    Start-NpmWindow "Infrago Quant Server (8790)" "api:remote"
+  } else {
+    Say "Infrago Quant Server（R API）を別のウィンドウで起動します（127.0.0.1:8790、npm run api）..."
+    Start-NpmWindow "Infrago Quant Server (8790)" "api"
+  }
+  if (-not (Wait-Url $Api 120 "Infrago Quant Server")) { return $false }
+  if ($Remote) { Show-RemoteAddresses }
+  return $true
 }
 
 function Start-ClientOnly {
   Say ""
+  if ($ApiUrl) {
+    $ApiUrl = $ApiUrl.TrimEnd("/")
+    if ($ApiUrl -match '^https?://(127\.|localhost|\[?::1)') { Say "別の PC の R API には、127.0.0.1・localhost は使えません。サーバーの PC の LAN の IP アドレス、DNS 名、コンピューター名のどれかを指定してください。" "Red"; return $false }
+    if ($ApiUrl -notmatch '^https?://[^/\s]+$') { Say "-ApiUrl は http://ホスト:ポート の形で指定してください（例 http://192.168.0.10:8790）: $ApiUrl" "Red"; return $false }
+    Say "R API の接続先：$ApiUrl（別の PC）。応答を確かめます..."
+    if (-not (Test-InfragoQuantApi "$ApiUrl/api/health")) {
+      Say "$ApiUrl/api/health に Infrago Quant Server が応答しません。サーバーの PC で start_infrago_server.ps1 を起動し、ファイアウォールで 8790 を許可したか確かめてください。" "Red"
+      return $false
+    }
+    $env:QUANTLET_API_URL = $ApiUrl   # ui/vite.config.ts が /api の転送先に使う
+  }
   if (Test-InfragoQuantPage $Page) {
     Say "Infrago Quant の画面（クライアント）はすでに起動しています（$Page）。ブラウザで開きます。" "Green"
     Start-Process $Page
@@ -121,6 +162,7 @@ function Start-ClientOnly {
   Say "クライアント（Web 画面）を別のウィンドウで起動します（$Page、npm run dev）..."
   Start-NpmWindow "Infrago Quant Client (8091)" "dev"
   if (-not (Wait-Url $Page 60 "画面")) { return $false }
+  if ($ApiUrl -and -not (Wait-Url $PageApi 30 "画面から別の PC の R API への接続")) { return $false }
   Say "ブラウザで $Page を開きます。"
   Start-Process $Page
   return $true

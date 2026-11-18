@@ -50,7 +50,7 @@
 workflows_c1_case <- function(source, claude_mode = .reader_modes_c1,
                               case_id = NULL, output_root = file.path("output", "c1_trs", "cases"),
                               claude_demo_dir = NULL, xsd_path = Sys.getenv("QUANTLET_FPML_XSD", ""),
-                              instruction_path = file.path("docs", "c1_trs_extraction_instructions.md"),
+                              instruction_path = file.path("agent_instructions", "c1_trs_extraction_instructions.md"),
                               timeout_sec = as.numeric(Sys.getenv("QUANTLET_CLAUDE_TIMEOUT_SEC", "1800")),
                               claude_cmd = claude_command_c1(), claude_args = NULL, fetcher = .curl_fetch_c1,
                               aladdin_map = read_aladdin_map_c1()) {

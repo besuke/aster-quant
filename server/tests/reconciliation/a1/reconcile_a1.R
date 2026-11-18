@@ -1,10 +1,10 @@
 # A1 の照合：QuantLet（RiemannFinMath）と Curie の旧デモ結果（GaussQuant・QuantLib 1.42）。
 #
-#   Rscript reconciliation/a1/reconcile_a1.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/reconciliation/a1/reconcile_a1.R）
+#   Rscript tests/reconciliation/a1/reconcile_a1.R     （どのフォルダーからでもよい。ui/ からは npm run r -- ../server/tests/reconciliation/a1/reconcile_a1.R）
 #
 # 基準：Curie output/offer_results_{JPY,ISO}_demo_20261006.xlsx の「オファー結果」シート（2026-10-27 作成、QuantLet の
-# reconciliation/curie_reference/a1/ に写した）。入力は同じデモデータ（架空）。Curie・GaussQuant・Riemann は変更しない。
-# 結果は reconciliation/a1/results/ に書く。
+# tests/reconciliation/curie_reference/a1/ に写した）。入力は同じデモデータ（架空）。Curie・GaussQuant・Riemann は変更しない。
+# 結果は tests/reconciliation/a1/results/ に書く。
 suppressPackageStartupMessages({ library(dplyr); library(readxl) })
 # この R スクリプトの場所から server/（VERSION があるフォルダー）を決め、そこを作業ディレクトリにする（どこから起動してもよい）
 local({
@@ -14,7 +14,7 @@ local({
   setwd(d)
 })
 source("R/load_quantlet.R", encoding = "UTF-8"); load_quantlet(getwd())
-out_dir <- file.path("reconciliation", "a1", "results"); dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+out_dir <- file.path("tests", "reconciliation", "a1", "results"); dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 demo <- a1_demo_inputs_QL()
 
 tol <- c(native_asw_bp = 1e-6, jgb_spread_bp = 1e-6, jpy_compound_yield_pct = 1e-10, jgb_interpolated_yield_pct = 1e-10,
@@ -23,7 +23,7 @@ tol <- c(native_asw_bp = 1e-6, jgb_spread_bp = 1e-6, jpy_compound_yield_pct = 1e
 compare <- function(workflow, offer_path, ref_file) {
   run <- run_offer_sheet_QL(workflow, offer_path, file.path(out_dir, paste0("quantlet_", workflow, ".xlsx")),
                             work_dir = file.path(tempdir(), paste0("ql_", workflow)))
-  ref <- read_excel(file.path("reconciliation", "curie_reference", "a1", ref_file), sheet = "オファー結果")
+  ref <- read_excel(file.path("tests", "reconciliation", "curie_reference", "a1", ref_file), sheet = "オファー結果")
   ql <- run$results
   stopifnot(nrow(ref) == nrow(ql), identical(ref$ISIN, ql$ISIN))
   items <- intersect(names(tol), names(ref))
