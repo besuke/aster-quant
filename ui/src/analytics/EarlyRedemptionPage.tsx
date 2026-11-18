@@ -8,7 +8,7 @@ import { f, NumField, PageHead, Segmented, Status, Tile, useCalc } from "./commo
 
 const DEFAULT: EarlyRedemptionRequest = {
   bond: { ratePct: 2, aPct: 15, sigmaPct: 1.2, couponPct: 3, firstCallYear: 1, callPrice: 100 },
-  mbs: { psaPct: 100, incentive: 20, refiCostPct: 0.5 },
+  mbs: { psaPct: 100, incentive: 20, refiCostPct: 0.5, oasPrice: 110 },
 };
 type Tab = "bond" | "mbs";
 
@@ -40,6 +40,7 @@ export default function EarlyRedemptionPage() {
             <NumField label="PSA（%）" value={req.mbs.psaPct} step={10} min={0} max={500} onChange={(v) => setM({ psaPct: v })} />
             <NumField label="借換えの感応度" value={req.mbs.incentive} step={1} min={0} max={50} onChange={(v) => setM({ incentive: v })} />
             <NumField label="借換え費用（%）" value={req.mbs.refiCostPct} step={0.1} min={0} max={3} onChange={(v) => setM({ refiCostPct: v })} />
+            <NumField label="OAS を解く価格" value={req.mbs.oasPrice} step={1} min={50} max={150} onChange={(v) => setM({ oasPrice: v })} />
           </>
         )}
         <button type="button" onClick={() => setReq(DEFAULT)}>初期値に戻す</button>
@@ -95,6 +96,68 @@ function BondResult({ d }: { d: EarlyRedemptionResponse }) {
   );
 }
 
+/** ダイナミック OAS（Hull-White の経路）、静的 OAS、経路での評価。計算は RiemannFinMath（compute_mbs_oas・compute_mbs_path_values）。 */
+function OasResult({ d }: { d: EarlyRedemptionResponse }) {
+  const { paths, oas, static: st } = d.mbs;
+  const months = paths.rates[0]?.length ?? 0;
+  const bp = (x: number) => `${f(x, 1)} bp`;
+  const pathSeries = paths.rates.map((r, i) => ({
+    key: `p${i}`, label: `経路 ${i + 1}`, color: "var(--series-1)", strokeWidth: 1, opacity: 0.55, inLegend: false,
+    points: r.map((y, k) => ({ x: (k + 1) / 12, y: y * 100, date: `${k + 1}か月` })),
+  }));
+  const years = [0, 5, 10, 15, 20, 25, 30].map((x) => ({ x, label: String(x) }));
+  const priceTicks = oas.by_price.map((r) => ({ x: r.price, label: String(r.price) }));
+  const psaColors: Record<number, string> = { 0: "var(--series-1)", 50: "var(--series-3)", 100: "var(--series-2)" };
+  const spreadTicks = [-200, -100, 0, 100, 200, 300].map((x) => ({ x, label: String(x) }));
+  return (
+    <>
+      <section className="card" data-testid="oas-section">
+        <h2>OAS（オプション調整後スプレッド）：ダイナミックと静的</h2>
+        <p className="muted small">
+          OAS は、経路ごとの現在価値の平均が市場価格に一致するように、短期金利に加えるスプレッドです。ダイナミック OAS は Hull-White の金利経路（{months}か月、初期カーブ 2%、a = 15%、σ = 1.2%）の上で、
+          借換え金利は短期金利、割引率は短期金利 + 3% として解きます。静的 OAS は、金利 4% 一定・借換え金利 5% 一定の 1 本の経路で解いたものです。
+        </p>
+        <div className="qc-tiles">
+          <Tile emphasis label={`ダイナミック OAS（500本、価格 ${f(oas.price, 2)}）`} value={bp(oas.dynamic_500_bp)} note={`20本では ${bp(oas.dynamic_20_bp)}`} />
+          <Tile label={`静的 OAS（価格 ${f(oas.price, 2)}）`} value={bp(oas.static_bp)} note="金利 4% 一定、借換え金利 5% 一定" />
+          <Tile label="経路での評価価格（20本の平均）" value={f(paths.mean_price, 3)} note={`WAL ${f(paths.mean_wal, 2)} 年。20本それぞれの価格は ${f(Math.min(...paths.price), 1)}〜${f(Math.max(...paths.price), 1)}`} />
+          <Tile label="2000本の平均価格" value={f(paths.mc.mean_price, 3)} note={`標準誤差 ${f(paths.mc.standard_error, 3)}、WAL ${f(paths.mc.mean_wal, 2)} 年（seed ${paths.mc.seed}）`} />
+        </div>
+        <div className="two-col" style={{ marginTop: 10 }}>
+          <LineChart title={`Hull-White の短期金利の経路（${paths.count}本）`} origin="2026-11-02" xMin={0} xMax={30} xLabel="経過年数" yLabel="短期金利（%）" xTicks={years}
+            series={pathSeries} formatY={(y) => `${y.toFixed(2)}%`} formatTick={(y) => y.toFixed(1)} legend={false} tooltipRows={3} />
+          <LineChart title="市場価格ごとの OAS：ダイナミック（20本）と静的" origin="2026-11-02" xMin={oas.by_price[0].price} xMax={oas.by_price[oas.by_price.length - 1].price} xLabel="市場価格" yLabel="OAS（bp）" xTicks={priceTicks} zeroLine
+            series={[
+              { key: "d", label: "ダイナミック OAS", color: "var(--series-1)", points: oas.by_price.map((r) => ({ x: r.price, y: r.dynamic_bp, date: `価格 ${r.price}` })) },
+              { key: "s", label: "静的 OAS", color: "var(--series-2)", dashed: true, points: oas.by_price.map((r) => ({ x: r.price, y: r.static_bp, date: `価格 ${r.price}` })) },
+            ]}
+            formatY={(y) => `${y.toFixed(1)} bp`} formatTick={(y) => y.toFixed(0)} />
+        </div>
+      </section>
+      <section className="card" data-testid="static-oas-section">
+        <h2>静的 OAS：PSA と価格ごと、スプレッドと価格の関係</h2>
+        <div className="two-col">
+          <div className="table-wrap">
+            <table className="data">
+              <caption>PSA 0・50・100%、借換え金利 5%（インセンティブなし）、ゼロ金利 4% に加えるスプレッドで、架空の価格 95・105 に合わせる</caption>
+              <thead><tr><th className="num">PSA（%）</th><th className="num">価格</th><th className="num">静的 OAS（bp）</th></tr></thead>
+              <tbody>{st.table.map((r) => (
+                <tr key={`${r.psa_percent}-${r.assumed_price}`}><td className="num">{r.psa_percent}</td><td className="num">{r.assumed_price}</td><td className="num">{f(r.oas_bp, 2)}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+          <LineChart title="スプレッドと価格（PSA 別）" origin="2026-11-02" xMin={-200} xMax={300} xLabel="スプレッド（bp）" yLabel="価格" xTicks={spreadTicks}
+            series={[0, 50, 100].map((psa) => ({
+              key: `psa${psa}`, label: `PSA ${psa}%`, color: psaColors[psa],
+              points: st.price_curve.filter((r) => r.psa_percent === psa).map((r) => ({ x: r.spread_bp, y: r.price, date: `${r.spread_bp} bp` })),
+            }))}
+            formatY={(y) => y.toFixed(2)} formatTick={(y) => y.toFixed(0)} />
+        </div>
+      </section>
+    </>
+  );
+}
+
 function MbsResult({ d }: { d: EarlyRedemptionResponse }) {
   const m = d.mbs;
   const cf = m.flat_cashflows;
@@ -121,6 +184,7 @@ function MbsResult({ d }: { d: EarlyRedemptionResponse }) {
           series={[{ key: "b", label: "残高", color: "var(--series-1)", points: balPt }]}
           formatY={(y) => y.toFixed(2)} formatTick={(y) => y.toFixed(0)} legend={false} />
       </div>
+      <OasResult d={d} />
       <section className="card">
         <h2>キャッシュフロー（金利一定、元本 {m.pool.balance}）</h2>
         <div className="table-wrap tall">

@@ -173,13 +173,3 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
     </svg>
   );
 }
-
-// 上の帯のロゴ：新緑の葉を 1 枚（原画。タブのアイコンは index.html に同じ図を入れる）
-export function BrandLogo({ size = 24 }: { size?: number }) {
-  return (
-    <svg className="brand-logo" width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" data-testid="brand-logo">
-      <defs><linearGradient id="leafG" x1="5" y1="20" x2="20" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#16a34a"/><stop offset="1" stopColor="#86efac"/></linearGradient></defs><path d="M4.5 19.5C3.5 10.5 9.5 4 20 4C20.5 14.5 14 20.5 4.5 19.5Z" fill="url(#leafG)" stroke="#166534" strokeWidth="1.2" strokeLinejoin="round"/><path d="M4.5 19.5L2.6 21.7" stroke="#166534" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-      <path d="M4.5 19.5C8.5 14.5 12.5 10.5 17 7M8 15.5L8.6 11.2M8 15.5L12.6 16M11.6 12L12.2 8M11.6 12L16.3 12.7" stroke="#f0fdf4" strokeWidth="1" strokeLinecap="round" fill="none"/>
-    </svg>
-  );
-}

@@ -123,7 +123,7 @@ export interface FuturesResponse {
 
 export interface EarlyRedemptionRequest {
   bond: { ratePct: number; aPct: number; sigmaPct: number; couponPct: number; firstCallYear: number; callPrice: number };
-  mbs: { psaPct: number; incentive: number; refiCostPct: number };
+  mbs: { psaPct: number; incentive: number; refiCostPct: number; oasPrice: number };
 }
 export interface EarlyRedemptionResponse {
   inputs: EarlyRedemptionRequest;
@@ -138,6 +138,18 @@ export interface EarlyRedemptionResponse {
     scenarios: { scenario: string; weighted_average_life: number; price_fixed_discount: number; price_path_discount: number; total_principal: number }[];
     cpr: { month: number; falling: number; flat: number; rising: number }[];
     flat_cashflows: { month: number; interest: number; scheduled_principal: number; prepaid_principal: number; end_balance: number }[];
+    /** Hull-White の月次の短期金利の経路（20本）で評価した価格と WAL、2000本の平均価格 */
+    paths: {
+      seed: number; count: number; rates: number[][]; price: number[]; weighted_average_life: number[]; mean_price: number; mean_wal: number;
+      mc: { count: number; seed: number; mean_price: number; standard_error: number; mean_wal: number };
+    };
+    /** 静的 OAS：PSA と架空の価格ごとのスプレッド（bp）、スプレッドごとの価格 */
+    static: {
+      table: { psa_percent: number; assumed_price: number; oas_bp: number }[];
+      price_curve: { psa_percent: number; spread_bp: number; price: number }[];
+    };
+    /** OAS（bp）：Hull-White の経路の平均価格が市場価格に一致するスプレッド（ダイナミック）と、1本の一定の経路での値（静的） */
+    oas: { price: number; dynamic_20_bp: number; dynamic_500_bp: number; static_bp: number; by_price: { price: number; dynamic_bp: number; static_bp: number }[] };
   };
 }
 

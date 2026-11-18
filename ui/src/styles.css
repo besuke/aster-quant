@@ -9,6 +9,7 @@
   --border: #dde2e8;
   --axis: #c0c8d2;
   --accent: #166534;
+  --header-h: 72px;
   --accent-soft: #e7f3ec;
   --ok: #1d7a46;
   --ok-soft: #e5f4ea;
@@ -60,6 +61,8 @@ h3 { font-size: 14px; margin: 8px 0; }
 
 /* ---- 上の帯と左のサイドバー（Carmine Studio と同じ構成：上に帯、その下に折りたためるサイドバーと本文） ---- */
 .site-header {
+  box-sizing: border-box;
+  height: var(--header-h);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -74,38 +77,49 @@ h3 { font-size: 14px; margin: 8px 0; }
 .site-header .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   text-decoration: none;
+  min-width: 0;
 }
-.site-header .brand-logo { flex-shrink: 0; }
+.site-header .brand-mark { flex-shrink: 0; width: 50px; height: 50px; }
+.site-header .brand-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .site-header .brand-name {
   font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.01em;
+  font-size: 32px;
+  letter-spacing: -0.015em;
   color: var(--accent);
   white-space: nowrap;
+}
+.site-header .brand-sub { font-size: 14px; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; }
+@media (max-width: 520px) {
+  .site-header { height: auto; padding: 6px 12px; gap: 8px; flex-wrap: wrap; position: static; }
+  .site-header .brand-mark { width: 38px; height: 38px; }
+  .site-header .brand-name { font-size: 22px; }
+  .site-header .brand-sub { font-size: 11px; }
+  .sidebar { top: 0; max-height: 100vh; min-height: 0; }
+  .layout { min-height: 0; }
 }
 .site-header .server-badge { margin-left: auto; }
 .layout {
   display: grid;
   grid-template-columns: 208px minmax(0, 1fr);
   width: 100%;
-  min-height: calc(100vh - 52px);
+  min-height: calc(100vh - var(--header-h));
   transition: grid-template-columns 0.15s ease;
 }
 .layout.sidebar-collapsed { grid-template-columns: 50px minmax(0, 1fr); }
 .sidebar {
   position: sticky;
-  top: 52px;
+  top: var(--header-h);
   align-self: start;
-  max-height: calc(100vh - 52px);
+  max-height: calc(100vh - var(--header-h));
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px 7px 20px;
   font-size: 13px;
   background: #EFEFF1;
   border-right: 1px solid var(--border);
-  min-height: calc(100vh - 52px);
+  min-height: calc(100vh - var(--header-h));
 }
 .sidebar.collapsed { padding: 8px 4px 20px; }
 .sidebar-top { display: flex; justify-content: flex-end; margin-bottom: 6px; }

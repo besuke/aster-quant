@@ -14,7 +14,8 @@ import CdsPage from "./analytics/CdsPage";
 import FuturesPage from "./analytics/FuturesPage";
 import EarlyRedemptionPage from "./analytics/EarlyRedemptionPage";
 import { ServerConnectionProvider, ServerStatusBadge } from "./serverConnection";
-import { BrandLogo, Icon } from "./icons";
+import { Icon } from "./icons";
+import ehMark from "./assets/eh-mark.svg";
 import { ALIASES, DEFAULT_PAGE, GROUPS, locate, PAGE_IDS, type NavItem, type PageId } from "./nav";
 
 // 画面の構成は Carmine Studio と同じ：上の帯（左にロゴと名前、右に Infrago Quant Server の接続表示）、その下に左のサイドバー。
@@ -95,8 +96,11 @@ export default function App() {
     <ServerConnectionProvider>
       <header className="site-header">
         <a className="brand" href={`#${DEFAULT_PAGE}`} title="Infrago Quantlet">
-          <BrandLogo />
-          <span className="brand-name">Infrago Quantlet</span>
+          <img className="brand-mark" src={ehMark} alt="" width={30} height={30} data-testid="brand-logo" />
+          <span className="brand-text">
+            <span className="brand-name">Infrago Quantlet</span>
+            <span className="brand-sub">市場分析運用判断支援</span>
+          </span>
         </a>
         <ServerStatusBadge />
       </header>
