@@ -46,12 +46,12 @@ install.packages(c("pdftools", "openssl", "curl", "processx", "ps", "httr2", "fl
 
 ### rmql を入れる
 
-rmql は別のリポジトリ（<https://github.com/besuke/rmql>）。入れ方の正本は rmql の `docs/client_guide.md`。要点：
+rmql は別のリポジトリ（<https://github.com/besuke/RiemannQL>）。入れ方の正本は rmql の `docs/client_guide.md`。要点：
 
 ```r
 install.packages(
   "rmql",
-  repos = c("https://besuke.github.io/rmql", "https://cloud.r-project.org")
+  repos = c("https://besuke.github.io/RiemannQL", "https://cloud.r-project.org")
 )
 ```
 
