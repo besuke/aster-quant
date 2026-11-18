@@ -3,9 +3,12 @@
 //   1. 環境変数 RSCRIPT（そのときだけ切り替えるとき）
 //   2. プロジェクトルートの settings.local.env の RSCRIPT=（この PC の設定。Git に入れない。見本は settings.example.env）
 //   3. PATH 上の Rscript.exe
+//   4. 環境変数 R_HOME の R
+//   5. この PC にインストールされている R のうち、いちばん新しい版（自動で探す。Windows の C:/Program Files/R と
+//      %LOCALAPPDATA%/Programs/R）
 //
-// 指定されたパスに Rscript がなければ、ほかの R に切り替えずに止める（どの R で動いたかを曖昧にしない）。
-// R の版を固定したパス（C:/Program Files/R/R-4.6.0/... など）はコードに書かない。
+// 指定（1・2）されたパスに Rscript がなければ、ほかの R に切り替えずに止める（どの R で動いたかを曖昧にしない）。
+// R の版や、版を含むパス（R-4.6.0 など）はコードに決め打ちしない。使う R と版は起動のたびに表示する（run-r.mjs）。
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,13 +38,21 @@ function findOnPath(name) {
   return null;
 }
 
-// 案内用：この PC に入っている R（自動では使わない）
+// R-4.6.0 のようなフォルダー名の版を数値で比べる（新しい順に並べるため）
+const versionOf = (dir) => (dir.match(/(\d+(?:\.\d+)*)/)?.[1] ?? "0").split(".").map(Number);
+function newerFirst(a, b) {
+  const x = versionOf(a), y = versionOf(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (y[i] ?? 0) - (x[i] ?? 0);
+  return 0;
+}
+
+// この PC に入っている R（新しい版が先）。見つけるだけで、どれを使うかは resolveRscript が決める
 export function installedRscripts() {
   const bases = ["C:/Program Files/R", process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Programs", "R")].filter(Boolean);
   const found = [];
   for (const base of bases) {
     try {
-      for (const d of readdirSync(base)) {
+      for (const d of readdirSync(base).sort(newerFirst)) {
         const p = join(base, d, "bin", RSCRIPT_EXE);
         if (existsSync(p)) found.push(p.replaceAll("\\", "/"));
       }
@@ -49,7 +60,7 @@ export function installedRscripts() {
       /* そのフォルダーはない */
     }
   }
-  return found;
+  return found.sort((a, b) => newerFirst(a.split("/").at(-3) ?? "", b.split("/").at(-3) ?? ""));
 }
 
 // { path, source } を返す。見つからなければ path は null
@@ -60,6 +71,10 @@ export function resolveRscript() {
   if (setting) return { path: setting, source: "settings.local.env の RSCRIPT" };
   const onPath = findOnPath(RSCRIPT_EXE);
   if (onPath) return { path: onPath, source: `PATH 上の ${RSCRIPT_EXE}` };
+  const home = process.env.R_HOME?.trim();
+  if (home && existsSync(join(home, "bin", RSCRIPT_EXE))) return { path: join(home, "bin", RSCRIPT_EXE), source: "環境変数 R_HOME" };
+  const [newest] = installedRscripts();
+  if (newest) return { path: newest, source: "自動検出（この PC にインストールされている最新の R）" };
   return { path: null, source: null };
 }
 
@@ -73,7 +88,7 @@ export function requireRscript() {
     if (found.length) console.error(`この PC で見つかった Rscript：\n${found.map((p) => `  ${p}`).join("\n")}`);
   };
   if (!r.path) {
-    console.error(`Rscript が決まりません。settings.local.env にも環境変数 RSCRIPT にも指定がなく、PATH 上にも ${RSCRIPT_EXE} がありません。`);
+    console.error(`Rscript が決まりません。settings.local.env にも環境変数 RSCRIPT にも指定がなく、PATH 上・R_HOME・標準のインストール先にも R が見つかりません。`);
     hint();
     process.exit(1);
   }
