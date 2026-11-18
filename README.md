@@ -20,10 +20,17 @@ Curie（`../Curie`、R Project）の後継で、Curie の次の2つを移植し�
 
 ## 起動
 
-準備（npm install、R のパッケージ、RiemannFinMath）、R の選び方、全コマンド、社内LANでの公開、確認の手順は、**`HANDOVER.md`** にまとめてある（引き継ぎの正本）。準備ができていれば、起動はこの1行。
+準備（npm install、R のパッケージ、RiemannFinMath）、R の選び方、全コマンド、社内LANでの公開、確認の手順は、**`HANDOVER.md`** にまとめてある（引き継ぎの正本）。準備ができていれば、1 台の PC で動かすなら次の1行。
 
 ```powershell
 .\start_infrago.ps1    # R API（127.0.0.1:8790）と画面（http://127.0.0.1:8091/）を起動し、ブラウザーで開く
+```
+
+サーバーとクライアントを別々の PC で動かすときは、サーバーの PC（R が要る）とクライアントの PC（Node.js だけ）で次を実行する。アドレスは LAN の IP アドレス（`127.0.0.1`・`localhost` は使えない）。
+
+```powershell
+.\start_infrago_server.ps1                                  # サーバーの PC：R API を 0.0.0.0:8790 で起動し、渡すアドレスを表示
+.\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790   # クライアントの PC：画面（8091）を起動し、そのサーバーにつなぐ
 ```
 
 ## 画面
