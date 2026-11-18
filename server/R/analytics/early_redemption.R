@@ -2,7 +2,7 @@
 # /api/callable（early-redemption）から、RiemannFinMath で計算できる部分を移した。計算はすべて RiemannFinMath。
 # （静的 OAS の表と、Hull-White の金利経路での MBS の評価は、RiemannFinMath の compute_mbs_oas・generate_hull_white_monthly_rates・
 #  compute_mbs_path_values で計算するので移した。経路は RiemannFinMath の乱数（seed 48）で、原稿の set.seed(48) の経路とは数値が違う。
-#  コール判断の境界は RiemannFinMath が行使判断を返さないので、まだ移していない）
+#  コール判断の境界は RiemannFinMath の compute_hull_white_callable_bond_decisions（0.3.5 から）で計算する。）
 #
 # POST /api/analytics/early-redemption
 #   {"bond":{"ratePct":2,"aPct":15,"sigmaPct":1.2,"couponPct":3,"firstCallYear":1,"callPrice":100},
@@ -58,7 +58,15 @@ er_bond_QL <- function(p) er_memo_QL("bond", p, function() {
     x <- er_value_QL(flows, a, s, curve)
     data.frame(volatility = s, callable = x$callable, bullet = x$bullet, issuer_call_value = x$issuer_call_value)
   }))
-  list(flows = flows, bullet = v$bullet, callable = v$callable, issuer_call_value = v$issuer_call_value, by_volatility = by_vol)
+  # コール判断：各コール日の、状態ごとの継続価値（クーポン除き）とコール価格の比べ。コールするのは継続価値がコール価格を上回る状態（金利が低い側）
+  dc <- RiemannFinMath::compute_hull_white_callable_bond_decisions(flows$time, flows$coupon, flows$principal, flows$call_price, a, sigma, curve,
+                                                                   points = 321L, limit = 0.13, nodes = 24L)
+  call_times <- sort(unique(dc$decisions$payment_time))
+  show_time <- if (any(call_times >= 2)) min(call_times[call_times >= 2]) else call_times[1]
+  d1 <- dc$decisions[abs(dc$decisions$payment_time - show_time) < 1e-10 & dc$decisions$short_rate >= -0.02 & dc$decisions$short_rate <= 0.08, ]
+  list(flows = flows, bullet = v$bullet, callable = v$callable, issuer_call_value = v$issuer_call_value, by_volatility = by_vol,
+       exercise_boundary = as.data.frame(dc$boundary), decision_time = show_time,
+       decision = d1[, c("short_rate", "continuation_ex_coupon", "call_price", "exercise_now")])
 })
 
 # プールの条件だけをキャッシュの鍵にする（OAS を解く価格を変えても、キャッシュフローや経路は作り直さない）

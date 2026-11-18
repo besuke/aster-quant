@@ -81,6 +81,34 @@ function BondResult({ d }: { d: EarlyRedemptionResponse }) {
           ]}
           formatY={(y) => y.toFixed(3)} formatTick={(y) => y.toFixed(1)} />
       </div>
+      <section className="card" data-testid="call-decision-section">
+        <h2>コール判断：金利がどこまで下がればコールするか</h2>
+        <p className="muted small">
+          各コール日に、クーポンを除いた以降の支払いの価値（継続価値。以降のコールを織り込み済み）がコール価格を上回れば、発行体はコールします。クーポンが市場金利より高いと、金利が低い側でコールします。
+          境界は、コールする状態のうち最も高い短期金利です。状態は Hull-White の格子（321点）で、計算は RiemannFinMath です。
+        </p>
+        <div className="two-col">
+          <LineChart title="コール判断の境界（この短期金利より低ければコール）" origin="2026-11-02" xMin={b.exercise_boundary[0].payment_time - 0.25} xMax={b.exercise_boundary[b.exercise_boundary.length - 1].payment_time + 0.25}
+            xLabel="コール日（年）" yLabel="短期金利（%）" xTicks={b.exercise_boundary.map((r) => ({ x: r.payment_time, label: String(r.payment_time) }))}
+            series={[{ key: "bd", label: "境界", color: "var(--series-1)", points: b.exercise_boundary.filter((r) => r.call_below_short_rate !== null).map((r) => ({ x: r.payment_time, y: (r.call_below_short_rate as number) * 100, date: `${r.payment_time}年` })) }]}
+            formatY={(y) => `${y.toFixed(2)}%`} formatTick={(y) => y.toFixed(1)} legend={false} />
+          <LineChart title={`${b.decision_time}年のコール判断：継続価値とコール価格`} origin="2026-11-02" xMin={-2} xMax={8} xLabel="短期金利（%）" yLabel="価格"
+            xTicks={[-2, 0, 2, 4, 6, 8].map((x) => ({ x, label: String(x) }))}
+            series={[
+              { key: "k", label: "継続価値（クーポン除き）", color: "var(--series-1)", points: b.decision.map((r) => ({ x: r.short_rate * 100, y: r.continuation_ex_coupon, date: `${(r.short_rate * 100).toFixed(2)}%` })) },
+              { key: "c", label: "コール価格", color: "var(--series-2)", dashed: true, points: b.decision.map((r) => ({ x: r.short_rate * 100, y: r.call_price, date: `${(r.short_rate * 100).toFixed(2)}%` })) },
+            ]}
+            formatY={(y) => y.toFixed(2)} formatTick={(y) => y.toFixed(0)} />
+        </div>
+        <div className="table-wrap" style={{ marginTop: 10 }}>
+          <table className="data">
+            <thead><tr><th className="num">コール日（年）</th><th className="num">コールする短期金利の上限（%）</th><th className="num">格子のうちコールする割合</th></tr></thead>
+            <tbody>{b.exercise_boundary.map((r) => (
+              <tr key={r.payment_time}><td className="num">{r.payment_time}</td><td className="num">{r.call_below_short_rate === null ? "—（コールしない）" : f(r.call_below_short_rate * 100, 2)}</td><td className="num">{f(r.share_of_grid_called * 100, 1)}%</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </section>
       <section className="card">
         <h2>キャッシュフローとコール価格</h2>
         <div className="table-wrap">

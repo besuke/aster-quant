@@ -132,6 +132,11 @@ export interface EarlyRedemptionResponse {
     flows: { time: number; coupon: number; principal: number; call_price: number | null }[];
     bullet: number; callable: number; issuer_call_value: number;
     by_volatility: { volatility: number; callable: number; bullet: number; issuer_call_value: number }[];
+    /** コール日ごとの境界：コールする状態のうち最も高い短期金利（コールするのは、それより金利が低いとき） */
+    exercise_boundary: { payment_time: number; call_below_short_rate: number | null; share_of_grid_called: number }[];
+    /** 1つのコール日（decision_time）の、短期金利ごとの継続価値（クーポン除き）とコール価格 */
+    decision_time: number;
+    decision: { short_rate: number; continuation_ex_coupon: number; call_price: number; exercise_now: boolean }[];
   };
   mbs: {
     pool: { balance: number; mortgage_rate: number; pass_through_rate: number; months: number };
