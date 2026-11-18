@@ -10,20 +10,20 @@ http://127.0.0.1:8091/）を立ち上げて、ブラウザーで開く。
   .\start_infrago.ps1 -Mode menu      番号で選ぶメニュー
   .\start_infrago.ps1 -Mode resume    Claude Code をこのフォルダーで開く（セッションがあれば続きから）
 
-起動の処理は InfragoQuant.ps1 にある（このファイルは入口）。起動前に、次の確認をする。
+起動の処理は scripts/InfragoQuant.ps1 にある（このファイルは入口）。起動前に、次の確認をする。
   - 使う R と必須パッケージを読み込めるか（読み込めなければ、選ばれた R と不足を表示して止まる）
   - ポート 8790・8091 が空いているか（使われていれば、使っているプロセスを示して止まる。別のポートには切り替えない）
   - サーバーと画面が応答するまで待つ
 止めるときは、開いた「Infrago Quant Server (8790)」「Infrago Quant Client (8091)」のウィンドウを閉じる。
 パスはすべてこのファイルの場所（$PSScriptRoot）からの相対なので、フォルダー名が違っても、別の PC でも、そのまま動く。
-初めて使う PC では、先に HANDOVER.md の「新しい PC で動かす」の手順（npm install と R のパッケージ）を済ませる。
+初めて使う PC では、先に docs/HANDOVER.md の「新しい PC で動かす」の手順（npm install と R のパッケージ）を済ませる。
 #>
 param([ValidateSet("dev", "lan", "server", "client", "check", "menu", "resume")] [string] $Mode = "dev")
 
 $ErrorActionPreference = "Stop"
-$launcher = Join-Path $PSScriptRoot "InfragoQuant.ps1"
+$launcher = Join-Path $PSScriptRoot "scripts/InfragoQuant.ps1"
 if (-not (Test-Path $launcher)) {
-  Write-Host "InfragoQuant.ps1 が見つかりません: $launcher" -ForegroundColor Red
+  Write-Host "scripts/InfragoQuant.ps1 が見つかりません: $launcher" -ForegroundColor Red
   exit 1
 }
 

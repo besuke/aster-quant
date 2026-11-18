@@ -1,7 +1,7 @@
 // どの Rscript を使うかを決める（Infrago Quant のすべての R の起動はここを通る）。
 //
 //   1. 環境変数 RSCRIPT（そのときだけ切り替えるとき）
-//   2. プロジェクトルートの settings.local.env の RSCRIPT=（この PC の設定。Git に入れない。見本は settings.example.env）
+//   2. プロジェクトルートの config/settings.local.env の RSCRIPT=（この PC の設定。Git に入れない。見本は config/settings.example.env）
 //   3. PATH 上の Rscript.exe
 //   4. 環境変数 R_HOME の R
 //   5. この PC にインストールされている R のうち、いちばん新しい版（自動で探す。Windows の C:/Program Files/R と
@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 
 // このファイルの場所（ui/scripts/）からプロジェクトルートを決める。フォルダー名や作業ディレクトリに依らない
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const SETTINGS_FILE = join(ROOT, "settings.local.env");
+export const SETTINGS_FILE = join(ROOT, "config/settings.local.env");
 const RSCRIPT_EXE = process.platform === "win32" ? "Rscript.exe" : "Rscript";
 
 function readSetting(key) {
@@ -68,7 +68,7 @@ export function resolveRscript() {
   const env = process.env.RSCRIPT?.trim();
   if (env) return { path: env, source: "環境変数 RSCRIPT" };
   const setting = readSetting("RSCRIPT");
-  if (setting) return { path: setting, source: "settings.local.env の RSCRIPT" };
+  if (setting) return { path: setting, source: "config/settings.local.env の RSCRIPT" };
   const onPath = findOnPath(RSCRIPT_EXE);
   if (onPath) return { path: onPath, source: `PATH 上の ${RSCRIPT_EXE}` };
   const home = process.env.R_HOME?.trim();
@@ -83,12 +83,12 @@ export function requireRscript() {
   const r = resolveRscript();
   const hint = () => {
     const found = installedRscripts();
-    console.error(`\n設定のしかた：${SETTINGS_FILE} に次の1行を書く（見本は settings.example.env）。`);
+    console.error(`\n設定のしかた：${SETTINGS_FILE} に次の1行を書く（見本は config/settings.example.env）。`);
     console.error(`  RSCRIPT=${found[0] ?? "C:/Program Files/R/R-x.y.z/bin/Rscript.exe"}`);
     if (found.length) console.error(`この PC で見つかった Rscript：\n${found.map((p) => `  ${p}`).join("\n")}`);
   };
   if (!r.path) {
-    console.error(`Rscript が決まりません。settings.local.env にも環境変数 RSCRIPT にも指定がなく、PATH 上・R_HOME・標準のインストール先にも R が見つかりません。`);
+    console.error(`Rscript が決まりません。config/settings.local.env にも環境変数 RSCRIPT にも指定がなく、PATH 上・R_HOME・標準のインストール先にも R が見つかりません。`);
     hint();
     process.exit(1);
   }

@@ -9,9 +9,9 @@ if (interactive()) {
   local({
     cat("Infrago Quant（", R.version.string, "）\n", sep = "")
     cat("  iq_check()   この R で必須パッケージを読み込めるか確かめる\n")
-    cat("  起動：ターミナルで  .\\start_infrago.ps1   （R API 8790 と画面 8091。引き継ぎ・手順は HANDOVER.md）\n")
+    cat("  起動：ターミナルで  .\\start_infrago.ps1   （R API 8790 と画面 8091。引き継ぎ・手順は docs/HANDOVER.md）\n")
     if (!requireNamespace("RiemannFinMath", quietly = TRUE)) {
-      cat("  ※ RiemannFinMath がこの R に入っていません。HANDOVER.md の「RiemannFinMath を入れる」を参照\n")
+      cat("  ※ RiemannFinMath がこの R に入っていません。docs/HANDOVER.md の「RiemannFinMath を入れる」を参照\n")
     }
   })
 }

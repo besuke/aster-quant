@@ -61,7 +61,7 @@ install.packages(
 
 ### R の版が違うとき（手元の R と、この PC の R 4.6.0 が違う）
 
-- **使う R は自動で決まる**（`ui/scripts/rscript.mjs`）：環境変数 `RSCRIPT` → `settings.local.env` の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R。複数の版が入っていて、最新でない R を使うときだけ指定する（`Copy-Item settings.example.env settings.local.env` して `RSCRIPT=` に Rscript.exe のパスを書く）。使う R と版は、起動のたびに表示される。
+- **使う R は自動で決まる**（`ui/scripts/rscript.mjs`）：環境変数 `RSCRIPT` → `config/settings.local.env` の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R。複数の版が入っていて、最新でない R を使うときだけ指定する（`Copy-Item config/settings.example.env config/settings.local.env` して `RSCRIPT=` に Rscript.exe のパスを書く）。使う R と版は、起動のたびに表示される。
 - **パッケージは R の版（4.5、4.6 のような 2 桁目）ごとに別の置き場に入る**。R の版を替えたら、上の `install.packages(...)` をその R でやり直す。
 - **R 4.6 以外では、RiemannFinMath は公開バイナリがない**。次のどれかになる。
   1. R 4.6 を入れる（いちばん簡単。複数の版は共存できる。`RSCRIPT` で選ぶ）。
@@ -73,8 +73,8 @@ install.packages(
 
 | ファイル | 内容 | 見本 |
 |---|---|---|
-| `settings.local.env` | 使う Rscript のパス（なくてよい） | `settings.example.env` |
-| `deploy.local.env` | 社内に案内するホスト名・IP（社内LAN公開のときだけ） | `deploy.example.env` |
+| `config/settings.local.env` | 使う Rscript のパス（なくてよい） | `config/settings.example.env` |
+| `config/deploy.local.env` | 社内に案内するホスト名・IP（社内LAN公開のときだけ） | `config/deploy.example.env` |
 | `server/tmp/.Renviron`、`server/tmp/aladdin_endpoint.json` | Bloomberg・Aladdin・User-Agent の設定（実接続は未実施。値は書かない） | なし |
 | `server/data/`（`demo/` と掲示板のサンプル案件 1 件を除く） | アップロード、実行結果、案件、取得した市場データ | — |
 | `ui/node_modules/`、`ui/dist/` | 画面の部品、ビルド結果 | `npm install`、`npm run build` |
@@ -93,8 +93,8 @@ install.packages(
 | `.\start_infrago.ps1 -Mode menu` | 番号で選ぶメニュー |
 | `.\start_infrago.ps1 -Mode resume` | Claude Code をこのフォルダーで開く |
 
-- 起動の処理の本体は `InfragoQuant.ps1`（`start_infrago.ps1` から呼ばれる）。
-- **サーバーとクライアントを別の PC で動かす**：サーバーの PC（R・RiemannFinMath が要る）で `.\start_infrago_server.ps1`。R API を 0.0.0.0:8790 で起動し、クライアントに渡すアドレス（`http://<この PC>:8790`）を表示する。クライアントの PC（Node.js と `ui/` だけでよい。R は要らない）で `.\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`。画面（127.0.0.1:8091）は、`/api` をそのアドレスへ転送する。`-ApiUrl` の代わりに `deploy.local.env` の `INFRAGO_QUANT_API_URL` でもよい。サーバーの PC では Windows ファイアウォールで 8790 の受信を許可する。
+- 起動の処理の本体は `scripts/InfragoQuant.ps1`（`start_infrago.ps1` から呼ばれる）。
+- **サーバーとクライアントを別の PC で動かす**：サーバーの PC（R・RiemannFinMath が要る）で `.\scripts\start_infrago_server.ps1`。R API を 0.0.0.0:8790 で起動し、クライアントに渡すアドレス（`http://<この PC>:8790`）を表示する。クライアントの PC（Node.js と `ui/` だけでよい。R は要らない）で `.\scripts\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`。画面（127.0.0.1:8091）は、`/api` をそのアドレスへ転送する。`-ApiUrl` の代わりに `config/deploy.local.env` の `INFRAGO_QUANT_API_URL` でもよい。サーバーの PC では Windows ファイアウォールで 8790 の受信を許可する。
   - 確認済み（2026-11-18）：1 台の PC の中で、LAN の IP アドレス経由でサーバーとクライアントをつなぎ、画面から `/api/health` が通ることを確かめた。**別の PC どうしでの接続（ファイアウォール越し）は未確認**
   - アドレスは **LAN の IP アドレス**（`http://192.168.x.x:8790`）を正とする。`127.0.0.1`・`localhost` は別の PC では使えず、クライアントのスクリプトも拒否する
   - コンピューター名・DNS 名（`-ApiUrl http://<名前>:8790`）は、2026-11-19 にサーバーの PC 自身から試したところ応答しなかった。名前が先に IPv6 に解決され、R API は IPv4（0.0.0.0）でしか待ち受けないため。名前を使うなら、DNS に IPv4 の A レコードを登録して IPv4 に解決させるか、IPv6 での待ち受けを調べる（未調査）
@@ -107,7 +107,7 @@ install.packages(
 
 `127.0.0.1` はこの PC の中だけで届くアドレスで、開発と内部の通信（起動の確認、画面から API への転送）にだけ使う。利用者に案内する URL・起動バッチが開く URL・接続確認ページに出す URL には、**配備先のホスト名（DNS で解決できる名前）またはこの PC の LAN の IP アドレス**を使う。
 
-1. `deploy.example.env` を `deploy.local.env`（Git に入れない）に写し、`INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
+1. `config/deploy.example.env` を `config/deploy.local.env`（Git に入れない）に写し、`INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`）にホスト名か IP アドレスを書く。空なら、この PC の LAN の IPv4 を自動で使う
 2. `.\start_infrago.ps1 -Mode lan` で起動する。画面をビルドし、画面と API を 8091 でまとめて公開し、`http://<ホスト>:8091/` の応答を確かめてからブラウザーで開き、利用者に案内するアドレスを表示する
 3. 他の端末から開けないときは、Windows ファイアウォールで 8091 の受信を許可する（この PC の設定。Infrago Quant からは変えない）
 

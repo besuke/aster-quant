@@ -3,7 +3,7 @@
 # RiemannFinMath の小さな計算にかかる時間（ネットワークの往復と分けて見るため）を返す。
 #
 # 案内用の URL：配備先のホスト名（DNS で解決できる名前）または LAN の IP アドレス。環境変数 QUANTLET_PUBLIC_HOST
-# （InfragoQuant.ps1 が配備設定 deploy.local.env から渡す）を使い、なければ LAN の IPv4 を探す。127.0.0.1 はこの PC の中だけで使う。
+# （scripts/InfragoQuant.ps1 が配備設定 config/deploy.local.env から渡す）を使い、なければ LAN の IPv4 を探す。127.0.0.1 はこの PC の中だけで使う。
 
 SERVER_STARTED_QL <- Sys.time()
 SERVER_REQUESTS_QL <- new.env()
@@ -39,7 +39,7 @@ SERVER_ROUTES_QL <- tibble::tribble(
 # 案内用のホスト：設定があればそれ、なければ LAN の IPv4（127.*・169.254.* を除く最初のもの）
 public_host_QL <- function() {
   h <- trimws(Sys.getenv("QUANTLET_PUBLIC_HOST", ""))
-  # InfragoQuant.ps1 は、設定（deploy.local.env）か自動検出かを QUANTLET_PUBLIC_HOST_SOURCE で一緒に渡す
+  # scripts/InfragoQuant.ps1 は、設定（config/deploy.local.env）か自動検出かを QUANTLET_PUBLIC_HOST_SOURCE で一緒に渡す
   if (nzchar(h)) return(list(host = h, source = Sys.getenv("QUANTLET_PUBLIC_HOST_SOURCE", "環境変数 QUANTLET_PUBLIC_HOST")))
   ips <- tryCatch(suppressWarnings(system2("powershell.exe", c("-NoProfile", "-Command",
     shQuote("Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -ExpandProperty IPAddress")),
@@ -72,8 +72,8 @@ server_info_QL <- function(host, port, static_dir) {
       # LAN で待ち受けて画面も配るときだけ、他の端末から開ける（配備）。そうでなければこの PC の中だけ
       share = if (lan && !is.na(pub$host)) paste0("http://", pub$host, ":", port, "/") else NA_character_,
       local = paste0("http://127.0.0.1:", port, "/"),
-      note = if (lan) "利用者には share の URL を案内する（ホスト名は deploy.local.env で設定）。他の端末から開けないときは、Windows ファイアウォールで受信を許可する" else
-        "この R API は 127.0.0.1 だけで待ち受けている（開発用）。社内の端末に配るときは InfragoQuant.ps1 の 2（社内LANで起動）を使う"),
+      note = if (lan) "利用者には share の URL を案内する（ホスト名は config/deploy.local.env で設定）。他の端末から開けないときは、Windows ファイアウォールで受信を許可する" else
+        "この R API は 127.0.0.1 だけで待ち受けている（開発用）。社内の端末に配るときは scripts/InfragoQuant.ps1 の 2（社内LANで起動）を使う"),
     started_at = format(SERVER_STARTED_QL, "%Y-%m-%dT%H:%M:%S%z"),
     server_time = format(now, "%Y-%m-%dT%H:%M:%S%z"),
     uptime_seconds = as.numeric(difftime(now, SERVER_STARTED_QL, units = "secs")),

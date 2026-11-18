@@ -12,9 +12,9 @@
 
 - 画面は Carmine Studio と同じ構成（上の帯と、その下の4グループの左サイドバー。最初から全部開き、自動では閉じない。名前のクリックでそのグループだけ手動で開閉。構成は `ui/src/nav.ts`）。トップ URL はレポートサマリーの掲示板。グループ：レポートと市場分析（イールドカーブ分析、レポートサマリー、発行体格付け推移）、オファーレベル（オファーシート）、商品評価（アセットスワップ、早期償還）、リスク計算（IRRBB、クレジットVaR、格付け枠管理）。未実装は「準備中」（発行体格付け推移、クレジットVaR、格付け枠管理）。債券キャッシュフロー・国債先物・CTD・クレジット・CDS・TRS契約書連携は関連画面のリンクから開く。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。タブのタイトルは「Infrago Quantlet/メニュー名」
 - デザインは Carmine Studio（`../carmine-studio`）と同じ方針：ボディーは `#F7F7F8`、サイドバーは `#EFEFF1`、グラフと表は白地（`#FFFFFF`）、上の帯の左に深い緑の SVG ロゴと「Infrago Quantlet」（日本語副題なし）、右に `Infrago Quant Server` の接続状態表示、横幅を活かした配置。色は深い緑（`#166534`）、ボタン・入力欄・選択・スライダーは Carmine と同じ Aqua 風（利用者の好み）
-- ポート：画面 8091、R API 8790（Carmine Studio の 8081・8787 と分ける）。起動の入口は `start_infrago.ps1`（1 台で動かす。`-Mode dev|lan|server|client|check|menu|resume`、引数なしは dev）。別々の PC で動かすときは、サーバーの PC で `start_infrago_server.ps1`（0.0.0.0:8790）、クライアントの PC で `start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`（`deploy.local.env` の `INFRAGO_QUANT_API_URL` でも可）。処理の本体は `InfragoQuant.ps1`（メニューの 1 でこの PC、2 で社内LAN、4 でサーバーのみ、5 でクライアントのみ）。個別起動は `ui/` で `npm run api` と `npm run dev`
-- 社内に配る URL は `http://<ホスト>:8091/`。ホストは `deploy.local.env` の `INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`、Git に入れない）、空なら LAN の IPv4。`127.0.0.1` は開発と内部通信だけ
-- R のパスも版もコードに決め打ちしない。`ui/scripts/rscript.mjs` が環境変数 `RSCRIPT` → `settings.local.env`（Git に入れない）の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R（自動検出）の順に選び、`npm run check:r`（`server/scripts/check_r.R`）で版と必須パッケージを確かめる。この PC は R が PATH になくても自動検出で動くので、`settings.local.env` は不要。`Rscript -e` は引用符で失敗しやすいのでスクリプトファイルにする
+- ポート：画面 8091、R API 8790（Carmine Studio の 8081・8787 と分ける）。起動の入口は `start_infrago.ps1`（1 台で動かす。`-Mode dev|lan|server|client|check|menu|resume`、引数なしは dev）。別々の PC で動かすときは、サーバーの PC で `scripts/start_infrago_server.ps1`（0.0.0.0:8790）、クライアントの PC で `scripts/start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790`（`config/deploy.local.env` の `INFRAGO_QUANT_API_URL` でも可）。処理の本体は `scripts/InfragoQuant.ps1`（メニューの 1 でこの PC、2 で社内LAN、4 でサーバーのみ、5 でクライアントのみ）。個別起動は `ui/` で `npm run api` と `npm run dev`
+- 社内に配る URL は `http://<ホスト>:8091/`。ホストは `config/deploy.local.env` の `INFRAGO_QUANT_PUBLIC_HOST`（または `QUANTLET_PUBLIC_HOST`、Git に入れない）、空なら LAN の IPv4。`127.0.0.1` は開発と内部通信だけ
+- R のパスも版もコードに決め打ちしない。`ui/scripts/rscript.mjs` が環境変数 `RSCRIPT` → `config/settings.local.env`（Git に入れない）の `RSCRIPT` → PATH → `R_HOME` → インストール済みの最新の R（自動検出）の順に選び、`npm run check:r`（`server/scripts/check_r.R`）で版と必須パッケージを確かめる。この PC は R が PATH になくても自動検出で動くので、`config/settings.local.env` は不要。`Rscript -e` は引用符で失敗しやすいのでスクリプトファイルにする
 
 ## 決めたこと
 
@@ -33,4 +33,4 @@
 
 ## 状態
 
-状態・引き継ぎ・未了・新しい PC での準備は、すべて `HANDOVER.md`（正本）。ここには書かない。
+状態・引き継ぎ・未了・新しい PC での準備は、すべて `docs/HANDOVER.md`（正本）。ここには書かない。

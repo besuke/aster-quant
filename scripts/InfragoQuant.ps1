@@ -1,14 +1,14 @@
 ﻿<#
 InfragoQuant.ps1 — Infrago Quant Server（R API、計算は RiemannFinMath）と画面（クライアント）を起動し、ブラウザーで開く。
 
-  .\InfragoQuant.ps1               メニュー（番号で選ぶ）
-  .\InfragoQuant.ps1 -Mode dev     この PC で起動（開発用）。R API 127.0.0.1:8790（npm run api）と画面 http://127.0.0.1:8091/（npm run dev）
-  .\InfragoQuant.ps1 -Mode lan     社内LANで起動（配備）。画面をビルドし、画面と API を 8091 でまとめて公開する（npm run lan）
-  .\InfragoQuant.ps1 -Mode server  サーバー（R API、127.0.0.1:8790）だけを起動する
-  .\InfragoQuant.ps1 -Mode client  クライアント（Web 画面、http://127.0.0.1:8091/）だけを起動してブラウザーで開く
-  .\InfragoQuant.ps1 -Mode server -Remote          サーバーだけを 0.0.0.0:8790 で起動（別の PC の画面から使う。start_infrago_server.ps1）
-  .\InfragoQuant.ps1 -Mode client -ApiUrl http://<サーバーのPC>:8790   画面だけを起動し、別の PC の R API につなぐ（start_infrago_client.ps1）
-  .\InfragoQuant.ps1 -Mode resume  Claude Code をこのフォルダーで開く（セッションがあれば claude --resume）
+  .\scripts\InfragoQuant.ps1               メニュー（番号で選ぶ）
+  .\scripts\InfragoQuant.ps1 -Mode dev     この PC で起動（開発用）。R API 127.0.0.1:8790（npm run api）と画面 http://127.0.0.1:8091/（npm run dev）
+  .\scripts\InfragoQuant.ps1 -Mode lan     社内LANで起動（配備）。画面をビルドし、画面と API を 8091 でまとめて公開する（npm run lan）
+  .\scripts\InfragoQuant.ps1 -Mode server  サーバー（R API、127.0.0.1:8790）だけを起動する
+  .\scripts\InfragoQuant.ps1 -Mode client  クライアント（Web 画面、http://127.0.0.1:8091/）だけを起動してブラウザーで開く
+  .\scripts\InfragoQuant.ps1 -Mode server -Remote          サーバーだけを 0.0.0.0:8790 で起動（別の PC の画面から使う。start_infrago_server.ps1）
+  .\scripts\InfragoQuant.ps1 -Mode client -ApiUrl http://<サーバーのPC>:8790   画面だけを起動し、別の PC の R API につなぐ（start_infrago_client.ps1）
+  .\scripts\InfragoQuant.ps1 -Mode resume  Claude Code をこのフォルダーで開く（セッションがあれば claude --resume）
 
 フォルダー名を InfragoQuant に変更したあとも、そのまま動く（パスはすべて $PSScriptRoot からの相対）。
 #>
@@ -22,7 +22,7 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $Host.UI.RawUI.WindowTitle = "Infrago Quant"
 
-$Root = $PSScriptRoot
+$Root = Split-Path $PSScriptRoot -Parent   # scripts/ の 1 つ上（プロジェクトのルート）
 $UI = Join-Path $Root "ui"
 $Page = "http://127.0.0.1:8091/"
 $Api = "http://127.0.0.1:8790/api/health"
@@ -34,13 +34,13 @@ if (-not $Claude) { $Claude = Join-Path $env:USERPROFILE ".local\bin\claude.exe"
 
 function Say([string] $text, [string] $color = "Gray") { Write-Host $text -ForegroundColor $color }
 
-# 利用者に案内するホスト：deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST または QUANTLET_PUBLIC_HOST、なければこの PC の LAN の IPv4
+# 利用者に案内するホスト：config/deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST または QUANTLET_PUBLIC_HOST、なければこの PC の LAN の IPv4
 function Get-PublicHost {
-  $file = Join-Path $Root "deploy.local.env"
+  $file = Join-Path $Root "config/deploy.local.env"
   if (Test-Path $file) {
     foreach ($line in Get-Content $file -Encoding UTF8) {
       if ($line -match '^\s*(?:INFRAGO_QUANT_PUBLIC_HOST|QUANTLET_PUBLIC_HOST)\s*=\s*(\S*)\s*$' -and $Matches[1]) {
-        return [pscustomobject]@{ Host = $Matches[1]; Source = "deploy.local.env の設定" }
+        return [pscustomobject]@{ Host = $Matches[1]; Source = "config/deploy.local.env の設定" }
       }
     }
   }
@@ -87,13 +87,13 @@ function Wait-Url([string] $url, [int] $seconds, [string] $name) {
   return $false
 }
 
-# R の確認（settings.local.env の RSCRIPT → PATH の順に選んだ R の版と、RiemannFinMath などの必須パッケージ）。
+# R の確認（config/settings.local.env の RSCRIPT → PATH の順に選んだ R の版と、RiemannFinMath などの必須パッケージ）。
 # 読み込めなければ、選ばれた R と不足しているパッケージを表示して false を返す
 function Test-REnvironment {
   Say "      R を確かめています（npm run check:r）..."
   Push-Location $UI
   try { & $Npm run --silent check:r | Out-Host; $ok = ($LASTEXITCODE -eq 0) } finally { Pop-Location }
-  if (-not $ok) { Say "R の確認で止めました。上の表示を見て、パッケージを入れるか $Root\settings.local.env の RSCRIPT を直してください。" "Red" }
+  if (-not $ok) { Say "R の確認で止めました。上の表示を見て、パッケージを入れるか $Root\config\settings.local.env の RSCRIPT を直してください。" "Red" }
   return $ok
 }
 
@@ -199,7 +199,7 @@ function Start-Dev {
 function Start-Lan {
   Say ""
   $pub = Get-PublicHost
-  if (-not $pub.Host) { Say "社内に案内するホスト名・IP アドレスが決まりません。$Root\deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST に書いてください。" "Red"; return $false }
+  if (-not $pub.Host) { Say "社内に案内するホスト名・IP アドレスが決まりません。$Root\config\deploy.local.env の INFRAGO_QUANT_PUBLIC_HOST に書いてください。" "Red"; return $false }
   $publicUrl = "http://$($pub.Host):8091/"
   if (Test-InfragoQuantPage $Page) { Say "Infrago Quant の画面がすでに 8091 で起動しています。社内LANで公開するときは、先にそのウィンドウを閉じてください。" "Red"; return $false }
   if (-not (Assert-PortFree 8091 "0.0.0.0" "社内LAN用のサーバー")) { return $false }

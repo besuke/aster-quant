@@ -40,9 +40,9 @@ config/*_local.*
 Thumbs.db
 
 # 配備設定（実際のホスト名・IP アドレス）
-/deploy.local.env
-!/deploy.example.env
+/config/deploy.local.env
+!/config/deploy.example.env
 
 # この PC の設定（使う Rscript.exe など）
-/settings.local.env
-!/settings.example.env
+/config/settings.local.env
+!/config/settings.example.env

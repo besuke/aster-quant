@@ -2,7 +2,7 @@
 
 運用の分析・業務支援を行う Web アプリ（旧称 QuantLet）。債券・金利・クレジット・リスク（IRRBB）の計算画面と、オファーシート・TRS 契約書・レポート掲示板の業務画面を持つ。計算は R の HTTP API（`server/`）が RiemannFinMath を呼んで行い、画面（`ui/`、React＋TypeScript）は入力と表示だけをする。
 
-- 始めるには：[`HANDOVER.md`](HANDOVER.md)（引き継ぎの正本：新しい PC・R の版が違う PC の準備、コマンド、社内LANでの公開、未了）。起動は [起動](#起動)
+- 始めるには：[`docs/HANDOVER.md`](docs/HANDOVER.md)（引き継ぎの正本：新しい PC・R の版が違う PC の準備、コマンド、社内LANでの公開、未了）。起動は [起動](#起動)
 - 画面の構成と、できること：[画面](#画面)。API：下の「API」の節
 - Claude Code 向けの決めごと：[`CLAUDE.md`](CLAUDE.md)
 
@@ -20,7 +20,7 @@ Curie（`../Curie`、R Project）の後継で、Curie の次の2つを移植し�
 
 ## 起動
 
-準備（npm install、R のパッケージ、RiemannFinMath）、R の選び方、全コマンド、社内LANでの公開、確認の手順は、**`HANDOVER.md`** にまとめてある（引き継ぎの正本）。準備ができていれば、1 台の PC で動かすなら次の1行。
+準備（npm install、R のパッケージ、RiemannFinMath）、R の選び方、全コマンド、社内LANでの公開、確認の手順は、**`docs/HANDOVER.md`** にまとめてある（引き継ぎの正本）。準備ができていれば、1 台の PC で動かすなら次の1行。
 
 ```powershell
 .\start_infrago.ps1    # R API（127.0.0.1:8790）と画面（http://127.0.0.1:8091/）を起動し、ブラウザーで開く
@@ -29,8 +29,8 @@ Curie（`../Curie`、R Project）の後継で、Curie の次の2つを移植し�
 サーバーとクライアントを別々の PC で動かすときは、サーバーの PC（R が要る）とクライアントの PC（Node.js だけ）で次を実行する。アドレスは LAN の IP アドレス（`127.0.0.1`・`localhost` は使えない）。
 
 ```powershell
-.\start_infrago_server.ps1                                  # サーバーの PC：R API を 0.0.0.0:8790 で起動し、渡すアドレスを表示
-.\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790   # クライアントの PC：画面（8091）を起動し、そのサーバーにつなぐ
+.\scripts\start_infrago_server.ps1                                  # サーバーの PC：R API を 0.0.0.0:8790 で起動し、渡すアドレスを表示
+.\scripts\start_infrago_client.ps1 -ApiUrl http://<サーバーのPC>:8790   # クライアントの PC：画面（8091）を起動し、そのサーバーにつなぐ
 ```
 
 ## 画面
@@ -292,4 +292,4 @@ AI の出力は実行ごとに少し変わる（見出しは1回目が20文字�
 
 ## 未了
 
-未了・次にやること・機能ごとの未了は、`HANDOVER.md` の「未了・次にやること」にまとめてある。
+未了・次にやること・機能ごとの未了は、`docs/HANDOVER.md` の「未了・次にやること」にまとめてある。

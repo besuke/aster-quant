@@ -41,7 +41,7 @@ if (length(bad)) {
     cat("  - ", x$package, if (!is.na(x$version)) paste0(" ", x$version), "：", gsub("\\s+", " ", x$error), "\n", sep = "")
   }
   cat("\nこの R にパッケージを入れるか（RiemannFinMath は Riemann から入れ直す）、",
-      "別の R を使うときは settings.local.env の RSCRIPT にその Rscript.exe を書いてください。\n", sep = "")
+      "別の R を使うときは config/settings.local.env の RSCRIPT にその Rscript.exe を書いてください。\n", sep = "")
   quit(save = "no", status = 1)
 }
 
