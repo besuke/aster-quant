@@ -102,9 +102,9 @@ export default function App() {
   return (
     <ServerConnectionProvider>
       <header className="site-header">
-        <a className="brand" href={`#${DEFAULT_PAGE}`} title="Infrago Quantlet">
+        <a className="brand" href={`#${DEFAULT_PAGE}`} title="Infrago">
           <span className="brand-text">
-            <span className="brand-name">Infrago Quantlet</span>
+            <span className="brand-name">Infrago</span>
             <span className="brand-sub">市場分析運用判断支援</span>
           </span>
         </a>

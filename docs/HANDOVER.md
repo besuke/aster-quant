@@ -8,7 +8,7 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 - ブランチ：`main` が最新（`7a9d65c`、2026-11-20 に push 済み）。PR #1 はマージ済み。作業に使ったブランチ（`rename-to-rmql`、`rename-carmine-crimson`、`riemannql-folder` など）は `main` に取り込み済みで、ローカルに残っている（消してよい）。次に変更するときは、CLAUDE.md のとおり、作業ブランチを作ってからコミットする。
 - この PC のフォルダーは `C:\AnalyticFin\Projects\Infrago`（旧 `InfragoQuant`）。デスクトップのショートカットと `InfragoClaude.bat` も、新しいパスに直した（2026-11-20）。
 - 画面：サイドバーは 3 つのまとまり（`ui/src/nav.ts`。業務支援、投資定量分析、規制リスク関連）。実装済みはクレジットRPT分析、オファーシート作成（関連：アセットスワップ）、デリバティブ取引入力（TRS契約書連携。確認書は、アップロードのほか、https の公開 URL・許可したフォルダーのファイルから読める）、イールドカーブ分析（関連：日米の国債金利・OIS）、債券原始計算、先物CTD、GPS（含むキーレート。TONA OIS・スワップの画面）、クレジットスプレッドCDS、債券早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**TBD**はレポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR。格付け枠管理の画面は、メニューから外した（2026-11-20）。
-- 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に二段の文字「Infrago Quantlet」「市場分析運用判断支援」、右に接続表示（ロゴのマークは付けない）。
+- 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に二段の文字「Infrago」「市場分析運用判断支援」、右に接続表示（ロゴのマークは付けない）。
 - rmql は旧名 RiemannFinMath（2026-11-19 に改名）。古い記録に `RiemannFinMath` と出てきたら、rmql のこと。
 
 ## 新しい PC で動かす
@@ -143,7 +143,7 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 | `ui/src/App.tsx` | 上の帯、サイドバー、画面の切り替え、タブのタイトル |
 | `ui/src/analytics/` | イールドカーブ・TONA OIS・債券キャッシュフロー・早期償還・国債先物・クレジット CDS の画面。呼び出しは `ui/src/analyticsApi.ts` |
 | `ui/src/charts/` | グラフ（Carmine Studio から写した `LineChart`・`FlowChart`） |
-| `ui/src/styles.css` | 配色（カーマイン）、Aqua 風の部品、サイドバー、グラフ |
+| `ui/src/styles.css` | 配色（アクア）、Aqua 風の部品、サイドバー、グラフ |
 | `server/server.R` | HTTP API の経路 |
 | `server/R/analytics/` | 上の6画面の計算（rmql を呼ぶ）。読み込みは `server/R/load_quantlet.R` の `.quantlet_modules` |
 | `server/data/demo/` | 架空のデモデータ（先物の入力は `demo/futures/inputs.json`） |
@@ -156,7 +156,7 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 - 計算は rmql、R の API は取り込み・整形・集計・検証、画面は表示だけ（計算し直さない）。
 - 市場データは、評価日と同じ市場日のものだけを使い、別の日付で補わない。
 - Aladdin への送信はしない（下書きのみ）。Bloomberg の実接続は未実施（将来 INDIGO に移す）。
-- 画面は Carmine Studio（`../Carmine`）と同じ構成・同じ Aqua 風の部品で、色はカーマイン。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。
+- 画面は Carmine Studio（`../Carmine`）と同じ構成・同じ Aqua 風の部品で、色はアクア。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。
 - Curie（`../Curie`）は変更しない。
 - コミットと push は頼まれたときだけ。ステージした差分に、認証情報・個人のパス・社内 URL・実データがないことを確かめる。
 
