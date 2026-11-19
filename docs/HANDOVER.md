@@ -133,7 +133,7 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 
 2026-11-20、rmql 0.4.0 で、`check:r`（必須パッケージ 15 個）、`test:irrbb`（11/11）、`test:early-redemption`（12/12）、`npm run typecheck` を確認した。
 
-`test:nav` の最後に最後まで通した実行は、59 件 PASS・7 件 FAIL（タブのタイトルだけ。原因は修正済み）。**修正後に最後まで通した実行はまだない**。
+`test:nav` の最後に最後まで通した実行（2026-11-20、3 つのまとまりの新しい構成）は、69 件 PASS・0 件 FAIL。2 本を同時に走らせると同じ Chrome（ポート 9333）を取り合って結果がずれるので、1 本だけで走らせる。
 
 ## どこに何があるか
 
