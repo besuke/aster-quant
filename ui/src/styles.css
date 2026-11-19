@@ -8,9 +8,9 @@
   --muted: #667085;
   --border: #dde2e8;
   --axis: #c0c8d2;
-  --accent: #166534;
+  --accent: #c93a5c;
   --header-h: 72px;
-  --accent-soft: #e7f3ec;
+  --accent-soft: #fdf0f3;
   --ok: #1d7a46;
   --ok-soft: #e5f4ea;
   --warn: #9a6200;
@@ -32,8 +32,8 @@
   --muted: #98a2b3;
   --border: #2d3642;
   --axis: #3d4856;
-  --accent: #5fbf86;
-  --accent-soft: #173326;
+  --accent: #ff6f8a;
+  --accent-soft: #3a1a24;
   --ok: #6fcf97;
   --ok-soft: #173326;
   --warn: #f2c26b;
@@ -81,7 +81,6 @@ h3 { font-size: 14px; margin: 8px 0; }
   text-decoration: none;
   min-width: 0;
 }
-.site-header .brand-mark { flex-shrink: 0; width: 50px; height: 50px; }
 .site-header .brand-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .site-header .brand-name {
   font-weight: 700;
@@ -93,7 +92,6 @@ h3 { font-size: 14px; margin: 8px 0; }
 .site-header .brand-sub { font-size: 14px; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; }
 @media (max-width: 520px) {
   .site-header { height: auto; padding: 6px 12px; gap: 8px; flex-wrap: wrap; position: static; }
-  .site-header .brand-mark { width: 38px; height: 38px; }
   .site-header .brand-name { font-size: 22px; }
   .site-header .brand-sub { font-size: 11px; }
   .sidebar { top: 0; max-height: 100vh; min-height: 0; }
@@ -149,11 +147,16 @@ h3 { font-size: 14px; margin: 8px 0; }
   margin: 1px 0;
   border-radius: 6px;
   color: var(--text-secondary);
+  font-size: 12.5px;
   text-decoration: none;
   white-space: nowrap;
 }
 .sidebar a:hover { color: var(--text); background: var(--none-soft); }
-.sidebar a.active { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.sidebar a.active { color: var(--text); font-weight: 700; }
+.sidebar .sidebar-planned {
+  display: flex; align-items: center; gap: 8px; padding: 4px 7px; margin: 1px 0;
+  color: var(--muted); font-size: 12.5px; white-space: nowrap; cursor: default;
+}
 .sidebar .icon { flex-shrink: 0; color: currentColor; }
 .sidebar .sidebar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-part {
@@ -815,22 +818,22 @@ ol.steps li.done {
   }
 }
 
-/* ---- Aqua 風の操作部品（Carmine Studio と同じ形。色は深い緑）----------------------------------------------------
+/* ---- Aqua 風の操作部品（Carmine Studio と同じ形。色はカーマイン）----------------------------------------------------
    ボタン・入力欄・選択・スライダーを同じ見た目にそろえる：角丸、上半分に光沢、軽い影。主ボタンと選択中の切り替え、
-   スライダーのつまみは深い緑。押すと沈んで影が浅くなる。グラフと表は白地のまま。 */
+   スライダーのつまみはカーマイン。押すと沈んで影が浅くなる。グラフと表は白地のまま。 */
 :root {
   --aqua-top: #ffffff;
   --aqua-bottom: #e2e2e7;
   --aqua-border: #a7a7b0;
   --aqua-gloss: linear-gradient(to bottom, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 49%, rgba(255, 255, 255, 0) 50%);
-  --aqua-accent: linear-gradient(to bottom, #3f9a63 0%, #166534 55%, #1f7a42 100%);
-  --aqua-accent-border: #0d3d20;
+  --aqua-accent: linear-gradient(to bottom, rgba(240, 130, 156, 0.92) 0%, rgba(214, 64, 98, 0.88) 55%, rgba(226, 92, 123, 0.9) 100%);
+  --aqua-accent-border: rgba(176, 40, 74, 0.75);
   --aqua-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08);
   --aqua-shadow-pressed: 0 0 1px rgba(0, 0, 0, 0.3);
   --aqua-field: #ffffff;
   --aqua-track: linear-gradient(to bottom, #b9b9c1, #e8e8ed);
-  --aqua-focus: rgba(22, 101, 52, 0.3);
-  --series-1: #166534;
+  --aqua-focus: rgba(214, 64, 98, 0.25);
+  --series-1: #c93a5c;
   --series-2: #eb6834;
   --series-3: #2a78d6;
 }
@@ -903,7 +906,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   box-shadow: 0 0 0 3px var(--aqua-focus), var(--aqua-shadow);
 }
 
-/* スライダー：溝のある軌道と光沢のある緑のつまみ */
+/* スライダー：溝のある軌道と光沢のあるカーマインのつまみ */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -990,10 +993,10 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
   margin: 10px 0 2px;
   padding: 3px 6px;
   font: inherit;
-  font-weight: 700;
-  font-size: 11.5px;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  color: var(--text);
   background: transparent;
   border: 0;
   border-radius: 5px;
@@ -1002,7 +1005,7 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
   cursor: pointer;
 }
 .sidebar button.sidebar-part:hover { color: var(--text); background: var(--none-soft); }
-.sidebar .sidebar-group.current > button.sidebar-part { color: var(--accent); }
+.sidebar .sidebar-group.current > button.sidebar-part { color: var(--text); }
 .sidebar button.sidebar-part .icon { transition: transform 0.12s ease; }
 .sidebar button.sidebar-part[aria-expanded="true"] .icon { transform: rotate(90deg); }
 .sidebar ul[hidden] { display: none; }
@@ -1028,7 +1031,9 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 .sidebar.collapsed .sidebar-soon { display: none; }
 .content > .tabs-row { margin: 0 0 12px; align-items: center; }
 .tabs-label { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 10px 0 2px; }
-.placeholder { max-width: 560px; }
+.placeholder, .spec { max-width: 640px; }
+.spec h2 { font-size: 14px; margin: 16px 0 4px; }
+.spec ul { margin: 0; padding-left: 20px; }
 .placeholder-badge {
   display: inline-block;
   margin: 0 0 6px;
@@ -1041,3 +1046,7 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 .subtab { display: inline-flex; align-items: center; gap: 6px; }
 .subtab .icon { flex-shrink: 0; }
+
+/* 見出しのないグループと、グループの間の破線 */
+.sidebar-group.divided { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.sidebar-group.unlabelled > ul { margin-top: 2px; }

@@ -23,7 +23,8 @@ job_c1 <- function(req) {
   mode <- match.arg(req$reader %||% "saved", c("saved", "claude_code", "api", "demo"))
   demo_dir <- if (mode %in% c("saved", "demo")) req$extraction_dir %||% file.path(Sys.getenv("QUANTLET_ROOT"), "data", "demo", "c1", "extraction_DEMO_TRS") else NULL
   case <- workflows_c1_case(req$source_path, mode, case_id = req$case_id, output_root = req$output_root,
-                            claude_demo_dir = demo_dir, instruction_path = file.path(Sys.getenv("QUANTLET_ROOT"), "agent_instructions", "c1_trs_extraction_instructions.md"))
+                            claude_demo_dir = demo_dir, instruction_path = file.path(Sys.getenv("QUANTLET_ROOT"), "agent_instructions", "c1_trs_extraction_instructions.md"),
+                            fetcher = req$fetcher %||% .curl_fetch_c1)
   read_json <- function(p) if (!is.na(p) && file.exists(p)) jsonlite::fromJSON(p, simplifyVector = TRUE) else NULL
   case_dir <- case$case_dir
   pages <- read_json(file.path(case_dir, "source", "reading_pages.json"))

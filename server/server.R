@@ -8,7 +8,7 @@
 #   POST /api/uploads/c1?name=<ファイル名>    本文はファイルそのもの（.pdf/.htm/.html）-> {uploadId}。保存先 data/uploads/c1/
 #   POST /api/a1/run       {"workflow":"JPY"|"ISO","uploadId":"..."(省略でデモ),"sheet":null} -> オファーごとの結果、カーブ、市場データ
 #   GET  /api/a1/runs/<runId>/excel          -> 出力 Excel
-#   POST /api/c1/run       {"uploadId":"..."(省略でデモ),"reader":"saved"|"claude_code"} -> 条件・原文根拠・検証・FpML・Aladdin 下書き
+#   POST /api/c1/run       {"source":"https://..."|"許可したフォルダーのファイル"（省略可）,"uploadId":"..."(省略でデモ),"reader":"saved"|"claude_code"} -> 条件・原文根拠・検証・FpML・Aladdin 下書き
 #   GET  /api/c1/cases/<caseId>/document     -> 原資料（PDF・HTML）
 #   GET  /api/c1/cases/<caseId>/fpml         -> FpML（fpml_DRAFT.xml または fpml_final.xml）
 #   GET  /api/c1/cases/<caseId>/aladdin      -> Aladdin 向け JSON の下書き（未送信）
@@ -290,20 +290,26 @@ handle_api <- function(req, method, path) {
     if (length(f) != 1L) http_error(404, "出力 Excel がない")
     return(file_response(f, content_types[["xlsx"]], basename(f)))
   }
+  # 資料の取得元として使えるもの（URL、許可したフォルダー）
+  if (method == "GET" && path == "/api/c1/sources") return(json_response(200, c1_sources_QL()))
   if (method == "POST" && path == "/api/c1/run") {
     b <- read_json_body(req)
     reader <- b$reader %||% "saved"
     if (!reader %in% c("saved", "claude_code")) http_error(400, "reader は saved または claude_code")
-    up <- if (is.null(b$uploadId)) list(path = file.path(server_dir, "data", "demo", "c1", "DEMO_TRS_confirmation.pdf"),
+    # 取得元：source（https の URL か、許可したフォルダーのファイル）、なければ uploadId、どちらもなければデモ
+    src <- if (is.character(b$source) && length(b$source) == 1L && nzchar(trimws(b$source))) c1_check_source_QL(b$source) else NULL
+    up <- if (!is.null(src)) list(path = src$source, file_name = src$label) else if (is.null(b$uploadId)) list(path = file.path(server_dir, "data", "demo", "c1", "DEMO_TRS_confirmation.pdf"),
                                          file_name = "DEMO_TRS_confirmation.pdf（デモ）") else find_upload("c1", b$uploadId)
     stem <- gsub("[^A-Za-z0-9_-]", "_", tools::file_path_sans_ext(sub(" .*$|（.*$", "", up$file_name)))
     stem <- gsub("^_|_$", "", gsub("_+", "_", stem))
     if (!grepl("[A-Za-z0-9]", stem)) stem <- "TRS"   # 日本語だけのファイル名
     case_id <- paste0(substr(stem, 1, 40), "_", format(Sys.time(), "%Y%m%d_%H%M%S"))
     t0 <- Sys.time()
-    res <- job_c1(list(source_path = up$path, reader = reader, case_id = case_id, output_root = dirs$cases_c1))
+    res <- job_c1(list(source_path = up$path, reader = reader, case_id = case_id, output_root = dirs$cases_c1,
+                       fetcher = if (!is.null(src) && src$kind == "url") c1_safe_fetch_QL else NULL))
     res$source_file <- up$file_name
-    res$is_demo_document <- is.null(b$uploadId)
+    res$source_kind <- if (!is.null(src)) src$kind else if (is.null(b$uploadId)) "demo" else "upload"
+    res$is_demo_document <- is.null(src) && is.null(b$uploadId)
     res$seconds <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     return(json_response(200, res))
   }

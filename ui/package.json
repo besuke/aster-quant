@@ -19,6 +19,7 @@
     "r": "node scripts/run-r.mjs",
     "test:irrbb": "node scripts/run-r.mjs ../server/tests/irrbb_checks.R",
     "test:early-redemption": "node scripts/run-r.mjs ../server/tests/early_redemption_checks.R",
+    "test:c1-source": "node scripts/run-r.mjs ../server/tests/c1_source_checks.R",
     "demo:offer": "node scripts/run-r.mjs ../server/scripts/make_single_offer_demo.R"
   },
   "dependencies": {

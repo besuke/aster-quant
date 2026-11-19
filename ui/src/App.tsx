@@ -6,7 +6,6 @@ import ReportsPage from "./ReportsPage";
 import IrrbbPage from "./IrrbbPage";
 import ServerPage from "./ServerPage";
 import AssetSwapPage from "./AssetSwapPage";
-import PlaceholderPage from "./PlaceholderPage";
 import YieldCurvesPage from "./analytics/YieldCurvesPage";
 import TonaOisPage from "./analytics/TonaOisPage";
 import BondCashflowPage from "./analytics/BondCashflowPage";
@@ -15,7 +14,6 @@ import FuturesPage from "./analytics/FuturesPage";
 import EarlyRedemptionPage from "./analytics/EarlyRedemptionPage";
 import { ServerConnectionProvider, ServerStatusBadge } from "./serverConnection";
 import { Icon } from "./icons";
-import ehMark from "./assets/eh-mark.svg";
 import { ALIASES, DEFAULT_PAGE, GROUPS, locate, PAGE_IDS, type NavItem, type PageId } from "./nav";
 
 // 画面の構成は Carmine Studio と同じ：上の帯（左にロゴと名前、右に Infrago Quant Server の接続表示）、その下に左のサイドバー。
@@ -56,10 +54,10 @@ export default function App() {
     if (g) setOpen((o) => (o.includes(g) ? o : [...o, g]));
   }, [route.page]);
 
-  // ブラウザのタブのタイトル：「Infrago Quantlet/（開いているメニュー名）」。index.html の静的なタイトルは「Infrago Quantlet」のまま（起動スクリプトの確認が読む）
+  // ブラウザのタブのタイトル：「投資業務支援ポータル/（開いているメニュー名）」。index.html の静的なタイトルは「Infrago Quantlet」のまま（起動スクリプトの確認が読む）
   useEffect(() => {
     const menu = route.page === "server" ? "サーバー接続" : locate(route.page)?.item.label;
-    document.title = menu ? `Infrago Quantlet/${menu}` : "Infrago Quantlet";
+    document.title = menu ? `投資業務支援ポータル/${menu}` : "投資業務支援ポータル";
   }, [route.page]);
 
   const toggleGroup = (id: string) => setOpen((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id]));
@@ -77,17 +75,26 @@ export default function App() {
 
   const itemLink = (item: NavItem) => {
     const active = here?.item.id === item.id;
+    if (item.planned) {
+      // 未実装（TBD）の項目は、画面を開かない
+      return (
+        <span className="sidebar-planned" title={`${item.label}（TBD）`} aria-disabled="true" data-testid={`nav-${item.id}`}>
+          <Icon name={item.icon} />
+          <span className="sidebar-label">{item.label}</span>
+          <span className="sidebar-soon sidebar-label">TBD</span>
+        </span>
+      );
+    }
     return (
       <a
         href={`#${item.views[0].page}`}
         className={active ? "active" : undefined}
         aria-current={active ? "page" : undefined}
-        title={item.planned ? `${item.label}（準備中）` : item.label}
+        title={item.planned ? `${item.label}（仕様確認）` : item.label}
         data-testid={`nav-${item.id}`}
       >
         <Icon name={item.icon} />
         <span className="sidebar-label">{item.label}</span>
-        {item.planned && <span className="sidebar-soon sidebar-label">準備中</span>}
       </a>
     );
   };
@@ -96,7 +103,6 @@ export default function App() {
     <ServerConnectionProvider>
       <header className="site-header">
         <a className="brand" href={`#${DEFAULT_PAGE}`} title="Infrago Quantlet">
-          <img className="brand-mark" src={ehMark} alt="" width={30} height={30} data-testid="brand-logo" />
           <span className="brand-text">
             <span className="brand-name">Infrago Quantlet</span>
             <span className="brand-sub">市場分析運用判断支援</span>
@@ -122,21 +128,24 @@ export default function App() {
           {GROUPS.map((g) => {
             const isOpen = open.includes(g.id);
             const current = here?.group.id === g.id;
+            const labelled = g.label !== "";
             return (
-              <div key={g.id} className={`sidebar-group${current ? " current" : ""}`} data-testid={`group-${g.id}`}>
-                <button
-                  type="button"
-                  className="sidebar-part"
-                  aria-expanded={isOpen}
-                  aria-controls={`group-items-${g.id}`}
-                  onClick={() => toggleGroup(g.id)}
-                  data-testid={`group-toggle-${g.id}`}
-                >
-                  <Icon name="chevron" size={12} />
-                  <span className="sidebar-label">{g.label}</span>
-                </button>
-                {/* 折りたたんだサイドバー（アイコンだけ）では、グループの開閉に関係なく項目のアイコンを並べる */}
-                <ul id={`group-items-${g.id}`} hidden={!isOpen && !collapsed}>
+              <div key={g.id} className={`sidebar-group${current ? " current" : ""}${g.dividerBefore ? " divided" : ""}${labelled ? "" : " unlabelled"}`} data-testid={`group-${g.id}`}>
+                {labelled && (
+                  <button
+                    type="button"
+                    className="sidebar-part"
+                    aria-expanded={isOpen}
+                    aria-controls={`group-items-${g.id}`}
+                    onClick={() => toggleGroup(g.id)}
+                    data-testid={`group-toggle-${g.id}`}
+                  >
+                    <Icon name="chevron" size={12} />
+                    <span className="sidebar-label">{g.label}</span>
+                  </button>
+                )}
+                {/* 折りたたんだサイドバー（アイコンだけ）では、グループの開閉に関係なく項目のアイコンを並べる。見出しのないグループは、いつも開いている */}
+                <ul id={`group-items-${g.id}`} hidden={labelled && !isOpen && !collapsed}>
                   {g.items.map((item) => <li key={item.id}>{itemLink(item)}</li>)}
                 </ul>
               </div>
@@ -151,7 +160,7 @@ export default function App() {
                 <a key={v.page} role="tab" aria-selected={route.page === v.page} className={`subtab ${route.page === v.page ? "active" : ""}`} href={`#${v.page}`} data-testid={`view-${v.page}`}>
                   <Icon name={v.icon} size={14} />
                   {v.label}
-                  {here.item.planned && v.page === here.item.views[0].page ? "（準備中）" : ""}
+                  {here.item.planned && v.page === here.item.views[0].page ? "（仕様確認）" : ""}
                 </a>
               ))}
             </div>
@@ -160,7 +169,6 @@ export default function App() {
           {route.page === "ois" && <TonaOisPage />}
           {route.page === "rates" && <RatesPage />}
           {route.page === "reports" && <ReportsPage arg={route.arg} />}
-          {route.page === "issuer-ratings" && <PlaceholderPage title="発行体格付け推移" note="発行体ごとの格付けの推移を表示する予定。" />}
           {route.page === "offers" && <OfferSheetPage focusIsin={route.arg} />}
           {route.page === "trs" && <TrsPage />}
           {route.page === "asw" && <AssetSwapPage />}
@@ -168,9 +176,7 @@ export default function App() {
           {route.page === "futures" && <FuturesPage />}
           {route.page === "callable" && <EarlyRedemptionPage />}
           {route.page === "irrbb" && <IrrbbPage />}
-          {route.page === "credit-var" && <PlaceholderPage title="クレジットVaR" note="クレジット・CDS は上の「関連画面」から開ける。" />}
           {route.page === "cds" && <CdsPage />}
-          {route.page === "rating-limits" && <PlaceholderPage title="格付け枠管理" note="格付けごとの与信枠の管理を行う予定。" />}
           {route.page === "server" && <ServerPage />}
         </main>
       </div>

@@ -7,8 +7,8 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 - リポジトリ：<https://github.com/besuke/infrago>（旧名 `infrago-quant`）。`origin` は新しい URL に直してある（2026-11-20）。2026-11-18 の確認では**公開（public）**で、CLAUDE.md の「private」と食い違っている。意図した公開かは未確認。
 - ブランチ：`main` が最新（`7a9d65c`、2026-11-20 に push 済み）。PR #1 はマージ済み。作業に使ったブランチ（`rename-to-rmql`、`rename-carmine-crimson`、`riemannql-folder` など）は `main` に取り込み済みで、ローカルに残っている（消してよい）。次に変更するときは、CLAUDE.md のとおり、作業ブランチを作ってからコミットする。
 - この PC のフォルダーは `C:\AnalyticFin\Projects\Infrago`（旧 `InfragoQuant`）。デスクトップのショートカットと `InfragoClaude.bat` も、新しいパスに直した（2026-11-20）。
-- 画面：4グループのサイドバー（`ui/src/nav.ts`）。実装済みはイールドカーブ分析（イールドカーブ・TONA OIS・日米の国債金利）、レポートサマリー、オファーシート（関連：TRS契約書連携）、アセットスワップ（関連：債券キャッシュフロー・国債先物・CTD）、早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**準備中**は発行体格付け推移、クレジットVaR（関連のクレジット・CDS は動く）、格付け枠管理。
-- 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に EH マーク（`ui/src/assets/eh-mark.svg`、淡い緑）、右に二段の文字「Infrago Quantlet」「市場分析運用判断支援」。
+- 画面：サイドバーは 3 つのまとまり（`ui/src/nav.ts`。業務支援、投資定量分析、規制リスク関連）。実装済みはクレジットRPT分析、オファーシート作成（関連：アセットスワップ）、デリバティブ取引入力（TRS契約書連携。確認書は、アップロードのほか、https の公開 URL・許可したフォルダーのファイルから読める）、イールドカーブ分析（関連：日米の国債金利・OIS）、債券原始計算、先物CTD、GPS（含むキーレート。TONA OIS・スワップの画面）、クレジットスプレッドCDS、債券早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**TBD**はレポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR。格付け枠管理の画面は、メニューから外した（2026-11-20）。
+- 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に二段の文字「Infrago Quantlet」「市場分析運用判断支援」、右に接続表示（ロゴのマークは付けない）。
 - rmql は旧名 RiemannFinMath（2026-11-19 に改名）。古い記録に `RiemannFinMath` と出てきたら、rmql のこと。
 
 ## 新しい PC で動かす
@@ -78,7 +78,7 @@ install.packages(
 |---|---|---|
 | `config/settings.local.env` | 使う Rscript のパス（なくてよい） | `config/settings.example.env` |
 | `config/deploy.local.env` | 社内に案内するホスト名・IP（社内LAN公開のときだけ） | `config/deploy.example.env` |
-| `server/tmp/.Renviron`、`server/tmp/aladdin_endpoint.json` | Bloomberg・Aladdin・User-Agent の設定（実接続は未実施。値は書かない） | なし |
+| `server/tmp/.Renviron`、`server/tmp/aladdin_endpoint.json` | Bloomberg・Aladdin・User-Agent の設定（実接続は未実施。値は書かない）。TRS 確認書をサーバーのフォルダーから読むときは、`QUANTLET_C1_SOURCE_DIRS=<フォルダー>;<フォルダー>` | なし |
 | `server/data/`（`demo/` と掲示板のサンプル案件 1 件を除く） | アップロード、実行結果、案件、取得した市場データ | — |
 | `ui/node_modules/`、`ui/dist/` | 画面の部品、ビルド結果 | `npm install`、`npm run build` |
 
@@ -124,9 +124,10 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 |---|---|---|
 | `npm run typecheck` | 画面の型 | なし |
 | `npm run check:r` | 使う R の版、必須パッケージ | R |
-| `npm run test:nav` | ブラウザーで、トップ URL・個別ページの URL・グループの開閉・選択表示・関連画面・準備中・タブのタイトル（ヘッドレス Chrome） | `npm run api` と `npm run dev` を起動済み、Chrome（`CHROME`・`BASE_URL` で変えられる） |
+| `npm run test:nav` | ブラウザーで、トップ URL・個別ページの URL・グループの開閉・選択表示・関連画面・TBD・タブのタイトル（ヘッドレス Chrome） | `npm run api` と `npm run dev` を起動済み、Chrome（`CHROME`・`BASE_URL` で変えられる） |
 | `npm run test:irrbb` | IRRBB の検算 11 項目 | R |
 | `npm run test:early-redemption` | 早期償還（MBS の静的・ダイナミック OAS と経路）の検算 12 項目 | R |
+| `npm run test:c1-source` | TRS 確認書の取得元（URL・許可したフォルダー）の検査の検算 33 項目（ネットワークなし） | R |
 | `npm run reconcile:a1` / `reconcile:c1` | Curie との照合（A1・C1） | R |
 | `npm run demo:offer` | 円債オファー 1 件のデモ Excel を作り直す | R |
 
@@ -138,11 +139,11 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 
 | 場所 | 内容 |
 |---|---|
-| `ui/src/nav.ts` | サイドバーの4グループ・項目・関連画面・準備中・以前のアドレスの対応（画面を足すときはここ） |
+| `ui/src/nav.ts` | サイドバーのまとまり・項目・関連画面・TBD・以前のアドレスの対応（画面を足すときはここ） |
 | `ui/src/App.tsx` | 上の帯、サイドバー、画面の切り替え、タブのタイトル |
 | `ui/src/analytics/` | イールドカーブ・TONA OIS・債券キャッシュフロー・早期償還・国債先物・クレジット CDS の画面。呼び出しは `ui/src/analyticsApi.ts` |
 | `ui/src/charts/` | グラフ（Carmine Studio から写した `LineChart`・`FlowChart`） |
-| `ui/src/styles.css` | 配色（深い緑）、Aqua 風の部品、サイドバー、グラフ |
+| `ui/src/styles.css` | 配色（カーマイン）、Aqua 風の部品、サイドバー、グラフ |
 | `server/server.R` | HTTP API の経路 |
 | `server/R/analytics/` | 上の6画面の計算（rmql を呼ぶ）。読み込みは `server/R/load_quantlet.R` の `.quantlet_modules` |
 | `server/data/demo/` | 架空のデモデータ（先物の入力は `demo/futures/inputs.json`） |
@@ -155,7 +156,7 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 - 計算は rmql、R の API は取り込み・整形・集計・検証、画面は表示だけ（計算し直さない）。
 - 市場データは、評価日と同じ市場日のものだけを使い、別の日付で補わない。
 - Aladdin への送信はしない（下書きのみ）。Bloomberg の実接続は未実施（将来 INDIGO に移す）。
-- 画面は Carmine Studio（`../Carmine`）と同じ構成・同じ Aqua 風の部品で、色は深い緑。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。
+- 画面は Carmine Studio（`../Carmine`）と同じ構成・同じ Aqua 風の部品で、色はカーマイン。移した画面は仕様の説明を載せず、入力・結果・グラフ・表だけにする。
 - Curie（`../Curie`）は変更しない。
 - コミットと push は頼まれたときだけ。ステージした差分に、認証情報・個人のパス・社内 URL・実データがないことを確かめる。
 
@@ -166,7 +167,7 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 1. **公開の範囲を決める**：GitHub のリポジトリは 2026-11-18 の確認で public。意図したものでなければ非公開に戻す（Settings → Danger Zone → Change visibility）。決めたら CLAUDE.md の記述を直す。
 2. **Carmine Studio のフォワードの直し**（未着手）：Carmine の yield-curves は原稿の2つの補間（ゼロ金利の線形補間、割引係数の対数線形補間）を再現する作りで、フォワードが折れ線・階段状になる。単調な対数3次補間のカーブを3つ目として足し、メインのグラフはそちらにする。原稿の2つは照合のために残す（照合の差 0 のテストを壊さない）。なお Carmine には、Infrago から移した「ノードのシミュレーション」と債券の日付入力がある（2026-11-19）。
 3. Carmine Studio の残りの画面（ブラック・モデル、金利モデル、キャリブレーション、PRDC など）を移すか決める。移すのは実務で使うものだけ。
-4. 準備中の3項目（発行体格付け推移、クレジットVaR、格付け枠管理）。rmql にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
+4. TBD の項目（レポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR）。メニューの構成は 2026-11-20 に、利用者の指示で決めた（「GPS（含むキーレート）」は、TONA OIS・スワップの画面を当てた。違う意図なら nav.ts の 1 行で変える）。rmql にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
 5. 数値の確認が残っているもの：TONA OIS は Infrago のデモ気配（Carmine は別の気配）なので、Carmine との数値照合をしていない。早期償還は、静的 OAS・ダイナミック OAS・Hull-White の経路・コール判断の境界を移した（2026-11-19〜20）。静的 OAS は Carmine の照合済みの値と最大 0.26 bp 差で、原因は原稿の `uniroot` の精度。経路は rmql の乱数（seed 48）なので、原稿の経路とは数値が違う。コール判断の境界は、rmql の `compute_hull_white_callable_bond_decisions` を Coral Book II-8.4.2 と照合済み（rmql 側の記録）。CDS の Hazard Rate は、Carmine と同じ `uniroot` で求めている（rmql の `bootstrap_hazard_curve` は契約の既定が違うので使っていない）。
 6. rmql 0.4.0 は導入済み。使える新しい関数（OIS スワップの日付を期間から作る `compute_ois_swap_dates` など）で、TONA OIS の `tona_swap_dates_QL` を置き換えられる可能性がある（未着手）。置き換えたら、`npm run test:irrbb` と、各画面の既定値の照合をやり直す。
 7. 機能ごとの未了（実データ、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API など）は、下の「機能ごとの未了」。そこにないもの：金融庁の IRRBB フロアの扱いの確認（既定はフロアなし）、Curie にある Aladdin の実 URL の扱い。

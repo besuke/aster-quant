@@ -17,7 +17,7 @@
   a1 = c("pricing_rmql.R", "convert_offer_sheet.R", "spread_inputs.R", "validate_offer_worksheet.R",
          "write_offer_results_excel.R", "workflows_offer_sheet.R", "demo_attributes.R", "a1_service.R"),
   # c1 は jsonlite・xml2・pdftools・openssl・curl・processx を使う（関数を呼んだときに必要）
-  c1 = c("trs_fields.R", "verify_quotes.R", "fpml_trs.R", "fpml_validate.R", "acquire_document.R", "reading_data.R",
+  c1 = c("trs_fields.R", "verify_quotes.R", "fpml_trs.R", "fpml_validate.R", "acquire_document.R", "source_policy.R", "reading_data.R",
          "claude_agent.R", "reader.R", "read_results.R", "validate_results.R", "aladdin_payload.R",
          "workflows_c1_case.R", "inbox_c1.R", "trs_cashflows.R"),
   bloomberg = c("bbg_data_license.R", "bbg_to_market_data.R"),

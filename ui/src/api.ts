@@ -427,7 +427,9 @@ export const api = {
       body: file,
     }),
   runA1: (workflow: Workflow, uploadId: string | null) => postJson<A1Result>("/api/a1/run", { workflow, uploadId }),
-  runC1: (uploadId: string | null, reader: "saved" | "claude_code") => postJson<C1Result>("/api/c1/run", { uploadId, reader }),
+  runC1: (uploadId: string | null, reader: "saved" | "claude_code", source?: string) =>
+    postJson<C1Result>("/api/c1/run", { uploadId, reader, ...(source ? { source } : {}) }),
+  c1Sources: () => call<C1Sources>("/api/c1/sources"),
   bloombergStatus: () => call<BloombergStatus>("/api/bloomberg/status"),
   bloombergOis: (start_date: string, end_date: string, marketdate: string) =>
     postJson<BloombergOis>("/api/bloomberg/ois", { start_date, end_date, marketdate, mode: "synthetic" }),
@@ -443,3 +445,9 @@ export const fmt = (x: number | null | undefined, digits = 4) =>
 // 小数点以下3桁（4桁目を切り捨て）で表示する（複利利回り・デュレーション・コンベクシティ用）
 export const fmtTrunc3 = (x: number | null | undefined) =>
   x === null || x === undefined || Number.isNaN(x) ? "—" : (Math.trunc(x * 1000) / 1000).toFixed(3);
+
+export interface C1Sources {
+  url: { enabled: boolean; scheme: string };
+  files: { enabled: boolean; folders: string[] };
+  max_mb: number;
+}

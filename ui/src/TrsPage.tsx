@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { api, type C1Result, type ConditionRow, type UploadResult } from "./api";
+import { useEffect, useMemo, useState } from "react";
+import { api, type C1Result, type C1Sources, type ConditionRow, type UploadResult } from "./api";
 import Upload from "./Upload";
 import TrsCashflowsPanel from "./TrsCashflowsPanel";
 
@@ -18,13 +18,16 @@ export default function TrsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ConditionRow | null>(null);
   const [showPdf, setShowPdf] = useState(false);
+  const [source, setSource] = useState("");
+  const [sources, setSources] = useState<C1Sources | null>(null);
+  useEffect(() => { api.c1Sources().then(setSources).catch(() => setSources(null)); }, []);
 
   const run = async () => {
     setBusy(true);
     setError(null);
     setSelected(null);
     try {
-      setResult(await api.runC1(uploaded?.uploadId ?? null, reader));
+      setResult(await api.runC1(source.trim() ? null : uploaded?.uploadId ?? null, reader, source.trim() || undefined));
     } catch (e) {
       setError((e as Error).message);
       setResult(null);
@@ -55,6 +58,24 @@ export default function TrsPage() {
           onUploaded={setUploaded}
         />
         <div className="row">
+          <label className="small" style={{ flex: 1 }}>
+            または、URL を貼る{sources?.files.enabled ? "（サーバーの許可フォルダーのファイルも可）" : ""}：
+            <input
+              type="text"
+              style={{ width: "100%" }}
+              value={source}
+              placeholder="https://（公開の PDF・HTML）"
+              onChange={(e) => setSource(e.target.value)}
+              data-testid="c1-source"
+            />
+          </label>
+        </div>
+        <div className="muted small">
+          URL は https だけ。社内のアドレスや、自分自身に向く URL は使えない（{sources?.max_mb ?? 50} MB まで）。
+          {sources?.files.enabled ? `許可したフォルダー：${sources.files.folders.join("、")}` : ""}
+          {source.trim() && uploaded ? " URL を入れているので、アップロードしたファイルは使わない。" : ""}
+        </div>
+        <div className="row">
           <label className="small">
             読み方：
             <select value={reader} onChange={(e) => setReader(e.target.value as "saved" | "claude_code")}>
@@ -66,7 +87,7 @@ export default function TrsPage() {
             {busy ? (reader === "claude_code" ? "Claude Code が読解中…（数分）" : "処理中…") : "取込・抽出・照合を実行"}
           </button>
         </div>
-        {reader === "saved" && uploaded && (
+        {reader === "saved" && (uploaded || source.trim()) && (
           <div className="warn small">
             保存済みの抽出結果はデモの確認書のものである。別の契約書に使うと、原文との照合で不一致になる（それが正しい結果）。実際の契約書は「Claude Code で読む」を選ぶ。
           </div>
