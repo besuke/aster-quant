@@ -229,7 +229,7 @@ INDIGO は現時点で存在しない（ソースに参照もない）。Bloombe
 | 経過利子・ダーティ価格（外債） | 5・5 | 4.4e-16・4.3e-14 | 1e-10 |
 | 入力検証・計算状態・メッセージ | 12 | 全件一致（変動利付債とコール条項付き債は両方とも `unsupported`、理由の文言も同じ） | 完全一致 |
 
-数値 84 項目がすべて許容誤差内、状態の不一致は 0。円換算 ASW と z の 1e-9 bp 程度の差は、z を求める解法の停止条件の違い（Curie は `uniroot` の許容誤差 1e-12、rmql は自前の解法）による。Carmine Studio の照合記録（`../carmine-studio/reconciliation/asw/RECONCILIATION_ASW.md`）と同じ大きさである。
+数値 84 項目がすべて許容誤差内、状態の不一致は 0。円換算 ASW と z の 1e-9 bp 程度の差は、z を求める解法の停止条件の違い（Curie は `uniroot` の許容誤差 1e-12、rmql は自前の解法）による。Carmine Studio の照合記録（`../Carmine/reconciliation/asw/RECONCILIATION_ASW.md`）と同じ大きさである。
 
 画面からの1件：円債オファー1件（テスト円債B 0.90% 2031/3、JPTEST000022、単価 98.15。`server/data/demo/a1/offers/demo_offer_JPY_single_JPTEST000022.xlsx`）をアップロードして計算すると、ASW 10.4841258717 bp、JGB スプレッド 11.5189351854 bp、ダーティ価格 98.2067123288 になり、上の照合の値と同じだった。
 
