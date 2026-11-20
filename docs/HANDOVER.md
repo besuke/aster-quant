@@ -9,7 +9,6 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 - この PC のフォルダーは `C:\AnalyticFin\Projects\Infrago`（旧 `InfragoQuant`）。デスクトップのショートカットと `InfragoClaude.bat` も、新しいパスに直した（2026-11-20）。
 - 画面：サイドバーは 3 つのまとまり（`ui/src/nav.ts`。業務支援、投資定量分析、規制リスク関連）。実装済みはクレジットRPT分析、オファーシート作成（関連：アセットスワップ）、デリバティブ取引入力（TRS契約書連携。確認書は、アップロードのほか、https の公開 URL・許可したフォルダーのファイルから読める）、イールドカーブ分析（関連：日米の国債金利・OIS）、債券原始計算、先物CTD、GPS（含むキーレート。TONA OIS・スワップの画面）、クレジットスプレッドCDS、債券早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**TBD**はレポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR。格付け枠管理の画面は、メニューから外した（2026-11-20）。
 - 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に二段の文字「Infrago」「市場分析運用判断支援」、右に接続表示（ロゴのマークは付けない）。
-- rmql は旧名 RiemannFinMath（2026-11-19 に改名）。古い記録に `RiemannFinMath` と出てきたら、rmql のこと。
 
 ## 新しい PC で動かす
 
@@ -48,7 +47,7 @@ install.packages(c("pdftools", "openssl", "curl", "processx", "ps", "httr2", "fl
 
 ### rmql を入れる
 
-rmql（旧 RiemannFinMath）は別のリポジトリ（<https://github.com/besuke/RiemannQL>、この PC では `../RiemannQL`）。入れ方の正本は rmql の `docs/client_guide.md` と `docs/r_package.md`。要点：
+rmql は別のリポジトリ（<https://github.com/besuke/RiemannQL>、この PC では `../RiemannQL`）。入れ方の正本は rmql の `docs/client_guide.md` と `docs/r_package.md`。要点：
 
 ```r
 install.packages(
@@ -60,7 +59,6 @@ install.packages(
 - **公開しているバイナリは Windows の R 4.4・4.5・4.6**（GitHub Actions で R の版ごとにビルドし、各 R でスモークテストを通した。2026-11-20 に 0.4.0 を公開）。Rust も Rtools も要らない。この PC（R 4.6.2）では、公開した R リポジトリからの導入を確かめた。**R 4.4 と 4.5 は、CI でビルドと検査をしただけで、この PC では試していない**。
 - `remotes::install_github("besuke/RiemannQL")`（`subdir` なし）でも入る（`DESCRIPTION` をリポジトリの直下に置いた）。ただし常にソースからビルドするので、Rust と Rtools が要る。
 - 入れ替えるときは、その DLL を使っている R のプロセス（Infrago Quant の R API、RStudio の R セッションなど）を**先に止める**。
-- 旧名の `RiemannFinMath` は使わない。この PC の既定のライブラリーからも削除した。
 
 ### R の版が違うとき（手元の R と、この PC の R 4.6.0 が違う）
 
