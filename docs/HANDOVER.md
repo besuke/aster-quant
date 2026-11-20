@@ -1,13 +1,13 @@
 # 引き継ぎ書
 
-Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクローン先）で続けるための書類。2026-11-20 時点。アプリの仕様と照合結果は `README.md`、Claude Code 向けの決めごとは `CLAUDE.md`。この書類は「手元で動かして続ける」ことだけを書く。
+Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクローン先）で続けるための書類。2026-11-21 時点。アプリの仕様と照合結果は `README.md`、Claude Code 向けの決めごとは `CLAUDE.md`。この書類は「手元で動かして続ける」ことだけを書く。
 
 ## いまの状態
 
 - リポジトリ：<https://github.com/besuke/infrago>（旧名 `infrago-quant`）。`origin` は新しい URL に直してある（2026-11-20）。2026-11-18 の確認では**公開（public）**で、CLAUDE.md の「private」と食い違っている。意図した公開かは未確認。
-- ブランチ：`main` が最新（`7a9d65c`、2026-11-20 に push 済み）。PR #1 はマージ済み。作業に使ったブランチ（`rename-to-rmql`、`rename-carmine-crimson`、`riemannql-folder` など）は `main` に取り込み済みで、ローカルに残っている（消してよい）。次に変更するときは、CLAUDE.md のとおり、作業ブランチを作ってからコミットする。
+- ブランチ：`main` が最新（`40b49c0`、2026-11-21 に push 済み）。PR #1 はマージ済み。作業に使ったブランチは `main` に取り込み、ローカルとリモートから削除した。`InfragoQuant.Rproj` は RStudio が自動で書き換える（行末の設定の順序など）ので、変更のまま残っていてもコミットしない。次に変更するときは、CLAUDE.md のとおり、作業ブランチを作ってからコミットする。
 - この PC のフォルダーは `C:\AnalyticFin\Projects\Infrago`（旧 `InfragoQuant`）。デスクトップのショートカットと `InfragoClaude.bat` も、新しいパスに直した（2026-11-20）。
-- 画面：サイドバーは 3 つのまとまり（`ui/src/nav.ts`。業務支援、投資定量分析、規制リスク関連）。実装済みはクレジットRPT分析、オファーシート作成（関連：アセットスワップ）、デリバティブ取引入力（TRS契約書連携。確認書は、アップロードのほか、https の公開 URL・許可したフォルダーのファイルから読める）、イールドカーブ分析（関連：日米の国債金利・OIS）、債券原始計算、先物CTD、GPS（含むキーレート。TONA OIS・スワップの画面）、クレジットスプレッドCDS、債券早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**TBD**はレポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR。格付け枠管理の画面は、メニューから外した（2026-11-20）。
+- 画面：サイドバーは 3 つのまとまり（`ui/src/nav.ts`。業務支援、投資定量分析、規制リスク関連）。実装済みはクレジットRPT分析、オファーシート作成（関連：アセットスワップ）、デリバティブ取引入力（TRS契約書連携。確認書は、アップロードのほか、https の公開 URL・許可したフォルダーのファイルから読める）、イールドカーブ分析（関連：日米の国債金利・OIS）、債券原始計算、先物CTD、GPS（含むキーレート。TONA OIS・スワップの画面）、クレジットスプレッドCDS、債券早期償還（コール判断の境界、MBS の静的・ダイナミック OAS と Hull-White の金利経路を含む）、IRRBB。**TBD**（札だけで、画面は開かない）はレポート格付検証、ショート残検証、為替ヘッジ/カバー発注、みなす基準算定支援、FRTB CVAR計算、クレジットVaR。格付け枠管理の画面は、メニューから外した（2026-11-20）。
 - 計算は R（`server/`、rmql）、画面は React（`ui/`）。画面は計算しない。上の帯は、左に二段の文字「Infrago」「市場分析運用判断支援」、右に接続表示（ロゴのマークは付けない）。
 
 ## 新しい PC で動かす
@@ -19,7 +19,7 @@ Infrago Quant（旧 QuantLet）を、別の PC・別の会話（Git のクロー
 | Git | — | |
 | Node.js | 23.6 以上 | 確認は 26.13.0 |
 | R | 4.x | **版ごとにパッケージの置き場が違う**（下の「R の版が違うとき」） |
-| rmql | **0.4.0 以上** | 確認は **0.4.0**（2026-11-20）。早期償還の債券タブのコール判断の境界が `compute_hull_white_callable_bond_decisions` を使うので、0.4.0 が要る |
+| rmql | **0.4.0 以上** | 公開は **0.4.1**（この PC に入っている版）。画面・API の確認（下の「確認のコマンド」）は 0.4.0 で行った。早期償還の債券タブのコール判断の境界が `compute_hull_white_callable_bond_decisions` を使うので、0.4.0 が要る |
 
 ### 手順
 
@@ -56,7 +56,7 @@ install.packages(
 )
 ```
 
-- **公開しているバイナリは Windows の R 4.4・4.5・4.6**（GitHub Actions で R の版ごとにビルドし、各 R でスモークテストを通した。2026-11-20 に 0.4.0 を公開）。Rust も Rtools も要らない。この PC（R 4.6.2）では、公開した R リポジトリからの導入を確かめた。**R 4.4 と 4.5 は、CI でビルドと検査をしただけで、この PC では試していない**。
+- **公開しているバイナリは Windows の R 4.4・4.5・4.6**（GitHub Actions で R の版ごとにビルドし、各 R でスモークテストを通した。2026-11-20 に 0.4.0、0.4.1 を公開。目録には最新の 0.4.1 だけが載る）。Rust も Rtools も要らない。この PC（R 4.6.2）では、公開した R リポジトリからの導入を確かめた。**R 4.4 と 4.5 は、CI でビルドと検査をしただけで、この PC では試していない**。
 - `remotes::install_github("besuke/RiemannQL")`（`subdir` なし）でも入る（`DESCRIPTION` をリポジトリの直下に置いた）。ただし常にソースからビルドするので、Rust と Rtools が要る。
 - 入れ替えるときは、その DLL を使っている R のプロセス（Infrago Quant の R API、RStudio の R セッションなど）を**先に止める**。
 
@@ -160,15 +160,16 @@ Infrago Quant Server（R）は環境変数 `QUANTLET_PUBLIC_HOST`（バッチが
 
 ## 未了・次にやること
 
-済み（2026-11-20）：フォルダー名を `Infrago` に変え、デスクトップのショートカットと `InfragoClaude.bat` を直した。`origin` を新しい URL に直した。PR #1 をマージし、`main` を push した。
+済み（2026-11-20〜21）：フォルダー名を `Infrago` に変え、デスクトップのショートカットと `InfragoClaude.bat` を直した。`origin` を新しい URL に直した。PR #1 をマージし、`main` を push した。メニューを 3 つのまとまりに組み替え、EH ロゴを外し（Carmine も）、色をアクア、左上の文字を「Infrago」、ブラウザーのタブの名前を「投資業務支援ポータル/メニュー名」にした。TRS 確認書を https の URL・許可したフォルダーから読めるようにした（`test:c1-source` 33/33、`test:nav` 69/69）。rmql の R リポジトリ（gh-pages）から旧名のパッケージを消した。
 
 1. **公開の範囲を決める**：GitHub のリポジトリは 2026-11-18 の確認で public。意図したものでなければ非公開に戻す（Settings → Danger Zone → Change visibility）。決めたら CLAUDE.md の記述を直す。
 2. **Carmine Studio のフォワードの直し**（未着手）：Carmine の yield-curves は原稿の2つの補間（ゼロ金利の線形補間、割引係数の対数線形補間）を再現する作りで、フォワードが折れ線・階段状になる。単調な対数3次補間のカーブを3つ目として足し、メインのグラフはそちらにする。原稿の2つは照合のために残す（照合の差 0 のテストを壊さない）。なお Carmine には、Infrago から移した「ノードのシミュレーション」と債券の日付入力がある（2026-11-19）。
 3. Carmine Studio の残りの画面（ブラック・モデル、金利モデル、キャリブレーション、PRDC など）を移すか決める。移すのは実務で使うものだけ。
-4. TBD の項目（レポート格付検証、ショート残検証、FRTB CVAR計算、クレジットVaR）。メニューの構成は 2026-11-20 に、利用者の指示で決めた（「GPS（含むキーレート）」は、TONA OIS・スワップの画面を当てた。違う意図なら nav.ts の 1 行で変える）。rmql にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
+4. TBD の項目（レポート格付検証、ショート残検証、為替ヘッジ/カバー発注、みなす基準算定支援、FRTB CVAR計算、クレジットVaR）。TBD の項目は札だけで、画面を開かない。「みなす基準算定支援」などは何を作るかの仕様がまだない。メニューの構成は 2026-11-20 に、利用者の指示で決めた（「GPS（含むキーレート）」は、TONA OIS・スワップの画面を当てた。違う意図なら nav.ts の 1 行で変える）。rmql にはクレジットリスクの関数（`compute_credit_risk`、`compute_portfolio_risk` など）がある。
 5. 数値の確認が残っているもの：TONA OIS は Infrago のデモ気配（Carmine は別の気配）なので、Carmine との数値照合をしていない。早期償還は、静的 OAS・ダイナミック OAS・Hull-White の経路・コール判断の境界を移した（2026-11-19〜20）。静的 OAS は Carmine の照合済みの値と最大 0.26 bp 差で、原因は原稿の `uniroot` の精度。経路は rmql の乱数（seed 48）なので、原稿の経路とは数値が違う。コール判断の境界は、rmql の `compute_hull_white_callable_bond_decisions` を Coral Book II-8.4.2 と照合済み（rmql 側の記録）。CDS の Hazard Rate は、Carmine と同じ `uniroot` で求めている（rmql の `bootstrap_hazard_curve` は契約の既定が違うので使っていない）。
 6. rmql 0.4.0 は導入済み。使える新しい関数（OIS スワップの日付を期間から作る `compute_ois_swap_dates` など）で、TONA OIS の `tona_swap_dates_QL` を置き換えられる可能性がある（未着手）。置き換えたら、`npm run test:irrbb` と、各画面の既定値の照合をやり直す。
-7. 機能ごとの未了（実データ、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API など）は、下の「機能ごとの未了」。そこにないもの：金融庁の IRRBB フロアの扱いの確認（既定はフロアなし）、Curie にある Aladdin の実 URL の扱い。
+7. TRS 確認書の「AI API で読む」モード（Curie にある `api` の読み方）は移していない（承認済みの AI API が未設定）。実際の契約書は「Claude Code で読む」で読み、許可したフォルダー（`QUANTLET_C1_SOURCE_DIRS`）に置く運用。
+8. 機能ごとの未了（実データ、Bloomberg の実接続、FpML の公式 XSD、承認済み AI API など）は、下の「機能ごとの未了」。そこにないもの：金融庁の IRRBB フロアの扱いの確認（既定はフロアなし）、Curie にある Aladdin の実 URL の扱い。
 
 ### 機能ごとの未了
 
